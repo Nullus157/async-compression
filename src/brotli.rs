@@ -74,14 +74,13 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
     }
 }
 
-pub fn compress_stream(
-    stream: impl Stream<Item = Result<Bytes>>,
-    compress: Compress,
-) -> impl Stream<Item = Result<Bytes>> {
-    CompressedStream {
-        inner: stream,
-        flushing: false,
-        input_buffer: Bytes::new(),
-        compress,
+impl<S: Stream<Item = Result<Bytes>>> CompressedStream<S> {
+    pub fn new(stream: S, compress: Compress) -> CompressedStream<S> {
+        CompressedStream {
+            inner: stream,
+            flushing: false,
+            input_buffer: Bytes::new(),
+            compress,
+        }
     }
 }

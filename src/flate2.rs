@@ -73,16 +73,15 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
     }
 }
 
-pub fn compress_stream(
-    stream: impl Stream<Item = Result<Bytes>>,
-    compress: Compress,
-) -> impl Stream<Item = Result<Bytes>> {
-    CompressedStream {
-        inner: stream,
-        flushing: false,
-        input_buffer: Bytes::new(),
-        output_buffer: BytesMut::new(),
-        compress,
+impl<S: Stream<Item = Result<Bytes>>> CompressedStream<S> {
+    pub fn new(stream: S, compress: Compress) -> CompressedStream<S> {
+        CompressedStream {
+            inner: stream,
+            flushing: false,
+            input_buffer: Bytes::new(),
+            output_buffer: BytesMut::new(),
+            compress,
+        }
     }
 }
 
@@ -132,10 +131,12 @@ impl<R: AsyncBufRead> AsyncRead for CompressedRead<R> {
     }
 }
 
-pub fn compress_read(read: impl AsyncBufRead, compress: Compress) -> impl AsyncRead {
-    CompressedRead {
-        inner: read,
-        flushing: false,
-        compress,
+impl<R: AsyncBufRead> CompressedRead<R> {
+    pub fn new(read: R, compress: Compress) -> CompressedRead<R> {
+        CompressedRead {
+            inner: read,
+            flushing: false,
+            compress,
+        }
     }
 }

@@ -16,7 +16,7 @@ fn brotli_stream() {
         Bytes::from_static(&[4, 5, 6]),
     ]);
     let compress = brotli::Compress::new();
-    let compressed = brotli::compress_stream(stream.map(Ok), compress);
+    let compressed = brotli::CompressedStream::new(stream.map(Ok), compress);
     let data: Vec<_> = block_on(compressed.collect());
     let data: io::Result<Vec<_>> = data.into_iter().collect();
     let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();

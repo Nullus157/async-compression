@@ -16,7 +16,7 @@ fn flate2_stream() {
         Bytes::from_static(&[4, 5, 6]),
     ]);
     let compress = flate2::Compress::new(flate2::Compression::default(), false);
-    let compressed = flate2::compress_stream(stream.map(Ok), compress);
+    let compressed = flate2::CompressedStream::new(stream.map(Ok), compress);
     let data: Vec<_> = block_on(compressed.collect());
     let data: io::Result<Vec<_>> = data.into_iter().collect();
     let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
@@ -33,7 +33,7 @@ fn flate2_read() {
 
     let input = &[1, 2, 3, 4, 5, 6];
     let compress = flate2::Compress::new(flate2::Compression::default(), false);
-    let mut compressed = flate2::compress_read(&input[..], compress);
+    let mut compressed = flate2::CompressedRead::new(&input[..], compress);
     let mut data = vec![];
     block_on(compressed.read_to_end(&mut data)).unwrap();
     let mut output = vec![];

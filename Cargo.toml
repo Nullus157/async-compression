@@ -5,7 +5,8 @@ authors = ["Wim Looman <wim@nemo157.com>"]
 edition = "2018"
 
 [dependencies]
+brotli2 = "0.3.2"
 bytes = "0.4.12"
 flate2 = "1.0.7"
-futures-preview = { git = "https://github.com/rust-lang-nursery/futures-rs" }
+futures-preview = "0.3.0-alpha.15"
 juliex = "0.3.0-alpha.5"

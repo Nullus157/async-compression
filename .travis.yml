@@ -1,0 +1,12 @@
+language: rust
+rust:
+  - nightly-2019-04-25
+
+before_script: |
+  rustup component add rustfmt clippy
+script: |
+  cargo fmt --all -- --check &&
+  cargo clippy --all --all-targets -- -D warnings &&
+  cargo build --no-default-features --verbose &&
+  cargo build --all --verbose &&
+  cargo test  --all --verbose

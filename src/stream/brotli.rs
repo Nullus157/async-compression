@@ -50,7 +50,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliStream<S> {
                 input_ref,
                 output_ref,
             )?;
-            while let Some(buf) = dbg!(this.compress.take_output(None)) {
+            while let Some(buf) = this.compress.take_output(None) {
                 compressed_output.put(buf);
             }
             match status {

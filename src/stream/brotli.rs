@@ -4,26 +4,21 @@ use core::{
 };
 use std::io::Result;
 
-use bytes::{BufMut, Bytes, BytesMut};
-use futures::{
-    //io::{AsyncBufRead, AsyncRead},
-    ready,
-    stream::Stream,
-};
-use pin_project::unsafe_project;
-
 use brotli2::raw::{CoStatus, CompressOp};
 pub use brotli2::{raw::Compress, CompressParams};
+use bytes::{BufMut, Bytes, BytesMut};
+use futures::{ready, stream::Stream};
+use pin_project::unsafe_project;
 
 #[unsafe_project(Unpin)]
-pub struct CompressedStream<S: Stream<Item = Result<Bytes>>> {
+pub struct BrotliStream<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     flushing: bool,
     compress: Compress,
 }
 
-impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliStream<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
@@ -55,7 +50,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
                 input_ref,
                 output_ref,
             )?;
-            while let Some(buf) = dbg!(this.compress.take_output(None)) {
+            while let Some(buf) = this.compress.take_output(None) {
                 compressed_output.put(buf);
             }
             match status {
@@ -68,9 +63,9 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>> CompressedStream<S> {
-    pub fn new(stream: S, compress: Compress) -> CompressedStream<S> {
-        CompressedStream {
+impl<S: Stream<Item = Result<Bytes>>> BrotliStream<S> {
+    pub fn new(stream: S, compress: Compress) -> BrotliStream<S> {
+        BrotliStream {
             inner: stream,
             flushing: false,
             compress,

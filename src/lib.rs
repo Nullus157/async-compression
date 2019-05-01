@@ -1,2 +1,2 @@
-pub mod brotli;
-pub mod flate2;
+pub mod read;
+pub mod stream;

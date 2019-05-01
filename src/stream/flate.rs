@@ -5,15 +5,10 @@ use core::{
 use std::io::Result;
 
 use bytes::{Bytes, BytesMut};
-use futures::{
-    io::{AsyncBufRead, AsyncRead},
-    ready,
-    stream::Stream,
-};
-use pin_project::unsafe_project;
-
 use flate2::FlushCompress;
 pub use flate2::{Compress, Compression};
+use futures::{ready, stream::Stream};
+use pin_project::unsafe_project;
 
 #[unsafe_project(Unpin)]
 pub struct CompressedStream<S: Stream<Item = Result<Bytes>>> {
@@ -52,12 +47,16 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
         };
 
         let (prior_in, prior_out) = (this.compress.total_in(), this.compress.total_out());
-        this.compress.compress(this.input_buffer, this.output_buffer, flush)?;
+        this.compress
+            .compress(this.input_buffer, this.output_buffer, flush)?;
         let input = this.compress.total_in() - prior_in;
         let output = this.compress.total_out() - prior_out;
 
         this.input_buffer.advance(input as usize);
-        Poll::Ready(Some(Ok(this.output_buffer.split_to(output as usize).freeze())))
+        Poll::Ready(Some(Ok(this
+            .output_buffer
+            .split_to(output as usize)
+            .freeze())))
     }
 }
 
@@ -68,55 +67,6 @@ impl<S: Stream<Item = Result<Bytes>>> CompressedStream<S> {
             flushing: false,
             input_buffer: Bytes::new(),
             output_buffer: BytesMut::new(),
-            compress,
-        }
-    }
-}
-
-#[unsafe_project(Unpin)]
-pub struct CompressedRead<R: AsyncBufRead> {
-    #[pin]
-    inner: R,
-    flushing: bool,
-    compress: Compress,
-}
-
-impl<R: AsyncBufRead> AsyncRead for CompressedRead<R> {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<Result<usize>> {
-        let mut this = self.project();
-
-        loop {
-            let input_buffer = ready!(this.inner.as_mut().poll_fill_buf(cx))?;
-            *this.flushing = input_buffer.is_empty();
-
-            let flush = if *this.flushing {
-                FlushCompress::Finish
-            } else {
-                FlushCompress::None
-            };
-
-            let (prior_in, prior_out) = (this.compress.total_in(), this.compress.total_out());
-            this.compress.compress(input_buffer, buf, flush)?;
-            let input = this.compress.total_in() - prior_in;
-            let output = this.compress.total_out() - prior_out;
-
-            this.inner.as_mut().consume(input as usize);
-            if *this.flushing || output > 0 {
-                return Poll::Ready(Ok(output as usize));
-            }
-        }
-    }
-}
-
-impl<R: AsyncBufRead> CompressedRead<R> {
-    pub fn new(read: R, compress: Compress) -> CompressedRead<R> {
-        CompressedRead {
-            inner: read,
-            flushing: false,
             compress,
         }
     }

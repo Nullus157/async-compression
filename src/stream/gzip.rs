@@ -1,5 +1,4 @@
 use core::{
-    marker::{PhantomData, Unpin},
     pin::Pin,
     task::{Context, Poll},
 };
@@ -8,44 +7,36 @@ use std::io::Result;
 use bytes::{Bytes, BytesMut};
 pub use flate2::Compression;
 use flate2::{Compress, Crc, FlushCompress};
-use futures::{
-    ready,
-    stream::{self, Stream, StreamExt},
-};
+use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
 
-pub struct GzipStream<S: Stream<Item = Result<Bytes>> + Unpin + 'static> {
-    inner: Box<dyn Stream<Item = Result<Bytes>> + Unpin>,
-    _marker: PhantomData<S>,
-}
-
-impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for GzipStream<S> {
-    type Item = Result<Bytes>;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
-        self.inner.poll_next_unpin(cx)
-    }
-}
-
 #[unsafe_project(Unpin)]
-struct GzipBodyStream<S: Stream<Item = Result<Bytes>>> {
+pub struct GzipStream<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     flushing: bool,
     input_buffer: Bytes,
     output_buffer: BytesMut,
     crc: Crc,
+    header_appended: bool,
     footer_appended: bool,
     compress: Compress,
+    level: Compression,
 }
 
-impl<S: Stream<Item = Result<Bytes>>> Stream for GzipBodyStream<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for GzipStream<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
         const OUTPUT_BUFFER_SIZE: usize = 8_000;
 
         let this = self.project();
+
+        if !*this.header_appended {
+            let header = get_header(*this.level);
+            *this.header_appended = true;
+            return Poll::Ready(Some(Ok(header)));
+        }
 
         if this.input_buffer.is_empty() {
             if *this.flushing {
@@ -88,23 +79,18 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for GzipBodyStream<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> GzipStream<S> {
+impl<S: Stream<Item = Result<Bytes>>> GzipStream<S> {
     pub fn new(stream: S, level: Compression) -> GzipStream<S> {
-        let header_stream = stream::iter(vec![Ok(get_header(level))]);
-        let body_stream = GzipBodyStream {
+        GzipStream {
             inner: stream,
             flushing: false,
             input_buffer: Bytes::new(),
             output_buffer: BytesMut::new(),
             crc: Crc::new(),
+            header_appended: false,
             footer_appended: false,
             compress: Compress::new(level, false),
-        };
-
-        let final_stream = header_stream.chain(body_stream);
-        GzipStream {
-            inner: Box::new(final_stream),
-            _marker: PhantomData,
+            level,
         }
     }
 }

@@ -10,14 +10,16 @@ use futures::{
     ready,
     stream::Stream,
 };
+use pin_project::unsafe_project;
 
 use brotli2::raw::{CoStatus, CompressOp};
 pub use brotli2::{raw::Compress, CompressParams};
 
+#[unsafe_project(Unpin)]
 pub struct CompressedStream<S: Stream<Item = Result<Bytes>>> {
+    #[pin]
     inner: S,
     flushing: bool,
-    input_buffer: Bytes,
     compress: Compress,
 }
 
@@ -27,32 +29,25 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
         const OUTPUT_BUFFER_SIZE: usize = 8_000;
 
-        let (inner, flushing, input_buffer, compress) = unsafe {
-            let CompressedStream {
-                inner,
-                flushing,
-                input_buffer,
-                compress,
-            } = self.get_unchecked_mut();
-            (Pin::new_unchecked(inner), flushing, input_buffer, compress)
-        };
+        let this = self.project();
 
-        if input_buffer.is_empty() {
-            if *flushing {
-                return Poll::Ready(None);
-            } else if let Some(bytes) = ready!(inner.poll_next(cx)) {
-                *input_buffer = bytes?;
-            } else {
-                *flushing = true;
-            }
+        if *this.flushing {
+            return Poll::Ready(None);
         }
+
+        let input_buffer = if let Some(bytes) = ready!(this.inner.poll_next(cx)) {
+            bytes?
+        } else {
+            *this.flushing = true;
+            Bytes::new()
+        };
 
         let mut compressed_output = BytesMut::with_capacity(OUTPUT_BUFFER_SIZE);
         let input_ref = &mut input_buffer.as_ref();
         let output_ref = &mut &mut [][..];
         loop {
-            let status = compress.compress(
-                if *flushing {
+            let status = this.compress.compress(
+                if *this.flushing {
                     CompressOp::Finish
                 } else {
                     CompressOp::Process
@@ -60,7 +55,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
                 input_ref,
                 output_ref,
             )?;
-            while let Some(buf) = dbg!(compress.take_output(None)) {
+            while let Some(buf) = dbg!(this.compress.take_output(None)) {
                 compressed_output.put(buf);
             }
             match status {
@@ -68,7 +63,6 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
                 CoStatus::Unfinished => (),
             }
         }
-        input_buffer.clear();
 
         Poll::Ready(Some(Ok(compressed_output.freeze())))
     }
@@ -79,7 +73,6 @@ impl<S: Stream<Item = Result<Bytes>>> CompressedStream<S> {
         CompressedStream {
             inner: stream,
             flushing: false,
-            input_buffer: Bytes::new(),
             compress,
         }
     }

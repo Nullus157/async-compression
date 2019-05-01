@@ -4,31 +4,26 @@ use core::{
 };
 use std::io::Result;
 
-use bytes::{BufMut, Bytes, BytesMut};
-use futures::{
-    //io::{AsyncBufRead, AsyncRead},
-    ready,
-    stream::Stream,
-};
-
 use brotli2::raw::{CoStatus, CompressOp};
 pub use brotli2::{raw::Compress, CompressParams};
+use bytes::{BufMut, Bytes, BytesMut};
+use futures::{ready, stream::Stream};
 
-pub struct CompressedStream<S: Stream<Item = Result<Bytes>>> {
+pub struct BrotliStream<S: Stream<Item = Result<Bytes>>> {
     inner: S,
     flushing: bool,
     input_buffer: Bytes,
     compress: Compress,
 }
 
-impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliStream<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
         const OUTPUT_BUFFER_SIZE: usize = 8_000;
 
         let (inner, flushing, input_buffer, compress) = unsafe {
-            let CompressedStream {
+            let BrotliStream {
                 inner,
                 flushing,
                 input_buffer,
@@ -74,9 +69,9 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>> CompressedStream<S> {
-    pub fn new(stream: S, compress: Compress) -> CompressedStream<S> {
-        CompressedStream {
+impl<S: Stream<Item = Result<Bytes>>> BrotliStream<S> {
+    pub fn new(stream: S, compress: Compress) -> BrotliStream<S> {
+        BrotliStream {
             inner: stream,
             flushing: false,
             input_buffer: Bytes::new(),

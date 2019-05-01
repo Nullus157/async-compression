@@ -28,7 +28,7 @@ impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for GzipStream<S> {
 }
 
 #[unsafe_project(Unpin)]
-pub struct GzipBodyStream<S: Stream<Item = Result<Bytes>>> {
+struct GzipBodyStream<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     flushing: bool,

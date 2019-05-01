@@ -1,76 +1,37 @@
-use brotli2::bufread::{BrotliDecoder, BrotliEncoder};
-use bytes::{Bytes, IntoBuf};
-use futures::{
-    executor::block_on,
-    stream::{self, StreamExt},
-};
-use std::io::{self, Read};
 use std::iter::FromIterator;
 
-#[test]
-fn brotli_stream() {
-    use async_compression::stream::brotli;
+mod utils;
 
-    let stream = stream::iter(vec![
-        Bytes::from_static(&[1, 2, 3]),
-        Bytes::from_static(&[4, 5, 6]),
-    ]);
-    let compress = brotli::Compress::new();
-    let compressed = brotli::BrotliStream::new(stream.map(Ok), compress);
-    let data: Vec<_> = block_on(compressed.collect());
-    let data: io::Result<Vec<_>> = data.into_iter().collect();
-    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
-    let mut output = vec![];
-    BrotliDecoder::new(&data[..])
-        .read_to_end(&mut output)
-        .unwrap();
+#[test]
+fn brotli_stream_compress() {
+    let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+    let compressed = utils::brotli_stream_compress(input.stream());
+    let output = utils::brotli_decompress(&compressed);
+
     assert_eq!(output, vec![1, 2, 3, 4, 5, 6]);
 }
 
 #[test]
-fn brotli_stream_large() {
-    use async_compression::stream::brotli;
-
-    let bytes = [
+fn brotli_stream_compress_large() {
+    let input = vec![
         Vec::from_iter((0..20_000).map(|_| rand::random())),
         Vec::from_iter((0..20_000).map(|_| rand::random())),
     ];
+    let input = utils::InputStream::from(input);
 
-    let stream = stream::iter(vec![
-        Bytes::from(bytes[0].clone()),
-        Bytes::from(bytes[1].clone()),
-    ]);
-    let compress = brotli::Compress::new();
-    let compressed = brotli::BrotliStream::new(stream.map(Ok), compress);
-    let data: Vec<_> = block_on(compressed.collect());
-    let data: io::Result<Vec<_>> = data.into_iter().collect();
-    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
-    let mut output = vec![];
-    BrotliDecoder::new(&data[..])
-        .read_to_end(&mut output)
-        .unwrap();
-    assert_eq!(
-        output,
-        Vec::from_iter(bytes[0].iter().chain(bytes[1].iter()).cloned())
-    );
+    let compressed = utils::brotli_stream_compress(input.stream());
+    let output = utils::brotli_decompress(&compressed);
+
+    assert_eq!(output, input.bytes());
 }
 
 #[test]
-fn decompressed_brotli_stream() {
-    use async_compression::stream::brotli;
+fn brotli_stream_decompress() {
+    let compressed = utils::brotli_compress(&[1, 2, 3, 4, 5, 6][..]);
 
-    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5, 6]).into_buf();
+    let stream = utils::InputStream::from(vec![compressed]);
+    let output = utils::brotli_stream_decompress(stream.stream());
 
-    let mut gz = BrotliEncoder::new(bytes, 9);
-    let mut buffer = Vec::new();
-
-    gz.read_to_end(&mut buffer).unwrap();
-
-    let stream = stream::iter(vec![Bytes::from(buffer)]);
-    let decompressed = brotli::DecompressedBrotliStream::new(stream.map(Ok));
-    let data: Vec<_> = block_on(decompressed.collect());
-    let data: io::Result<Vec<_>> = data.into_iter().collect();
-    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
-
-    assert_eq!(data, vec![1, 2, 3, 4, 5, 6]);
+    assert_eq!(output, vec![1, 2, 3, 4, 5, 6]);
 }

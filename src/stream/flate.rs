@@ -5,8 +5,8 @@ use core::{
 use std::io::Result;
 
 use bytes::{Bytes, BytesMut};
-use flate2::{FlushCompress, FlushDecompress};
 pub use flate2::{Compress, Compression, Decompress};
+use flate2::{FlushCompress, FlushDecompress};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
 

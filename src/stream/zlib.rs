@@ -7,8 +7,8 @@ use std::marker::Unpin;
 
 use super::flate::{CompressedStream, DecompressedStream};
 use bytes::Bytes;
-use flate2::{Compress, Decompress};
 pub use flate2::Compression;
+use flate2::{Compress, Decompress};
 use futures::{stream::Stream, stream::StreamExt};
 
 pub struct ZlibStream<S: Stream<Item = Result<Bytes>> + Unpin> {

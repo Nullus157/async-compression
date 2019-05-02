@@ -6,7 +6,7 @@ use std::io::Result;
 
 use bytes::{Bytes, BytesMut};
 pub use flate2::Compression;
-use flate2::{Compress, Crc, FlushCompress};
+use flate2::{Compress, Crc, Decompress, FlushCompress};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
 
@@ -110,4 +110,54 @@ fn get_header(level: Compression) -> Bytes {
     header[9] = 0xff;
 
     Bytes::from(header)
+}
+
+#[unsafe_project(Unpin)]
+pub struct DecompressedGzipStream<S: Stream<Item = Result<Bytes>>> {
+    #[pin]
+    inner: S,
+    flushing: bool,
+    input_buffer: Bytes,
+    output_buffer: BytesMut,
+    crc: Crc,
+    header_stripped: bool,
+    footer_stripped: bool,
+    decompress: Decompress,
+}
+
+impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
+    type Item = Result<Bytes>;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
+        const OUTPUT_BUFFER_SIZE: usize = 8_000;
+
+        let this = self.project();
+
+        if this.input_buffer.is_empty() {
+            if *this.flushing {
+                return Poll::Ready(None);
+            } else if let Some(bytes) = ready!(this.inner.poll_next(cx)) {
+                *this.input_buffer = bytes?;
+            } else {
+                *this.flushing = true;
+            }
+        }
+
+        unimplemented!()
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>>> DecompressedGzipStream<S> {
+    pub fn new(stream: S) -> DecompressedGzipStream<S> {
+        DecompressedGzipStream {
+            inner: stream,
+            flushing: false,
+            input_buffer: Bytes::new(),
+            output_buffer: BytesMut::new(),
+            crc: Crc::new(),
+            header_stripped: false,
+            footer_stripped: false,
+            decompress: Decompress::new(false),
+        }
+    }
 }

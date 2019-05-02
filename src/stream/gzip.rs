@@ -165,7 +165,6 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                 ))));
             }
             *this.header_stripped = true;
-            return Poll::Ready(Some(Ok(Bytes::new())));
         }
 
         this.output_buffer.resize(OUTPUT_BUFFER_SIZE, 0);

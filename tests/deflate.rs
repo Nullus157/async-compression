@@ -27,6 +27,23 @@ fn deflate_stream() {
 }
 
 #[test]
+fn decompressed_deflate_stream() {
+    use async_compression::stream::deflate;
+
+    let stream = stream::iter(vec![
+        Bytes::from_static(&[1, 2, 3]),
+        Bytes::from_static(&[4, 5, 6]),
+    ]);
+    let compressed = deflate::DeflateStream::new(stream.map(Ok), deflate::Compression::default());
+    let decompressed = deflate::DecompressedDeflateStream::new(compressed);
+    let data: Vec<_> = block_on(decompressed.collect());
+    let data: io::Result<Vec<_>> = data.into_iter().collect();
+    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
+
+    assert_eq!(data, vec![1, 2, 3, 4, 5, 6]);
+}
+
+#[test]
 fn deflate_read() {
     use async_compression::read::deflate;
 

@@ -94,7 +94,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedStream<S> {
             if *this.flushing {
                 return Poll::Ready(None);
             } else if let Some(bytes) = ready!(this.inner.poll_next(cx)) {
-                *this.input_buffer = bytes?;
+                this.input_buffer.extend_from_slice(&bytes?);
             } else {
                 *this.flushing = true;
             }

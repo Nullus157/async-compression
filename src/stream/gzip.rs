@@ -2,11 +2,11 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::Result;
+use std::io::{Error, ErrorKind, Result};
 
 use bytes::{Bytes, BytesMut};
 pub use flate2::Compression;
-use flate2::{Compress, Crc, Decompress, FlushCompress};
+use flate2::{Compress, Crc, Decompress, FlushCompress, FlushDecompress};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
 
@@ -42,15 +42,15 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for GzipStream<S> {
             if *this.flushing {
                 if !*this.footer_appended {
                     let mut footer = Bytes::from(&this.crc.sum().to_le_bytes()[..]);
-                    let length_read = &this.crc.amount().to_le_bytes()[..];
-                    footer.extend_from_slice(length_read);
+                    let bytes_read = &this.crc.amount().to_le_bytes()[..];
+                    footer.extend_from_slice(bytes_read);
                     *this.footer_appended = true;
                     return Poll::Ready(Some(Ok(footer)));
                 } else {
                     return Poll::Ready(None);
                 }
             } else if let Some(bytes) = ready!(this.inner.poll_next(cx)) {
-                *this.input_buffer = bytes?;
+                this.input_buffer.extend_from_slice(&bytes?);
             } else {
                 *this.flushing = true;
             }
@@ -121,7 +121,6 @@ pub struct DecompressedGzipStream<S: Stream<Item = Result<Bytes>>> {
     output_buffer: BytesMut,
     crc: Crc,
     header_stripped: bool,
-    footer_stripped: bool,
     decompress: Decompress,
 }
 
@@ -133,17 +132,63 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
 
         let this = self.project();
 
-        if this.input_buffer.is_empty() {
+        if this.input_buffer.len() <= 8 {
             if *this.flushing {
+                // check crc and len in the footer
+                let crc = &this.crc.sum().to_le_bytes()[..];
+                let bytes_read = &this.crc.amount().to_le_bytes()[..];
+                if crc != this.input_buffer.slice(0, 4) {
+                    return Poll::Ready(Some(Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "CRC computed does not match",
+                    ))));
+                } else if bytes_read != this.input_buffer.slice(4, 8) {
+                    return Poll::Ready(Some(Err(Error::new(
+                        ErrorKind::InvalidData,
+                        "amount of bytes read does not match",
+                    ))));
+                }
                 return Poll::Ready(None);
             } else if let Some(bytes) = ready!(this.inner.poll_next(cx)) {
-                *this.input_buffer = bytes?;
+                this.input_buffer.extend_from_slice(&bytes?);
             } else {
                 *this.flushing = true;
             }
         }
 
-        unimplemented!()
+        if !*this.header_stripped {
+            let header = this.input_buffer.split_to(10);
+            if header[0..3] != [0x1f, 0x8b, 0x08] {
+                return Poll::Ready(Some(Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Invalid file header",
+                ))));
+            }
+            *this.header_stripped = true;
+            return Poll::Ready(Some(Ok(Bytes::new())));
+        }
+
+        this.output_buffer.resize(OUTPUT_BUFFER_SIZE, 0);
+
+        let flush = if *this.flushing {
+            FlushDecompress::Finish
+        } else {
+            FlushDecompress::None
+        };
+
+        let (prior_in, prior_out) = (this.decompress.total_in(), this.decompress.total_out());
+        this.decompress
+            .decompress(this.input_buffer, this.output_buffer, flush)?;
+        let input = this.decompress.total_in() - prior_in;
+        let output = this.decompress.total_out() - prior_out;
+
+        this.crc.update(&this.output_buffer[..output as usize]);
+        this.input_buffer.advance(input as usize);
+
+        Poll::Ready(Some(Ok(this
+            .output_buffer
+            .split_to(output as usize)
+            .freeze())))
     }
 }
 
@@ -156,7 +201,6 @@ impl<S: Stream<Item = Result<Bytes>>> DecompressedGzipStream<S> {
             output_buffer: BytesMut::new(),
             crc: Crc::new(),
             header_stripped: false,
-            footer_stripped: false,
             decompress: Decompress::new(false),
         }
     }

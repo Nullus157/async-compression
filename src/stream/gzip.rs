@@ -170,9 +170,10 @@ fn get_header(level: Compression) -> Bytes {
 
 #[derive(Debug)]
 enum DeState {
+    ReadingHeader,
     Reading,
     Writing,
-    CheckingFooter,
+    ReadingFooter,
     Invalid,
 }
 
@@ -181,7 +182,6 @@ pub struct DecompressedGzipStream<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     state: DeState,
-    header_read: bool,
     input: BytesMut,
     output: BytesMut,
     crc: Crc,
@@ -219,11 +219,11 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
         #[allow(clippy::never_loop)] // https://github.com/rust-lang/rust-clippy/issues/4058
         loop {
             break match dbg!(mem::replace(this.state, DeState::Invalid)) {
-                DeState::Reading => {
+                DeState::ReadingHeader => {
                     *this.state = match ready!(this.inner.as_mut().poll_next(cx)) {
                         Some(chunk) => {
                             this.input.extend_from_slice(&chunk?);
-                            if !*this.header_read && this.input.len() >= 10 {
+                            if this.input.len() >= 10 {
                                 let header = this.input.split_to(10);
                                 if header[0..3] != [0x1f, 0x8b, 0x08] {
                                     return Poll::Ready(Some(Err(Error::new(
@@ -231,23 +231,27 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                                         "Invalid file header",
                                     ))));
                                 }
-                                *this.header_read = true;
-                            }
-                            if !*this.header_read && this.input.len() < 10 {
                                 DeState::Reading
                             } else {
-                                DeState::Writing
+                                DeState::ReadingHeader
                             }
                         }
                         None => {
-                            if !*this.header_read {
-                                return Poll::Ready(Some(Err(Error::new(
-                                    ErrorKind::InvalidData,
-                                    "A valid header was not found",
-                                ))));
-                            }
-                            DeState::CheckingFooter
+                            return Poll::Ready(Some(Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "A valid header was not found",
+                            ))));
                         }
+                    };
+                    continue;
+                }
+                DeState::Reading => {
+                    *this.state = match ready!(this.inner.as_mut().poll_next(cx)) {
+                        Some(chunk) => {
+                            this.input.extend_from_slice(&chunk?);
+                            DeState::Writing
+                        }
+                        None => DeState::ReadingFooter,
                     };
                     continue;
                 }
@@ -274,7 +278,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                     Poll::Ready(Some(Ok(chunk)))
                 }
 
-                DeState::CheckingFooter => {
+                DeState::ReadingFooter => {
                     if this.input.len() == 8 {
                         let crc = &this.crc.sum().to_le_bytes()[..];
                         let bytes_read = &this.crc.amount().to_le_bytes()[..];
@@ -305,8 +309,7 @@ impl<S: Stream<Item = Result<Bytes>>> DecompressedGzipStream<S> {
     pub fn new(stream: S) -> DecompressedGzipStream<S> {
         DecompressedGzipStream {
             inner: stream,
-            state: DeState::Reading,
-            header_read: false,
+            state: DeState::ReadingHeader,
             input: BytesMut::new(),
             output: BytesMut::new(),
             crc: Crc::new(),

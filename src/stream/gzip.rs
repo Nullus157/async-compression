@@ -239,7 +239,15 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                                 DeState::Writing
                             }
                         }
-                        None => DeState::CheckingFooter,
+                        None => {
+                            if !*this.header_read {
+                                return Poll::Ready(Some(Err(Error::new(
+                                    ErrorKind::InvalidData,
+                                    "A valid header was not found",
+                                ))));
+                            }
+                            DeState::CheckingFooter
+                        }
                     };
                     continue;
                 }

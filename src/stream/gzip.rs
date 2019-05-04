@@ -174,6 +174,7 @@ enum DeState {
     Reading,
     Writing,
     ReadingFooter,
+    Done,
     Invalid,
 }
 
@@ -279,28 +280,32 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                 }
 
                 DeState::ReadingFooter => {
+                    *this.state = DeState::Done;
                     if this.input.len() == 8 {
                         let crc = &this.crc.sum().to_le_bytes()[..];
                         let bytes_read = &this.crc.amount().to_le_bytes()[..];
                         if crc != &this.input[0..4] {
-                            return Poll::Ready(Some(Err(Error::new(
+                            Poll::Ready(Some(Err(Error::new(
                                 ErrorKind::InvalidData,
                                 "CRC computed does not match",
-                            ))));
+                            ))))
                         } else if bytes_read != &this.input[4..8] {
-                            return Poll::Ready(Some(Err(Error::new(
+                            Poll::Ready(Some(Err(Error::new(
                                 ErrorKind::InvalidData,
                                 "amount of bytes read does not match",
-                            ))));
+                            ))))
+                        } else {
+                            Poll::Ready(None)
                         }
-                        Poll::Ready(None)
                     } else {
-                        return Poll::Ready(Some(Err(Error::new(
+                        Poll::Ready(Some(Err(Error::new(
                             ErrorKind::UnexpectedEof,
                             "reached unexpected EOF",
-                        ))));
+                        ))))
                     }
                 }
+
+                DeState::Done => Poll::Ready(None),
 
                 DeState::Invalid => panic!("DecompressedGzipStream reached invalid state"),
             };

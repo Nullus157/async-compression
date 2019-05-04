@@ -189,7 +189,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedStream<S> {
 
                     *this.state = match status {
                         Status::Ok => State::Writing(input),
-                        Status::StreamEnd => unreachable!(),
+                        Status::StreamEnd => State::Reading,
                         Status::BufError => panic!("unexpected BufError"),
                     };
 

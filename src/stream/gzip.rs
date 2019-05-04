@@ -168,82 +168,128 @@ fn get_header(level: Compression) -> Bytes {
     Bytes::from(header)
 }
 
+#[derive(Debug)]
+enum DeState {
+    Reading,
+    Writing,
+    CheckingFooter,
+    Invalid,
+}
+
 #[unsafe_project(Unpin)]
 pub struct DecompressedGzipStream<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
-    flushing: bool,
-    input_buffer: Bytes,
-    output_buffer: BytesMut,
+    state: DeState,
+    header_read: bool,
+    input: Bytes,
+    output: BytesMut,
     crc: Crc,
-    header_stripped: bool,
     decompress: Decompress,
 }
 
 impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
     type Item = Result<Bytes>;
-
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
-        const OUTPUT_BUFFER_SIZE: usize = 8_000;
+        let mut this = self.project();
 
-        let this = self.project();
+        fn decompress(
+            decompress: &mut Decompress,
+            input: &mut Bytes,
+            output: &mut BytesMut,
+            crc: &mut Crc,
+            flush: FlushDecompress,
+        ) -> Result<(Status, Bytes)> {
+            const OUTPUT_BUFFER_SIZE: usize = 8_000;
 
-        if this.input_buffer.len() <= 8 {
-            if *this.flushing {
-                // check crc and len in the footer
-                let crc = &this.crc.sum().to_le_bytes()[..];
-                let bytes_read = &this.crc.amount().to_le_bytes()[..];
-                if crc != this.input_buffer.slice(0, 4) {
-                    return Poll::Ready(Some(Err(Error::new(
-                        ErrorKind::InvalidData,
-                        "CRC computed does not match",
-                    ))));
-                } else if bytes_read != this.input_buffer.slice(4, 8) {
-                    return Poll::Ready(Some(Err(Error::new(
-                        ErrorKind::InvalidData,
-                        "amount of bytes read does not match",
-                    ))));
+            if output.len() < OUTPUT_BUFFER_SIZE {
+                output.resize(OUTPUT_BUFFER_SIZE, 0);
+            }
+
+            let (prior_in, prior_out) = (decompress.total_in(), decompress.total_out());
+            let status = decompress.decompress(input, output, flush)?;
+            let input_len = decompress.total_in() - prior_in;
+            let output_len = decompress.total_out() - prior_out;
+
+            crc.update(&output[0..output_len as usize]);
+            input.advance(input_len as usize);
+            Ok((status, output.split_to(output_len as usize).freeze()))
+        }
+
+        #[allow(clippy::never_loop)] // https://github.com/rust-lang/rust-clippy/issues/4058
+        loop {
+            break match dbg!(mem::replace(this.state, DeState::Invalid)) {
+                DeState::Reading => {
+                    *this.state = match ready!(this.inner.as_mut().poll_next(cx)) {
+                        Some(chunk) => {
+                            this.input.extend_from_slice(&chunk?);
+                            if !*this.header_read && this.input.len() >= 10 {
+                                let header = this.input.split_to(10);
+                                if header[0..3] != [0x1f, 0x8b, 0x08] {
+                                    return Poll::Ready(Some(Err(Error::new(
+                                        ErrorKind::InvalidData,
+                                        "Invalid file header",
+                                    ))));
+                                }
+                                *this.header_read = true;
+                            }
+                            if !*this.header_read && this.input.len() < 10 {
+                                DeState::Reading
+                            } else {
+                                DeState::Writing
+                            }
+                        }
+                        None => DeState::CheckingFooter,
+                    };
+                    continue;
                 }
-                return Poll::Ready(None);
-            } else if let Some(bytes) = ready!(this.inner.poll_next(cx)) {
-                this.input_buffer.extend_from_slice(&bytes?);
-            } else {
-                *this.flushing = true;
-            }
+
+                DeState::Writing => {
+                    if this.input.len() <= 8 {
+                        *this.state = DeState::Reading;
+                        continue;
+                    }
+                    let (status, chunk) = decompress(
+                        &mut this.decompress,
+                        &mut this.input,
+                        &mut this.output,
+                        &mut this.crc,
+                        FlushDecompress::None,
+                    )?;
+
+                    *this.state = match status {
+                        Status::Ok => DeState::Writing,
+                        Status::StreamEnd => DeState::Reading,
+                        Status::BufError => panic!("unexpected BufError"),
+                    };
+
+                    Poll::Ready(Some(Ok(chunk)))
+                }
+
+                DeState::CheckingFooter => {
+                    if this.input.len() == 8 {
+                        let crc = &this.crc.sum().to_le_bytes()[..];
+                        let bytes_read = &this.crc.amount().to_le_bytes()[..];
+                        if crc != this.input.slice(0, 4) {
+                            return Poll::Ready(Some(Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "CRC computed does not match",
+                            ))));
+                        } else if bytes_read != this.input.slice(4, 8) {
+                            return Poll::Ready(Some(Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "amount of bytes read does not match",
+                            ))));
+                        }
+                        Poll::Ready(None)
+                    } else {
+                        unreachable!() // this should be unreachable
+                    }
+                }
+
+                DeState::Invalid => panic!("DecompressedGzipStream reached invalid state"),
+            };
         }
-
-        if !*this.header_stripped {
-            let header = this.input_buffer.split_to(10);
-            if header[0..3] != [0x1f, 0x8b, 0x08] {
-                return Poll::Ready(Some(Err(Error::new(
-                    ErrorKind::InvalidData,
-                    "Invalid file header",
-                ))));
-            }
-            *this.header_stripped = true;
-        }
-
-        this.output_buffer.resize(OUTPUT_BUFFER_SIZE, 0);
-
-        let flush = if *this.flushing {
-            FlushDecompress::Finish
-        } else {
-            FlushDecompress::None
-        };
-
-        let (prior_in, prior_out) = (this.decompress.total_in(), this.decompress.total_out());
-        this.decompress
-            .decompress(this.input_buffer, this.output_buffer, flush)?;
-        let input = this.decompress.total_in() - prior_in;
-        let output = this.decompress.total_out() - prior_out;
-
-        this.crc.update(&this.output_buffer[..output as usize]);
-        this.input_buffer.advance(input as usize);
-
-        Poll::Ready(Some(Ok(this
-            .output_buffer
-            .split_to(output as usize)
-            .freeze())))
     }
 }
 
@@ -251,11 +297,11 @@ impl<S: Stream<Item = Result<Bytes>>> DecompressedGzipStream<S> {
     pub fn new(stream: S) -> DecompressedGzipStream<S> {
         DecompressedGzipStream {
             inner: stream,
-            flushing: false,
-            input_buffer: Bytes::new(),
-            output_buffer: BytesMut::new(),
+            state: DeState::Reading,
+            header_read: false,
+            input: Bytes::new(),
+            output: BytesMut::new(),
             crc: Crc::new(),
-            header_stripped: false,
             decompress: Decompress::new(false),
         }
     }

@@ -182,7 +182,7 @@ pub struct DecompressedGzipStream<S: Stream<Item = Result<Bytes>>> {
     inner: S,
     state: DeState,
     header_read: bool,
-    input: Bytes,
+    input: BytesMut,
     output: BytesMut,
     crc: Crc,
     decompress: Decompress,
@@ -195,7 +195,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
 
         fn decompress(
             decompress: &mut Decompress,
-            input: &mut Bytes,
+            input: &mut BytesMut,
             output: &mut BytesMut,
             crc: &mut Crc,
             flush: FlushDecompress,
@@ -270,12 +270,12 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                     if this.input.len() == 8 {
                         let crc = &this.crc.sum().to_le_bytes()[..];
                         let bytes_read = &this.crc.amount().to_le_bytes()[..];
-                        if crc != this.input.slice(0, 4) {
+                        if crc != &this.input[0..4] {
                             return Poll::Ready(Some(Err(Error::new(
                                 ErrorKind::InvalidData,
                                 "CRC computed does not match",
                             ))));
-                        } else if bytes_read != this.input.slice(4, 8) {
+                        } else if bytes_read != &this.input[4..8] {
                             return Poll::Ready(Some(Err(Error::new(
                                 ErrorKind::InvalidData,
                                 "amount of bytes read does not match",
@@ -299,7 +299,7 @@ impl<S: Stream<Item = Result<Bytes>>> DecompressedGzipStream<S> {
             inner: stream,
             state: DeState::Reading,
             header_read: false,
-            input: Bytes::new(),
+            input: BytesMut::new(),
             output: BytesMut::new(),
             crc: Crc::new(),
             decompress: Decompress::new(false),

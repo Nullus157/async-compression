@@ -231,7 +231,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                                         "Invalid file header",
                                     ))));
                                 }
-                                DeState::Reading
+                                DeState::Writing
                             } else {
                                 DeState::ReadingHeader
                             }
@@ -295,7 +295,10 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                         }
                         Poll::Ready(None)
                     } else {
-                        unreachable!() // this should be unreachable
+                        return Poll::Ready(Some(Err(Error::new(
+                            ErrorKind::UnexpectedEof,
+                            "reached unexpected EOF",
+                        ))));
                     }
                 }
 

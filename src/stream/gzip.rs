@@ -182,7 +182,7 @@ pub struct DecompressedGzipStream<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     state: DeState,
-    input: BytesMut,
+    input: Bytes,
     output: BytesMut,
     crc: Crc,
     decompress: Decompress,
@@ -195,7 +195,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
 
         fn decompress(
             decompress: &mut Decompress,
-            input: &mut BytesMut,
+            input: &mut Bytes,
             output: &mut BytesMut,
             crc: &mut Crc,
             flush: FlushDecompress,
@@ -248,7 +248,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                 DeState::Reading => {
                     *this.state = match ready!(this.inner.as_mut().poll_next(cx)) {
                         Some(chunk) => {
-                            this.input.extend_from_slice(&chunk?);
+                            *this.input = chunk?;
                             DeState::Writing
                         }
                         None => DeState::ReadingFooter,
@@ -263,7 +263,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                     }
                     let (status, chunk) = decompress(
                         &mut this.decompress,
-                        &mut this.input,
+                        this.input,
                         &mut this.output,
                         &mut this.crc,
                         FlushDecompress::None,
@@ -310,7 +310,7 @@ impl<S: Stream<Item = Result<Bytes>>> DecompressedGzipStream<S> {
         DecompressedGzipStream {
             inner: stream,
             state: DeState::ReadingHeader,
-            input: BytesMut::new(),
+            input: Bytes::new(),
             output: BytesMut::new(),
             crc: Crc::new(),
             decompress: Decompress::new(false),

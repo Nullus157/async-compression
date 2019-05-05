@@ -249,12 +249,14 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                 DeState::Reading => {
                     *this.state = match ready!(this.inner.as_mut().poll_next(cx)) {
                         Some(chunk) => {
-                            this.input.extend_from_slice(&chunk?);
+                            if this.input.is_empty() {
+                                *this.input = chunk?;
+                            } else {
+                                this.input.extend_from_slice(&chunk?);
+                            }
                             DeState::Writing
                         }
-                        None => {
-                            DeState::ReadingFooter
-                        },
+                        None => DeState::ReadingFooter,
                     };
                     continue;
                 }

@@ -1,5 +1,5 @@
-use bytes::Bytes;
-use flate2::bufread::DeflateDecoder;
+use bytes::{Bytes, IntoBuf};
+use flate2::bufread::{DeflateDecoder, DeflateEncoder};
 use futures::{
     executor::block_on,
     io::AsyncReadExt,
@@ -52,6 +52,26 @@ fn deflate_stream_large() {
         output,
         Vec::from_iter(bytes[0].iter().chain(bytes[1].iter()).cloned())
     );
+}
+
+#[test]
+fn decompressed_deflate_stream() {
+    use async_compression::stream::deflate;
+
+    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5, 6]).into_buf();
+
+    let mut gz = DeflateEncoder::new(bytes, deflate::Compression::default());
+    let mut buffer = Vec::new();
+
+    gz.read_to_end(&mut buffer).unwrap();
+
+    let stream = stream::iter(vec![Bytes::from(buffer)]);
+    let decompressed = deflate::DecompressedDeflateStream::new(stream.map(Ok));
+    let data: Vec<_> = block_on(decompressed.collect());
+    let data: io::Result<Vec<_>> = data.into_iter().collect();
+    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
+
+    assert_eq!(data, vec![1, 2, 3, 4, 5, 6]);
 }
 
 #[test]

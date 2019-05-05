@@ -1,5 +1,5 @@
-use bytes::Bytes;
-use flate2::bufread::GzDecoder;
+use bytes::{Bytes, IntoBuf};
+use flate2::bufread::{GzDecoder, GzEncoder};
 use futures::{
     executor::block_on,
     stream::{self, StreamExt},
@@ -47,4 +47,154 @@ fn gzip_stream_large() {
         output,
         Vec::from_iter(bytes[0].iter().chain(bytes[1].iter()).cloned())
     );
+}
+
+#[test]
+fn decompressed_gzip_stream_single_chunk() {
+    use async_compression::stream::gzip;
+
+    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5, 6]).into_buf();
+
+    let mut gz = GzEncoder::new(bytes, gzip::Compression::default());
+    let mut buffer = Vec::new();
+
+    gz.read_to_end(&mut buffer).unwrap();
+
+    // The entirety in one chunk
+    let stream = stream::iter(vec![Bytes::from(buffer)]);
+
+    let decompressed = gzip::DecompressedGzipStream::new(stream.map(Ok));
+    let data: Vec<_> = block_on(decompressed.collect());
+    let data: io::Result<Vec<_>> = data.into_iter().collect();
+    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
+    assert_eq!(data, vec![1, 2, 3, 4, 5, 6]);
+}
+
+#[test]
+fn decompressed_gzip_stream_segmented() {
+    use async_compression::stream::gzip;
+
+    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5, 6]).into_buf();
+
+    let mut gz = GzEncoder::new(bytes, gzip::Compression::default());
+    let mut buffer = Vec::new();
+
+    gz.read_to_end(&mut buffer).unwrap();
+
+    let body_end = buffer.len() - 8;
+
+    let header = &buffer[..10];
+    let body = &buffer[10..body_end];
+    let footer = &buffer[body_end..];
+
+    // Header, body and trailer in separate chunks, similar to how `GzipStream` outputs it.
+    let stream = stream::iter(vec![
+        Bytes::from(&header[..]),
+        Bytes::from(&body[..]),
+        Bytes::from(&footer[..]),
+    ]);
+
+    let decompressed = gzip::DecompressedGzipStream::new(stream.map(Ok));
+    let data: Vec<_> = block_on(decompressed.collect());
+    let data: io::Result<Vec<_>> = data.into_iter().collect();
+    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
+    assert_eq!(data, vec![1, 2, 3, 4, 5, 6]);
+}
+
+#[test]
+fn decompressed_gzip_stream_split() {
+    use async_compression::stream::gzip;
+
+    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5, 6]).into_buf();
+
+    let mut gz = GzEncoder::new(bytes, gzip::Compression::default());
+    let mut buffer = Vec::new();
+
+    gz.read_to_end(&mut buffer).unwrap();
+
+    dbg!(&buffer);
+
+    let body_end = buffer.len() - 8;
+
+    let header = &buffer[..10];
+    let body = &buffer[10..body_end];
+    let footer = &buffer[body_end..];
+
+    // Header, body and trailer split across multiple chunks and mixed together
+    let stream = stream::iter(vec![
+        Bytes::from(&header[0..5]),
+        Bytes::from(Vec::from_iter(
+            header[5..10]
+                .iter()
+                .chain(body[0..body.len() / 2].iter())
+                .cloned(),
+        )),
+        Bytes::from(Vec::from_iter(
+            body[body.len() / 2..]
+                .iter()
+                .chain(footer[0..4].iter())
+                .cloned(),
+        )),
+        Bytes::from(&footer[4..8]),
+    ]);
+
+    let decompressed = gzip::DecompressedGzipStream::new(stream.map(Ok));
+    let data: Vec<_> = block_on(decompressed.collect());
+    let data: io::Result<Vec<_>> = data.into_iter().collect();
+    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
+    assert_eq!(data, vec![1, 2, 3, 4, 5, 6]);
+}
+
+#[test]
+fn decompressed_gzip_stream_split_mixed() {
+    use async_compression::stream::gzip;
+
+    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5, 6]).into_buf();
+
+    let mut gz = GzEncoder::new(bytes, gzip::Compression::default());
+    let mut buffer = Vec::new();
+
+    gz.read_to_end(&mut buffer).unwrap();
+
+    let body_end = buffer.len() - 8;
+
+    let header = &buffer[..10];
+    let body = &buffer[10..body_end];
+    let footer = &buffer[body_end..];
+
+    // Header, body and trailer each split across multiple chunks, no mixing
+    let stream = stream::iter(vec![
+        Bytes::from(&header[0..5]),
+        Bytes::from(&header[5..10]),
+        Bytes::from(&body[0..body.len() / 2]),
+        Bytes::from(&body[body.len() / 2..]),
+        Bytes::from(&footer[0..4]),
+        Bytes::from(&footer[4..8]),
+    ]);
+
+    let decompressed = gzip::DecompressedGzipStream::new(stream.map(Ok));
+    let data: Vec<_> = block_on(decompressed.collect());
+    let data: io::Result<Vec<_>> = data.into_iter().collect();
+    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
+    assert_eq!(data, vec![1, 2, 3, 4, 5, 6]);
+}
+
+#[test]
+fn decompressed_gzip_stream_empty() {
+    use async_compression::stream::gzip;
+
+    let bytes = Bytes::from_static(&[]).into_buf();
+
+    let mut gz = GzEncoder::new(bytes, gzip::Compression::default());
+    let mut buffer = Vec::new();
+
+    gz.read_to_end(&mut buffer).unwrap();
+
+    let stream = stream::iter(vec![Bytes::from(buffer)]);
+
+    let decompressed = gzip::DecompressedGzipStream::new(stream.map(Ok));
+    let data: Vec<_> = block_on(decompressed.collect());
+    let data: io::Result<Vec<_>> = data.into_iter().collect();
+    let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
+    assert_eq!(data, vec![]);
 }

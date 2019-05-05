@@ -221,6 +221,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
         loop {
             break match mem::replace(this.state, DeState::Invalid) {
                 DeState::ReadingHeader => {
+                    *this.state = DeState::ReadingHeader;
                     *this.state = match ready!(this.inner.as_mut().poll_next(cx)) {
                         Some(chunk) => {
                             this.input.extend_from_slice(&chunk?);
@@ -247,6 +248,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                     continue;
                 }
                 DeState::Reading => {
+                    *this.state = DeState::Reading;
                     *this.state = match ready!(this.inner.as_mut().poll_next(cx)) {
                         Some(chunk) => {
                             if this.input.is_empty() {
@@ -284,17 +286,16 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                 }
 
                 DeState::ReadingFooter => {
+                    *this.state = DeState::Done;
                     if this.input.len() == 8 {
                         let crc = &this.crc.sum().to_le_bytes()[..];
                         let bytes_read = &this.crc.amount().to_le_bytes()[..];
                         if crc != &this.input[0..4] {
-                            *this.state = DeState::Done;
                             Poll::Ready(Some(Err(Error::new(
                                 ErrorKind::InvalidData,
                                 "CRC computed does not match",
                             ))))
                         } else if bytes_read != &this.input[4..8] {
-                            *this.state = DeState::Done;
                             Poll::Ready(Some(Err(Error::new(
                                 ErrorKind::InvalidData,
                                 "amount of bytes read does not match",
@@ -303,7 +304,6 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
                             Poll::Ready(None)
                         }
                     } else {
-                        *this.state = DeState::Done;
                         Poll::Ready(Some(Err(Error::new(
                             ErrorKind::UnexpectedEof,
                             "reached unexpected EOF",

@@ -1,5 +1,5 @@
 use brotli2::bufread::{BrotliDecoder, BrotliEncoder};
-use bytes::{BufMut, Bytes, IntoBuf};
+use bytes::{Bytes, IntoBuf};
 use futures::{
     executor::block_on,
     stream::{self, StreamExt},

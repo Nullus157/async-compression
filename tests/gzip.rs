@@ -1,4 +1,4 @@
-use bytes::{BufMut, Bytes, IntoBuf};
+use bytes::{Bytes, IntoBuf};
 use flate2::bufread::{GzDecoder, GzEncoder};
 use futures::{
     executor::block_on,

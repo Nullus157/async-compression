@@ -1,5 +1,5 @@
-use brotli2::bufread::BrotliDecoder;
-use bytes::Bytes;
+use brotli2::bufread::{BrotliDecoder, BrotliEncoder};
+use bytes::{BufMut, Bytes, IntoBuf};
 use futures::{
     executor::block_on,
     stream::{self, StreamExt},
@@ -59,15 +59,18 @@ fn brotli_stream_large() {
 fn decompressed_brotli_stream() {
     use async_compression::stream::brotli;
 
-    let stream = stream::iter(vec![
-        Bytes::from_static(&[1, 2, 3]),
-        Bytes::from_static(&[4, 5, 6]),
-    ]);
-    let compress = brotli::Compress::new();
-    let compressed = brotli::BrotliStream::new(stream.map(Ok), compress);
-    let decompressed = brotli::DecompressedBrotliStream::new(compressed);
+    let bytes = Bytes::from_static(&[1, 2, 3, 4, 5, 6]).into_buf();
+
+    let mut gz = BrotliEncoder::new(bytes, 9);
+    let mut buffer = Vec::new();
+
+    gz.read_to_end(&mut buffer).unwrap();
+
+    let stream = stream::iter(vec![Bytes::from(buffer)]);
+    let decompressed = brotli::DecompressedBrotliStream::new(stream.map(Ok));
     let data: Vec<_> = block_on(decompressed.collect());
     let data: io::Result<Vec<_>> = data.into_iter().collect();
     let data: Vec<u8> = data.unwrap().into_iter().flatten().collect();
+
     assert_eq!(data, vec![1, 2, 3, 4, 5, 6]);
 }

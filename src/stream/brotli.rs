@@ -12,12 +12,63 @@ use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
 
+/// A brotli encoder, or compressor.
+///
+/// This structure implements a [`Stream`] interface and will read uncompressed data from an
+/// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
 pub struct BrotliEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     flush: bool,
     compress: Compress,
+}
+
+/// A brotli decoder, or decompressor.
+///
+/// This structure implements a [`Stream`] interface and will read compressed data from an
+/// underlying stream and emit a stream of uncompressed data.
+#[unsafe_project(Unpin)]
+pub struct BrotliDecoder<S: Stream<Item = Result<Bytes>>> {
+    #[pin]
+    inner: S,
+    flush: bool,
+    decompress: Decompress,
+}
+
+impl<S: Stream<Item = Result<Bytes>>> BrotliEncoder<S> {
+    /// Creates a new encoder which will read uncompressed data from the given stream and emit a
+    /// compressed stream.
+    ///
+    /// The `level` argument here is typically 0-11.
+    pub fn new(stream: S, level: u32) -> BrotliEncoder<S> {
+        let mut params = CompressParams::new();
+        params.quality(level);
+        BrotliEncoder::from_params(stream, &params)
+    }
+
+    /// Creates a new encoder with a custom [`CompressParams`].
+    pub fn from_params(stream: S, params: &CompressParams) -> BrotliEncoder<S> {
+        let mut compress = Compress::new();
+        compress.set_params(params);
+        BrotliEncoder {
+            inner: stream,
+            flush: false,
+            compress,
+        }
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>>> BrotliDecoder<S> {
+    /// Creates a new decoder which will read compressed data from the given stream and emit an
+    /// uncompressed stream.
+    pub fn new(stream: S) -> BrotliDecoder<S> {
+        BrotliDecoder {
+            inner: stream,
+            flush: false,
+            decompress: Decompress::new(),
+        }
+    }
 }
 
 impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliEncoder<S> {
@@ -65,32 +116,6 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliEncoder<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>> BrotliEncoder<S> {
-    pub fn new(stream: S, level: u32) -> BrotliEncoder<S> {
-        let mut params = CompressParams::new();
-        params.quality(level);
-        BrotliEncoder::from_params(stream, &params)
-    }
-
-    pub fn from_params(stream: S, params: &CompressParams) -> BrotliEncoder<S> {
-        let mut compress = Compress::new();
-        compress.set_params(params);
-        BrotliEncoder {
-            inner: stream,
-            flush: false,
-            compress,
-        }
-    }
-}
-
-#[unsafe_project(Unpin)]
-pub struct BrotliDecoder<S: Stream<Item = Result<Bytes>>> {
-    #[pin]
-    inner: S,
-    flush: bool,
-    decompress: Decompress,
-}
-
 impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliDecoder<S> {
     type Item = Result<Bytes>;
 
@@ -134,15 +159,5 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliDecoder<S> {
         }
 
         Poll::Ready(Some(Ok(decompressed_output.freeze())))
-    }
-}
-
-impl<S: Stream<Item = Result<Bytes>>> BrotliDecoder<S> {
-    pub fn new(stream: S) -> BrotliDecoder<S> {
-        BrotliDecoder {
-            inner: stream,
-            flush: false,
-            decompress: Decompress::new(),
-        }
     }
 }

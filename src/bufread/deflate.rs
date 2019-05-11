@@ -11,12 +11,28 @@ use futures::{
 };
 use pin_project::unsafe_project;
 
+/// A DEFLATE encoder, or compressor.
+///
+/// This structure implements an [`AsyncRead`] interface and will read uncompressed data from an
+/// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
 pub struct DeflateEncoder<R: AsyncBufRead> {
     #[pin]
     inner: R,
     flushing: bool,
     compress: Compress,
+}
+
+impl<R: AsyncBufRead> DeflateEncoder<R> {
+    /// Creates a new encoder which will read uncompressed data from the given stream and emit a
+    /// compressed stream.
+    pub fn new(read: R, level: Compression) -> DeflateEncoder<R> {
+        DeflateEncoder {
+            inner: read,
+            flushing: false,
+            compress: Compress::new(level, false),
+        }
+    }
 }
 
 impl<R: AsyncBufRead> AsyncRead for DeflateEncoder<R> {
@@ -46,16 +62,6 @@ impl<R: AsyncBufRead> AsyncRead for DeflateEncoder<R> {
             if *this.flushing || output > 0 {
                 return Poll::Ready(Ok(output as usize));
             }
-        }
-    }
-}
-
-impl<R: AsyncBufRead> DeflateEncoder<R> {
-    pub fn new(read: R, level: Compression) -> DeflateEncoder<R> {
-        DeflateEncoder {
-            inner: read,
-            flushing: false,
-            compress: Compress::new(level, false),
         }
     }
 }

@@ -28,6 +28,37 @@ pub(crate) struct FlateEncoder<S: Stream<Item = Result<Bytes>>> {
     compress: Compress,
 }
 
+#[unsafe_project(Unpin)]
+pub(crate) struct FlateDecoder<S: Stream<Item = Result<Bytes>>> {
+    #[pin]
+    inner: S,
+    state: State,
+    output: BytesMut,
+    decompress: Decompress,
+}
+
+impl<S: Stream<Item = Result<Bytes>>> FlateEncoder<S> {
+    pub(crate) fn new(stream: S, compress: Compress) -> FlateEncoder<S> {
+        FlateEncoder {
+            inner: stream,
+            state: State::Reading,
+            output: BytesMut::new(),
+            compress,
+        }
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>>> FlateDecoder<S> {
+    pub(crate) fn new(stream: S, decompress: Decompress) -> FlateDecoder<S> {
+        FlateDecoder {
+            inner: stream,
+            state: State::Reading,
+            output: BytesMut::new(),
+            decompress,
+        }
+    }
+}
+
 impl<S: Stream<Item = Result<Bytes>>> Stream for FlateEncoder<S> {
     type Item = Result<Bytes>;
 
@@ -114,26 +145,6 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for FlateEncoder<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>> FlateEncoder<S> {
-    pub(crate) fn new(stream: S, compress: Compress) -> FlateEncoder<S> {
-        FlateEncoder {
-            inner: stream,
-            state: State::Reading,
-            output: BytesMut::new(),
-            compress,
-        }
-    }
-}
-
-#[unsafe_project(Unpin)]
-pub(crate) struct FlateDecoder<S: Stream<Item = Result<Bytes>>> {
-    #[pin]
-    inner: S,
-    state: State,
-    output: BytesMut,
-    decompress: Decompress,
-}
-
 impl<S: Stream<Item = Result<Bytes>>> Stream for FlateDecoder<S> {
     type Item = Result<Bytes>;
 
@@ -216,17 +227,6 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for FlateDecoder<S> {
 
                 State::Invalid => panic!("FlateEncoder reached invalid state"),
             };
-        }
-    }
-}
-
-impl<S: Stream<Item = Result<Bytes>>> FlateDecoder<S> {
-    pub(crate) fn new(stream: S, decompress: Decompress) -> FlateDecoder<S> {
-        FlateDecoder {
-            inner: stream,
-            state: State::Reading,
-            output: BytesMut::new(),
-            decompress,
         }
     }
 }

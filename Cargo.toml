@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 brotli2 = "0.3.2"
 bytes = "0.4.12"
 flate2 = "1.0.7"
-futures-preview = "0.3.0-alpha.15"
+futures-preview = "0.3.0-alpha.16"
 pin-project = "0.3.2"
 
 [dev-dependencies]
@@ -17,3 +17,4 @@ proptest = "0.9.3"
 pin-utils = "0.1.0-alpha.4"
 proptest-derive = "0.1.1"
 rand = "0.6.5"
+futures-test-preview = "0.3.0-alpha.16"

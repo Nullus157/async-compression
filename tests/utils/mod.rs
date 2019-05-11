@@ -4,8 +4,9 @@ use bytes::Bytes;
 use futures::{
     executor::{block_on, block_on_stream},
     io::{AsyncBufRead, AsyncRead, AsyncReadExt},
-    stream::{self, Stream},
+    stream::{self, Stream, TryStreamExt},
 };
+use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
 use pin_project::unsafe_project;
 use pin_utils::pin_mut;
 use proptest_derive::Arbitrary;
@@ -24,7 +25,7 @@ impl InputStream {
         // The resulting stream here will interleave empty chunks before and after each chunk, and
         // then interleave a `Poll::Pending` between each yielded chunk, that way we test the
         // handling of these two conditions in every point of the tested stream.
-        PendStream::new(stream::iter(
+        stream::iter(
             self.0
                 .clone()
                 .into_iter()
@@ -32,17 +33,16 @@ impl InputStream {
                 .flat_map(|bytes| vec![Bytes::new(), bytes])
                 .chain(Some(Bytes::new()))
                 .map(Ok),
-        ))
+        )
+        .interleave_pending()
     }
 
     pub fn reader(&self) -> impl AsyncBufRead {
         // TODO: By using the stream here we ensure that each chunk will require a separate
         // read/poll_fill_buf call to process to help test reading multiple chunks. This is
-        // blocked on having AsyncBufRead implemented on IntoAsyncRead:
-        // (https://github.com/rust-lang-nursery/futures-rs/pull/1575)
-        //
-        // PendRead::new(self.stream().into_async_read())
-        PendRead::new(Cursor::new(self.bytes()))
+        // blocked on fixing AsyncBufRead for IntoAsyncRead:
+        // (https://github.com/rust-lang-nursery/futures-rs/pull/1595)
+        Cursor::new(self.bytes()).interleave_pending()
     }
 
     pub fn bytes(&self) -> Vec<u8> {
@@ -59,90 +59,6 @@ impl From<[[u8; 3]; 2]> for InputStream {
 impl From<Vec<Vec<u8>>> for InputStream {
     fn from(input: Vec<Vec<u8>>) -> InputStream {
         InputStream(input)
-    }
-}
-
-#[unsafe_project(Unpin)]
-struct PendStream<S>(bool, #[pin] S);
-
-/// Injects at least one Poll::Pending in between each item
-impl<S: Stream> PendStream<S> {
-    fn new(stream: S) -> PendStream<S> {
-        PendStream(false, stream)
-    }
-}
-
-impl<S: Stream> Stream for PendStream<S> {
-    type Item = S::Item;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let this = self.project();
-        if *this.0 {
-            let next = this.1.poll_next(cx);
-            if next.is_ready() {
-                *this.0 = false;
-            }
-            next
-        } else {
-            cx.waker().wake_by_ref();
-            *this.0 = true;
-            Poll::Pending
-        }
-    }
-}
-
-#[unsafe_project(Unpin)]
-struct PendRead<R>(bool, #[pin] R);
-
-/// Injects at least one Poll::Pending in between each ready read
-impl<R: AsyncBufRead> PendRead<R> {
-    fn new(reader: R) -> PendRead<R> {
-        PendRead(false, reader)
-    }
-}
-
-impl<R: AsyncRead> AsyncRead for PendRead<R> {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
-        let this = self.project();
-        if *this.0 {
-            let next = this.1.poll_read(cx, buf);
-            if next.is_ready() {
-                *this.0 = false;
-            }
-            next
-        } else {
-            cx.waker().wake_by_ref();
-            *this.0 = true;
-            Poll::Pending
-        }
-    }
-}
-
-impl<R: AsyncBufRead> AsyncBufRead for PendRead<R> {
-    fn poll_fill_buf<'a>(
-        self: Pin<&'a mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<io::Result<&'a [u8]>> {
-        let this = self.project();
-        if *this.0 {
-            let next = this.1.poll_fill_buf(cx);
-            if next.is_ready() {
-                *this.0 = false;
-            }
-            next
-        } else {
-            cx.waker().wake_by_ref();
-            *this.0 = true;
-            Poll::Pending
-        }
-    }
-
-    fn consume(self: Pin<&mut Self>, amount: usize) {
-        self.project().1.consume(amount);
     }
 }
 

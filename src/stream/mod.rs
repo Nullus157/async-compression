@@ -8,9 +8,13 @@
 //! stream, the encoders and decoders will buffer the incoming data and choose their own boundaries
 //! at which to yield a new item.
 
+mod brotli;
+mod deflate;
 mod flate;
+mod gzip;
+mod zlib;
 
-pub mod brotli;
-pub mod deflate;
-pub mod gzip;
-pub mod zlib;
+pub use brotli::{BrotliDecoder, BrotliEncoder};
+pub use deflate::{DeflateDecoder, DeflateEncoder};
+pub use gzip::{GzipDecoder, GzipEncoder};
+pub use zlib::{ZlibDecoder, ZlibEncoder};

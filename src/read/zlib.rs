@@ -4,8 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-pub use flate2::Compression;
-use flate2::{Compress, FlushCompress};
+use flate2::{Compress, Compression, FlushCompress};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
@@ -13,14 +12,14 @@ use futures::{
 use pin_project::unsafe_project;
 
 #[unsafe_project(Unpin)]
-pub struct ZlibRead<R: AsyncBufRead> {
+pub struct ZlibEncoder<R: AsyncBufRead> {
     #[pin]
     inner: R,
     flushing: bool,
     compress: Compress,
 }
 
-impl<R: AsyncBufRead> AsyncRead for ZlibRead<R> {
+impl<R: AsyncBufRead> AsyncRead for ZlibEncoder<R> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -51,9 +50,9 @@ impl<R: AsyncBufRead> AsyncRead for ZlibRead<R> {
     }
 }
 
-impl<R: AsyncBufRead> ZlibRead<R> {
-    pub fn new(read: R, level: Compression) -> ZlibRead<R> {
-        ZlibRead {
+impl<R: AsyncBufRead> ZlibEncoder<R> {
+    pub fn new(read: R, level: Compression) -> ZlibEncoder<R> {
+        ZlibEncoder {
             inner: read,
             flushing: false,
             compress: Compress::new(level, true),

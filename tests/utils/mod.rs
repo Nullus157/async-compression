@@ -178,15 +178,15 @@ pub fn brotli_decompress(bytes: &[u8]) -> Vec<u8> {
 }
 
 pub fn brotli_stream_compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-    use async_compression::stream::brotli::{BrotliStream, Compress};
+    use async_compression::stream::BrotliEncoder;
     pin_mut!(input);
-    stream_to_vec(BrotliStream::new(input, Compress::new()))
+    stream_to_vec(BrotliEncoder::new(input, 1))
 }
 
 pub fn brotli_stream_decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-    use async_compression::stream::brotli::DecompressedBrotliStream;
+    use async_compression::stream::BrotliDecoder;
     pin_mut!(input);
-    stream_to_vec(DecompressedBrotliStream::new(input))
+    stream_to_vec(BrotliDecoder::new(input))
 }
 
 pub fn deflate_compress(bytes: &[u8]) -> Vec<u8> {
@@ -200,21 +200,21 @@ pub fn deflate_decompress(bytes: &[u8]) -> Vec<u8> {
 }
 
 pub fn deflate_stream_compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-    use async_compression::stream::deflate::{Compression, DeflateStream};
+    use async_compression::{flate2::Compression, stream::DeflateEncoder};
     pin_mut!(input);
-    stream_to_vec(DeflateStream::new(input, Compression::fast()))
+    stream_to_vec(DeflateEncoder::new(input, Compression::fast()))
 }
 
 pub fn deflate_stream_decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-    use async_compression::stream::deflate::DecompressedDeflateStream;
+    use async_compression::stream::DeflateDecoder;
     pin_mut!(input);
-    stream_to_vec(DecompressedDeflateStream::new(input))
+    stream_to_vec(DeflateDecoder::new(input))
 }
 
 pub fn deflate_read_compress(input: impl AsyncBufRead) -> Vec<u8> {
-    use async_compression::read::deflate::{Compression, DeflateRead};
+    use async_compression::{flate2::Compression, read::DeflateEncoder};
     pin_mut!(input);
-    async_read_to_vec(DeflateRead::new(input, Compression::fast()))
+    async_read_to_vec(DeflateEncoder::new(input, Compression::fast()))
 }
 
 pub fn zlib_compress(bytes: &[u8]) -> Vec<u8> {
@@ -228,21 +228,21 @@ pub fn zlib_decompress(bytes: &[u8]) -> Vec<u8> {
 }
 
 pub fn zlib_stream_compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-    use async_compression::stream::zlib::{Compression, ZlibStream};
+    use async_compression::{flate2::Compression, stream::ZlibEncoder};
     pin_mut!(input);
-    stream_to_vec(ZlibStream::new(input, Compression::fast()))
+    stream_to_vec(ZlibEncoder::new(input, Compression::fast()))
 }
 
 pub fn zlib_stream_decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-    use async_compression::stream::zlib::DecompressedZlibStream;
+    use async_compression::stream::ZlibDecoder;
     pin_mut!(input);
-    stream_to_vec(DecompressedZlibStream::new(input))
+    stream_to_vec(ZlibDecoder::new(input))
 }
 
 pub fn zlib_read_compress(input: impl AsyncBufRead) -> Vec<u8> {
-    use async_compression::read::zlib::{Compression, ZlibRead};
+    use async_compression::{flate2::Compression, read::ZlibEncoder};
     pin_mut!(input);
-    async_read_to_vec(ZlibRead::new(input, Compression::fast()))
+    async_read_to_vec(ZlibEncoder::new(input, Compression::fast()))
 }
 
 pub fn gzip_compress(bytes: &[u8]) -> Vec<u8> {
@@ -256,13 +256,13 @@ pub fn gzip_decompress(bytes: &[u8]) -> Vec<u8> {
 }
 
 pub fn gzip_stream_compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-    use async_compression::stream::gzip::{Compression, GzipStream};
+    use async_compression::{flate2::Compression, stream::GzipEncoder};
     pin_mut!(input);
-    stream_to_vec(GzipStream::new(input, Compression::fast()))
+    stream_to_vec(GzipEncoder::new(input, Compression::fast()))
 }
 
 pub fn gzip_stream_decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-    use async_compression::stream::gzip::DecompressedGzipStream;
+    use async_compression::stream::GzipDecoder;
     pin_mut!(input);
-    stream_to_vec(DecompressedGzipStream::new(input))
+    stream_to_vec(GzipDecoder::new(input))
 }

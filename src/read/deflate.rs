@@ -4,8 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-pub use flate2::Compression;
-use flate2::{Compress, FlushCompress};
+use flate2::{Compress, Compression, FlushCompress};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
@@ -13,14 +12,14 @@ use futures::{
 use pin_project::unsafe_project;
 
 #[unsafe_project(Unpin)]
-pub struct DeflateRead<R: AsyncBufRead> {
+pub struct DeflateEncoder<R: AsyncBufRead> {
     #[pin]
     inner: R,
     flushing: bool,
     compress: Compress,
 }
 
-impl<R: AsyncBufRead> AsyncRead for DeflateRead<R> {
+impl<R: AsyncBufRead> AsyncRead for DeflateEncoder<R> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -51,9 +50,9 @@ impl<R: AsyncBufRead> AsyncRead for DeflateRead<R> {
     }
 }
 
-impl<R: AsyncBufRead> DeflateRead<R> {
-    pub fn new(read: R, level: Compression) -> DeflateRead<R> {
-        DeflateRead {
+impl<R: AsyncBufRead> DeflateEncoder<R> {
+    pub fn new(read: R, level: Compression) -> DeflateEncoder<R> {
+        DeflateEncoder {
             inner: read,
             flushing: false,
             compress: Compress::new(level, false),

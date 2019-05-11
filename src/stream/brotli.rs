@@ -4,21 +4,23 @@ use core::{
 };
 use std::io::{Error, ErrorKind, Result};
 
-use brotli2::raw::{CoStatus, CompressOp, DeStatus, Decompress};
-pub use brotli2::{raw::Compress, CompressParams};
+use brotli2::{
+    raw::{CoStatus, Compress, CompressOp, DeStatus, Decompress},
+    CompressParams,
+};
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
 
 #[unsafe_project(Unpin)]
-pub struct BrotliStream<S: Stream<Item = Result<Bytes>>> {
+pub struct BrotliEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     flush: bool,
     compress: Compress,
 }
 
-impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliStream<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliEncoder<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
@@ -63,9 +65,17 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliStream<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>> BrotliStream<S> {
-    pub fn new(stream: S, compress: Compress) -> BrotliStream<S> {
-        BrotliStream {
+impl<S: Stream<Item = Result<Bytes>>> BrotliEncoder<S> {
+    pub fn new(stream: S, level: u32) -> BrotliEncoder<S> {
+        let mut params = CompressParams::new();
+        params.quality(level);
+        BrotliEncoder::from_params(stream, &params)
+    }
+
+    pub fn from_params(stream: S, params: &CompressParams) -> BrotliEncoder<S> {
+        let mut compress = Compress::new();
+        compress.set_params(params);
+        BrotliEncoder {
             inner: stream,
             flush: false,
             compress,
@@ -74,14 +84,14 @@ impl<S: Stream<Item = Result<Bytes>>> BrotliStream<S> {
 }
 
 #[unsafe_project(Unpin)]
-pub struct DecompressedBrotliStream<S: Stream<Item = Result<Bytes>>> {
+pub struct BrotliDecoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     flush: bool,
     decompress: Decompress,
 }
 
-impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedBrotliStream<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliDecoder<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
@@ -127,9 +137,9 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedBrotliStream<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>> DecompressedBrotliStream<S> {
-    pub fn new(stream: S) -> DecompressedBrotliStream<S> {
-        DecompressedBrotliStream {
+impl<S: Stream<Item = Result<Bytes>>> BrotliDecoder<S> {
+    pub fn new(stream: S) -> BrotliDecoder<S> {
+        BrotliDecoder {
             inner: stream,
             flush: false,
             decompress: Decompress::new(),

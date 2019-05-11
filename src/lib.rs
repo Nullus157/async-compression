@@ -13,3 +13,13 @@
 
 pub mod read;
 pub mod stream;
+
+/// Types to configure [`flate2`](::flate2) based encoders.
+pub mod flate2 {
+    pub use flate2::Compression;
+}
+
+/// Types to configure [`brotli2`](::brotli2) based encoders.
+pub mod brotli2 {
+    pub use brotli2::CompressParams;
+}

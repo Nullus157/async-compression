@@ -5,17 +5,16 @@ use core::{
 use std::io::Result;
 use std::marker::Unpin;
 
-use super::flate::{CompressedStream, DecompressedStream};
+use super::flate::{FlateDecoder, FlateEncoder};
 use bytes::Bytes;
-pub use flate2::Compression;
-use flate2::{Compress, Decompress};
+use flate2::{Compress, Compression, Decompress};
 use futures::{stream::Stream, stream::StreamExt};
 
-pub struct ZlibStream<S: Stream<Item = Result<Bytes>> + Unpin> {
-    inner: CompressedStream<S>,
+pub struct ZlibEncoder<S: Stream<Item = Result<Bytes>> + Unpin> {
+    inner: FlateEncoder<S>,
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for ZlibStream<S> {
+impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for ZlibEncoder<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
@@ -23,19 +22,19 @@ impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for ZlibStream<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibStream<S> {
-    pub fn new(stream: S, level: Compression) -> ZlibStream<S> {
-        ZlibStream {
-            inner: CompressedStream::new(stream, Compress::new(level, true)),
+impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibEncoder<S> {
+    pub fn new(stream: S, level: Compression) -> ZlibEncoder<S> {
+        ZlibEncoder {
+            inner: FlateEncoder::new(stream, Compress::new(level, true)),
         }
     }
 }
 
-pub struct DecompressedZlibStream<S: Stream<Item = Result<Bytes>> + Unpin> {
-    inner: DecompressedStream<S>,
+pub struct ZlibDecoder<S: Stream<Item = Result<Bytes>> + Unpin> {
+    inner: FlateDecoder<S>,
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for DecompressedZlibStream<S> {
+impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for ZlibDecoder<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
@@ -43,10 +42,10 @@ impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for DecompressedZlibStream<
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> DecompressedZlibStream<S> {
-    pub fn new(stream: S) -> DecompressedZlibStream<S> {
-        DecompressedZlibStream {
-            inner: DecompressedStream::new(stream, Decompress::new(true)),
+impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibDecoder<S> {
+    pub fn new(stream: S) -> ZlibDecoder<S> {
+        ZlibDecoder {
+            inner: FlateDecoder::new(stream, Decompress::new(true)),
         }
     }
 }

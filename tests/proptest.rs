@@ -41,8 +41,8 @@ proptest! {
     }
 
     #[test]
-    fn deflate_read_compress(ref input in any::<utils::InputStream>()) {
-        let compressed = utils::deflate_read_compress(input.reader());
+    fn deflate_bufread_compress(ref input in any::<utils::InputStream>()) {
+        let compressed = utils::deflate_bufread_compress(input.reader());
         let output = utils::deflate_decompress(&compressed);
         assert_eq!(output, input.bytes());
     }
@@ -66,8 +66,8 @@ proptest! {
     }
 
     #[test]
-    fn zlib_read_compress(ref input in any::<utils::InputStream>()) {
-        let compressed = utils::zlib_read_compress(input.reader());
+    fn zlib_bufread_compress(ref input in any::<utils::InputStream>()) {
+        let compressed = utils::zlib_bufread_compress(input.reader());
         let output = utils::zlib_decompress(&compressed);
         assert_eq!(output, input.bytes());
     }

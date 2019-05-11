@@ -211,8 +211,8 @@ pub fn deflate_stream_decompress(input: impl Stream<Item = io::Result<Bytes>>) -
     stream_to_vec(DeflateDecoder::new(input))
 }
 
-pub fn deflate_read_compress(input: impl AsyncBufRead) -> Vec<u8> {
-    use async_compression::{flate2::Compression, read::DeflateEncoder};
+pub fn deflate_bufread_compress(input: impl AsyncBufRead) -> Vec<u8> {
+    use async_compression::{bufread::DeflateEncoder, flate2::Compression};
     pin_mut!(input);
     async_read_to_vec(DeflateEncoder::new(input, Compression::fast()))
 }
@@ -239,8 +239,8 @@ pub fn zlib_stream_decompress(input: impl Stream<Item = io::Result<Bytes>>) -> V
     stream_to_vec(ZlibDecoder::new(input))
 }
 
-pub fn zlib_read_compress(input: impl AsyncBufRead) -> Vec<u8> {
-    use async_compression::{flate2::Compression, read::ZlibEncoder};
+pub fn zlib_bufread_compress(input: impl AsyncBufRead) -> Vec<u8> {
+    use async_compression::{bufread::ZlibEncoder, flate2::Compression};
     pin_mut!(input);
     async_read_to_vec(ZlibEncoder::new(input, Compression::fast()))
 }

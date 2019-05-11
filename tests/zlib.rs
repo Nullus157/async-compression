@@ -37,10 +37,10 @@ fn zlib_stream_decompress() {
 }
 
 #[test]
-fn zlib_read_compress() {
+fn zlib_bufread_compress() {
     let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
-    let compressed = utils::zlib_read_compress(input.reader());
+    let compressed = utils::zlib_bufread_compress(input.reader());
     let output = utils::zlib_decompress(&compressed);
 
     assert_eq!(output, vec![1, 2, 3, 4, 5, 6]);

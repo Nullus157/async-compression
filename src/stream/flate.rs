@@ -6,8 +6,7 @@ use std::{
 };
 
 use bytes::{Bytes, BytesMut};
-pub(crate) use flate2::{Compress, Decompress};
-use flate2::{FlushCompress, FlushDecompress, Status};
+use flate2::{Compress, Decompress, FlushCompress, FlushDecompress, Status};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
 
@@ -21,7 +20,7 @@ enum State {
 }
 
 #[unsafe_project(Unpin)]
-pub(crate) struct CompressedStream<S: Stream<Item = Result<Bytes>>> {
+pub(crate) struct FlateEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     state: State,
@@ -29,7 +28,38 @@ pub(crate) struct CompressedStream<S: Stream<Item = Result<Bytes>>> {
     compress: Compress,
 }
 
-impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
+#[unsafe_project(Unpin)]
+pub(crate) struct FlateDecoder<S: Stream<Item = Result<Bytes>>> {
+    #[pin]
+    inner: S,
+    state: State,
+    output: BytesMut,
+    decompress: Decompress,
+}
+
+impl<S: Stream<Item = Result<Bytes>>> FlateEncoder<S> {
+    pub(crate) fn new(stream: S, compress: Compress) -> FlateEncoder<S> {
+        FlateEncoder {
+            inner: stream,
+            state: State::Reading,
+            output: BytesMut::new(),
+            compress,
+        }
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>>> FlateDecoder<S> {
+    pub(crate) fn new(stream: S, decompress: Decompress) -> FlateDecoder<S> {
+        FlateDecoder {
+            inner: stream,
+            state: State::Reading,
+            output: BytesMut::new(),
+            decompress,
+        }
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>>> Stream for FlateEncoder<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
@@ -109,33 +139,13 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for CompressedStream<S> {
 
                 State::Done => Poll::Ready(None),
 
-                State::Invalid => panic!("CompressedStream reached invalid state"),
+                State::Invalid => panic!("FlateEncoder reached invalid state"),
             };
         }
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>> CompressedStream<S> {
-    pub(crate) fn new(stream: S, compress: Compress) -> CompressedStream<S> {
-        CompressedStream {
-            inner: stream,
-            state: State::Reading,
-            output: BytesMut::new(),
-            compress,
-        }
-    }
-}
-
-#[unsafe_project(Unpin)]
-pub(crate) struct DecompressedStream<S: Stream<Item = Result<Bytes>>> {
-    #[pin]
-    inner: S,
-    state: State,
-    output: BytesMut,
-    decompress: Decompress,
-}
-
-impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedStream<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for FlateDecoder<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
@@ -215,19 +225,8 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedStream<S> {
 
                 State::Done => Poll::Ready(None),
 
-                State::Invalid => panic!("CompressedStream reached invalid state"),
+                State::Invalid => panic!("FlateEncoder reached invalid state"),
             };
-        }
-    }
-}
-
-impl<S: Stream<Item = Result<Bytes>>> DecompressedStream<S> {
-    pub(crate) fn new(stream: S, decompress: Decompress) -> DecompressedStream<S> {
-        DecompressedStream {
-            inner: stream,
-            state: State::Reading,
-            output: BytesMut::new(),
-            decompress,
         }
     }
 }

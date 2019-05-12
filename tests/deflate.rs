@@ -37,10 +37,10 @@ fn deflate_stream_decompress() {
 }
 
 #[test]
-fn deflate_read_compress() {
+fn deflate_bufread_compress() {
     let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
-    let compressed = utils::deflate_read_compress(input.reader());
+    let compressed = utils::deflate_bufread_compress(input.reader());
     let output = utils::deflate_decompress(&compressed);
 
     assert_eq!(output, vec![1, 2, 3, 4, 5, 6]);

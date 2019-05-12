@@ -6,8 +6,7 @@ use std::{
 };
 
 use bytes::{BufMut, Bytes, BytesMut};
-pub use flate2::Compression;
-use flate2::{Compress, Crc, Decompress, FlushCompress, FlushDecompress, Status};
+use flate2::{Compress, Compression, Crc, Decompress, FlushCompress, FlushDecompress, Status};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
 
@@ -22,9 +21,23 @@ enum State {
     Invalid,
 }
 
+#[derive(Debug)]
+enum DeState {
+    ReadingHeader,
+    Reading,
+    Writing,
+    ReadingFooter,
+    Done,
+    Invalid,
+}
+
+/// A gzip encoder, or compressor.
+///
+/// This structure implements a [`Stream`] interface and will read uncompressed data from an
+/// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
 #[derive(Debug)]
-pub struct GzipStream<S: Stream<Item = Result<Bytes>>> {
+pub struct GzipEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     state: State,
@@ -33,7 +46,51 @@ pub struct GzipStream<S: Stream<Item = Result<Bytes>>> {
     compress: Compress,
 }
 
-impl<S: Stream<Item = Result<Bytes>>> Stream for GzipStream<S> {
+/// A gzip decoder, or decompressor.
+///
+/// This structure implements a [`Stream`] interface and will read compressed data from an
+/// underlying stream and emit a stream of uncompressed data.
+#[unsafe_project(Unpin)]
+pub struct GzipDecoder<S: Stream<Item = Result<Bytes>>> {
+    #[pin]
+    inner: S,
+    state: DeState,
+    input: Bytes,
+    output: BytesMut,
+    crc: Crc,
+    decompress: Decompress,
+}
+
+impl<S: Stream<Item = Result<Bytes>>> GzipEncoder<S> {
+    /// Creates a new encoder which will read uncompressed data from the given stream and emit a
+    /// compressed stream.
+    pub fn new(stream: S, level: Compression) -> GzipEncoder<S> {
+        GzipEncoder {
+            inner: stream,
+            state: State::WritingHeader(level),
+            output: BytesMut::new(),
+            crc: Crc::new(),
+            compress: Compress::new(level, false),
+        }
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>>> GzipDecoder<S> {
+    /// Creates a new decoder which will read compressed data from the given stream and emit an
+    /// uncompressed stream.
+    pub fn new(stream: S) -> GzipDecoder<S> {
+        GzipDecoder {
+            inner: stream,
+            state: DeState::ReadingHeader,
+            input: Bytes::new(),
+            output: BytesMut::new(),
+            crc: Crc::new(),
+            decompress: Decompress::new(false),
+        }
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>>> Stream for GzipEncoder<S> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
@@ -133,20 +190,8 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for GzipStream<S> {
 
                 State::Done => Poll::Ready(None),
 
-                State::Invalid => panic!("GzipStream reached invalid state"),
+                State::Invalid => panic!("GzipEncoder reached invalid state"),
             };
-        }
-    }
-}
-
-impl<S: Stream<Item = Result<Bytes>>> GzipStream<S> {
-    pub fn new(stream: S, level: Compression) -> GzipStream<S> {
-        GzipStream {
-            inner: stream,
-            state: State::WritingHeader(level),
-            output: BytesMut::new(),
-            crc: Crc::new(),
-            compress: Compress::new(level, false),
         }
     }
 }
@@ -168,28 +213,7 @@ fn get_header(level: Compression) -> Bytes {
     Bytes::from(header)
 }
 
-#[derive(Debug)]
-enum DeState {
-    ReadingHeader,
-    Reading,
-    Writing,
-    ReadingFooter,
-    Done,
-    Invalid,
-}
-
-#[unsafe_project(Unpin)]
-pub struct DecompressedGzipStream<S: Stream<Item = Result<Bytes>>> {
-    #[pin]
-    inner: S,
-    state: DeState,
-    input: Bytes,
-    output: BytesMut,
-    crc: Crc,
-    decompress: Decompress,
-}
-
-impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for GzipDecoder<S> {
     type Item = Result<Bytes>;
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
         let mut this = self.project();
@@ -313,21 +337,8 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DecompressedGzipStream<S> {
 
                 DeState::Done => Poll::Ready(None),
 
-                DeState::Invalid => panic!("DecompressedGzipStream reached invalid state"),
+                DeState::Invalid => panic!("GzipDecoder reached invalid state"),
             };
-        }
-    }
-}
-
-impl<S: Stream<Item = Result<Bytes>>> DecompressedGzipStream<S> {
-    pub fn new(stream: S) -> DecompressedGzipStream<S> {
-        DecompressedGzipStream {
-            inner: stream,
-            state: DeState::ReadingHeader,
-            input: Bytes::new(),
-            output: BytesMut::new(),
-            crc: Crc::new(),
-            decompress: Decompress::new(false),
         }
     }
 }

@@ -4,23 +4,38 @@ use core::{
 };
 use std::io::Result;
 
-pub use flate2::Compression;
-use flate2::{Compress, FlushCompress};
+use flate2::{Compress, Compression, FlushCompress};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
 };
 use pin_project::unsafe_project;
 
+/// A zlib encoder, or compressor.
+///
+/// This structure implements an [`AsyncRead`] interface and will read uncompressed data from an
+/// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
-pub struct DeflateRead<R: AsyncBufRead> {
+pub struct ZlibEncoder<R: AsyncBufRead> {
     #[pin]
     inner: R,
     flushing: bool,
     compress: Compress,
 }
 
-impl<R: AsyncBufRead> AsyncRead for DeflateRead<R> {
+impl<R: AsyncBufRead> ZlibEncoder<R> {
+    /// Creates a new encoder which will read uncompressed data from the given stream and emit a
+    /// compressed stream.
+    pub fn new(read: R, level: Compression) -> ZlibEncoder<R> {
+        ZlibEncoder {
+            inner: read,
+            flushing: false,
+            compress: Compress::new(level, true),
+        }
+    }
+}
+
+impl<R: AsyncBufRead> AsyncRead for ZlibEncoder<R> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -47,16 +62,6 @@ impl<R: AsyncBufRead> AsyncRead for DeflateRead<R> {
             if *this.flushing || output > 0 {
                 return Poll::Ready(Ok(output as usize));
             }
-        }
-    }
-}
-
-impl<R: AsyncBufRead> DeflateRead<R> {
-    pub fn new(read: R, level: Compression) -> DeflateRead<R> {
-        DeflateRead {
-            inner: read,
-            flushing: false,
-            compress: Compress::new(level, false),
         }
     }
 }

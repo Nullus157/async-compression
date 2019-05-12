@@ -3,18 +3,20 @@ use core::{
     task::{Context, Poll},
 };
 use std::io::Result;
-use std::marker::Unpin;
 
 use super::flate::{FlateDecoder, FlateEncoder};
 use bytes::Bytes;
 use flate2::{Compress, Compression, Decompress};
-use futures::{stream::Stream, stream::StreamExt};
+use futures::stream::Stream;
+use pin_project::unsafe_project;
 
 /// A zlib encoder, or compressor.
 ///
 /// This structure implements a [`Stream`] interface and will read uncompressed data from an
 /// underlying stream and emit a stream of compressed data.
-pub struct ZlibEncoder<S: Stream<Item = Result<Bytes>> + Unpin> {
+#[unsafe_project(Unpin)]
+pub struct ZlibEncoder<S: Stream<Item = Result<Bytes>>> {
+    #[pin]
     inner: FlateEncoder<S>,
 }
 
@@ -22,11 +24,13 @@ pub struct ZlibEncoder<S: Stream<Item = Result<Bytes>> + Unpin> {
 ///
 /// This structure implements a [`Stream`] interface and will read compressed data from an
 /// underlying stream and emit a stream of uncompressed data.
-pub struct ZlibDecoder<S: Stream<Item = Result<Bytes>> + Unpin> {
+#[unsafe_project(Unpin)]
+pub struct ZlibDecoder<S: Stream<Item = Result<Bytes>>> {
+    #[pin]
     inner: FlateDecoder<S>,
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibEncoder<S> {
+impl<S: Stream<Item = Result<Bytes>>> ZlibEncoder<S> {
     /// Creates a new encoder which will read uncompressed data from the given stream and emit a
     /// compressed stream.
     pub fn new(stream: S, level: Compression) -> ZlibEncoder<S> {
@@ -53,7 +57,7 @@ impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibEncoder<S> {
     /// Note that care must be taken to avoid tampering with the state of the stream which may
     /// otherwise confuse this encoder.
     pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut S> {
-        Pin::new(&mut self.get_mut().inner).get_pin_mut()
+        self.project().inner.get_pin_mut()
     }
 
     /// Consumes this encoder returning the underlying stream.
@@ -65,7 +69,7 @@ impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibEncoder<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibDecoder<S> {
+impl<S: Stream<Item = Result<Bytes>>> ZlibDecoder<S> {
     /// Creates a new decoder which will read compressed data from the given stream and emit an
     /// uncompressed stream.
     pub fn new(stream: S) -> ZlibDecoder<S> {
@@ -92,7 +96,7 @@ impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibDecoder<S> {
     /// Note that care must be taken to avoid tampering with the state of the stream which may
     /// otherwise confuse this decoder.
     pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut S> {
-        Pin::new(&mut self.get_mut().inner).get_pin_mut()
+        self.project().inner.get_pin_mut()
     }
 
     /// Consumes this decoder returning the underlying stream.
@@ -104,18 +108,18 @@ impl<S: Stream<Item = Result<Bytes>> + Unpin> ZlibDecoder<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for ZlibEncoder<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for ZlibEncoder<S> {
     type Item = Result<Bytes>;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
-        self.inner.poll_next_unpin(cx)
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
+        self.project().inner.poll_next(cx)
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>> + Unpin> Stream for ZlibDecoder<S> {
+impl<S: Stream<Item = Result<Bytes>>> Stream for ZlibDecoder<S> {
     type Item = Result<Bytes>;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
-        self.inner.poll_next_unpin(cx)
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
+        self.project().inner.poll_next(cx)
     }
 }

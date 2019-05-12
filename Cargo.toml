@@ -11,6 +11,8 @@ bytes = "0.4.12"
 flate2 = "1.0.7"
 futures-preview = "0.3.0-alpha.16"
 pin-project = "0.3.2"
+zstd = "0.4"
+zstd-safe = "1.4"
 
 [dev-dependencies]
 proptest = "0.9.3"

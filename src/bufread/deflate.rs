@@ -33,6 +33,35 @@ impl<R: AsyncBufRead> DeflateEncoder<R> {
             compress: Compress::new(level, false),
         }
     }
+
+    /// Acquires a reference to the underlying reader that this encoder is wrapping.
+    pub fn get_ref(&self) -> &R {
+        &self.inner
+    }
+
+    /// Acquires a mutable reference to the underlying reader that this encoder is wrapping.
+    ///
+    /// Note that care must be taken to avoid tampering with the state of the reader which may
+    /// otherwise confuse this encoder.
+    pub fn get_mut(&mut self) -> &mut R {
+        &mut self.inner
+    }
+
+    /// Acquires a pinned mutable reference to the underlying reader that this encoder is wrapping.
+    ///
+    /// Note that care must be taken to avoid tampering with the state of the reader which may
+    /// otherwise confuse this encoder.
+    pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut R> {
+        self.project().inner
+    }
+
+    /// Consumes this encoder returning the underlying reader.
+    ///
+    /// Note that this may discard internal state of this encoder, so care should be taken
+    /// to avoid losing resources when this is called.
+    pub fn into_inner(self) -> R {
+        self.inner
+    }
 }
 
 impl<R: AsyncBufRead> AsyncRead for DeflateEncoder<R> {

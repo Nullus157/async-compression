@@ -46,6 +46,22 @@ impl<S: Stream<Item = Result<Bytes>>> FlateEncoder<S> {
             compress,
         }
     }
+
+    pub(crate) fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    pub(crate) fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    pub(crate) fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut S> {
+        self.project().inner
+    }
+
+    pub(crate) fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S: Stream<Item = Result<Bytes>>> FlateDecoder<S> {
@@ -56,6 +72,22 @@ impl<S: Stream<Item = Result<Bytes>>> FlateDecoder<S> {
             output: BytesMut::new(),
             decompress,
         }
+    }
+
+    pub(crate) fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    pub(crate) fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    pub(crate) fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut S> {
+        self.project().inner
+    }
+
+    pub(crate) fn into_inner(self) -> S {
+        self.inner
     }
 }
 

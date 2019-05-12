@@ -13,8 +13,10 @@ mod deflate;
 mod flate;
 mod gzip;
 mod zlib;
+mod zstd;
 
-pub use brotli::{BrotliDecoder, BrotliEncoder};
-pub use deflate::{DeflateDecoder, DeflateEncoder};
-pub use gzip::{GzipDecoder, GzipEncoder};
-pub use zlib::{ZlibDecoder, ZlibEncoder};
+pub use self::brotli::{BrotliDecoder, BrotliEncoder};
+pub use self::deflate::{DeflateDecoder, DeflateEncoder};
+pub use self::gzip::{GzipDecoder, GzipEncoder};
+pub use self::zlib::{ZlibDecoder, ZlibEncoder};
+pub use self::zstd::{ZstdDecoder, ZstdEncoder};

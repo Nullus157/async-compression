@@ -163,7 +163,6 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdDecoder<S> {
             }
 
             let status = decoder.run_on_buffers(input, output)?;
-            dbg!(&status.remaining, &status.bytes_written, &status.bytes_read);
             input.advance(status.bytes_read);
             Ok(output.split_to(status.bytes_written).freeze())
         }

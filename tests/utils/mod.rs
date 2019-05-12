@@ -197,7 +197,7 @@ pub fn zstd_decompress(bytes: &[u8]) -> Vec<u8> {
 pub fn zstd_stream_compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
     use async_compression::stream::ZstdEncoder;
     pin_mut!(input);
-    stream_to_vec(ZstdEncoder::new(input))
+    stream_to_vec(ZstdEncoder::new(input, 0))
 }
 
 pub fn zstd_stream_decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {

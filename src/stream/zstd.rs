@@ -8,10 +8,7 @@ use std::{
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
-use zstd::{
-    stream::raw::{Decoder, Encoder, Operation},
-    DEFAULT_COMPRESSION_LEVEL,
-};
+use zstd::stream::raw::{Decoder, Encoder, Operation};
 
 #[derive(Debug)]
 enum State {
@@ -59,12 +56,14 @@ pub struct ZstdDecoder<S: Stream<Item = Result<Bytes>>> {
 impl<S: Stream<Item = Result<Bytes>>> ZstdEncoder<S> {
     /// Creates a new encoder which will read uncompressed data from the given stream and emit a
     /// compressed stream.
-    pub fn new(stream: S) -> ZstdEncoder<S> {
+    ///
+    /// The `level` argument here can range from 1-21. A level of `0` will use zstd's default, which is `3`.
+    pub fn new(stream: S, level: i32) -> ZstdEncoder<S> {
         ZstdEncoder {
             inner: stream,
             state: State::Reading,
             output: BytesMut::new(),
-            encoder: Encoder::new(DEFAULT_COMPRESSION_LEVEL).unwrap(),
+            encoder: Encoder::new(level).unwrap(),
         }
     }
 }
@@ -128,16 +127,16 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdEncoder<S> {
                     Poll::Ready(Some(Ok(chunk)))
                 }
                 State::Flushing => {
-                    let mut outbuffer = zstd_safe::OutBuffer::around(this.output);
+                    let mut output = zstd_safe::OutBuffer::around(this.output);
 
-                    let bytes_left = this.encoder.flush(&mut outbuffer).unwrap();
+                    let bytes_left = this.encoder.flush(&mut output).unwrap();
                     *this.state = if bytes_left == 0 {
-                        let _ = this.encoder.finish(&mut outbuffer, true);
+                        let _ = this.encoder.finish(&mut output, true);
                         State::Done
                     } else {
                         State::Flushing
                     };
-                    Poll::Ready(Some(Ok(outbuffer.as_slice().into())))
+                    Poll::Ready(Some(Ok(output.as_slice().into())))
                 }
                 State::Done => Poll::Ready(None),
                 State::Invalid => panic!("ZstdEncoder reached invalid state"),

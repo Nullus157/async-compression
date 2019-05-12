@@ -57,6 +57,35 @@ impl<S: Stream<Item = Result<Bytes>>> BrotliEncoder<S> {
             compress,
         }
     }
+
+    /// Acquires a reference to the underlying stream that this encoder is wrapping.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Acquires a mutable reference to the underlying stream that this encoder is wrapping.
+    ///
+    /// Note that care must be taken to avoid tampering with the state of the stream which may
+    /// otherwise confuse this encoder.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Acquires a pinned mutable reference to the underlying stream that this encoder is wrapping.
+    ///
+    /// Note that care must be taken to avoid tampering with the state of the stream which may
+    /// otherwise confuse this encoder.
+    pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut S> {
+        self.project().inner
+    }
+
+    /// Consumes this encoder returning the underlying stream.
+    ///
+    /// Note that this may discard internal state of this encoder, so care should be taken
+    /// to avoid losing resources when this is called.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S: Stream<Item = Result<Bytes>>> BrotliDecoder<S> {
@@ -68,6 +97,35 @@ impl<S: Stream<Item = Result<Bytes>>> BrotliDecoder<S> {
             flush: false,
             decompress: Decompress::new(),
         }
+    }
+
+    /// Acquires a reference to the underlying stream that this decoder is wrapping.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Acquires a mutable reference to the underlying stream that this decoder is wrapping.
+    ///
+    /// Note that care must be taken to avoid tampering with the state of the stream which may
+    /// otherwise confuse this decoder.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Acquires a pinned mutable reference to the underlying stream that this decoder is wrapping.
+    ///
+    /// Note that care must be taken to avoid tampering with the state of the stream which may
+    /// otherwise confuse this decoder.
+    pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut S> {
+        self.project().inner
+    }
+
+    /// Consumes this decoder returning the underlying stream.
+    ///
+    /// Note that this may discard internal state of this decoder, so care should be taken
+    /// to avoid losing resources when this is called.
+    pub fn into_inner(self) -> S {
+        self.inner
     }
 }
 

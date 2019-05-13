@@ -11,14 +11,24 @@ description = """
 Adaptors between compression crates and Rust's modern asynchronous IO types.
 """
 
+[features]
+default = ["bufread", "stream", "brotli", "deflate", "gzip", "zlib", "zstd"]
+bufread = []
+stream = ["bytes"]
+brotli = ["brotli2"]
+deflate = ["flate2"]
+gzip = ["flate2"]
+zlib = ["flate2"]
+zstd = ["libzstd", "zstd-safe"]
+
 [dependencies]
-brotli2 = "0.3.2"
-bytes = "0.4.12"
-flate2 = "1.0.7"
+brotli2 = { version = "0.3.2", optional = true }
+bytes = { version = "0.4.12", optional = true }
+flate2 = { version = "1.0.7", optional = true }
 futures-preview = "0.3.0-alpha.16"
 pin-project = "0.3.2"
-zstd = "0.4"
-zstd-safe = "1.4"
+libzstd = { version = "0.4", optional = true, package = "zstd", default-features = false }
+zstd-safe = { version = "1.4", optional = true, default-features = false }
 
 [dev-dependencies]
 proptest = "0.9.3"

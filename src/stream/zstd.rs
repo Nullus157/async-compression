@@ -8,8 +8,8 @@ use std::{
 
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
-use pin_project::unsafe_project;
 use libzstd::stream::raw::{Decoder, Encoder, Operation};
+use pin_project::unsafe_project;
 
 #[derive(Debug)]
 enum State {

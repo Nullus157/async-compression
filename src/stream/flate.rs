@@ -20,7 +20,7 @@ enum State {
 }
 
 #[unsafe_project(Unpin)]
-pub(crate) struct FlateEncoder<S: Stream<Item = Result<Bytes>>> {
+pub struct FlateEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     state: State,
@@ -29,7 +29,7 @@ pub(crate) struct FlateEncoder<S: Stream<Item = Result<Bytes>>> {
 }
 
 #[unsafe_project(Unpin)]
-pub(crate) struct FlateDecoder<S: Stream<Item = Result<Bytes>>> {
+pub struct FlateDecoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     state: State,

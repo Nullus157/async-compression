@@ -1,4 +1,5 @@
 use core::{
+    fmt,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -217,5 +218,25 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for BrotliDecoder<S> {
         }
 
         Poll::Ready(Some(Ok(decompressed_output.freeze())))
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>> + fmt::Debug> fmt::Debug for BrotliEncoder<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BrotliEncoder")
+            .field("inner", &self.inner)
+            .field("flush", &self.flush)
+            .field("compress", &"<no debug>")
+            .finish()
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>> + fmt::Debug> fmt::Debug for BrotliDecoder<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BrotliDecoder")
+            .field("inner", &self.inner)
+            .field("flush", &self.flush)
+            .field("decompress", &"<no debug>")
+            .finish()
     }
 }

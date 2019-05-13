@@ -51,6 +51,7 @@ pub struct GzipEncoder<S: Stream<Item = Result<Bytes>>> {
 /// This structure implements a [`Stream`] interface and will read compressed data from an
 /// underlying stream and emit a stream of uncompressed data.
 #[unsafe_project(Unpin)]
+#[derive(Debug)]
 pub struct GzipDecoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,

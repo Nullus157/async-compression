@@ -20,6 +20,7 @@ enum State {
 }
 
 #[unsafe_project(Unpin)]
+#[derive(Debug)]
 pub struct FlateEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
@@ -29,6 +30,7 @@ pub struct FlateEncoder<S: Stream<Item = Result<Bytes>>> {
 }
 
 #[unsafe_project(Unpin)]
+#[derive(Debug)]
 pub struct FlateDecoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,

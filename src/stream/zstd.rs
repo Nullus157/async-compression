@@ -1,4 +1,5 @@
 use std::{
+    fmt,
     io::Result,
     mem,
     pin::Pin,
@@ -252,5 +253,27 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdDecoder<S> {
                 DeState::Invalid => panic!("ZstdDecoder reached invalid state"),
             };
         }
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>> + fmt::Debug> fmt::Debug for ZstdEncoder<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ZstdEncoder")
+            .field("inner", &self.inner)
+            .field("state", &self.state)
+            .field("output", &self.output)
+            .field("encoder", &"<no debug>")
+            .finish()
+    }
+}
+
+impl<S: Stream<Item = Result<Bytes>> + fmt::Debug> fmt::Debug for ZstdDecoder<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ZstdDecoder")
+            .field("inner", &self.inner)
+            .field("state", &self.state)
+            .field("output", &self.output)
+            .field("decoder", &"<no debug>")
+            .finish()
     }
 }

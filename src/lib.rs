@@ -11,7 +11,7 @@
 //!  * [`stream`] provides types which operate over [`Stream`](futures::stream::Stream)`<Item =
 //!    `[`io::Result`](std::io::Result)`<`[`Bytes`](bytes::Bytes)`>>` streams
 
-#![warn(missing_docs)]
+#![warn(missing_docs, missing_debug_implementations)]
 
 pub mod bufread;
 pub mod stream;

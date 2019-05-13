@@ -16,6 +16,7 @@ use pin_project::unsafe_project;
 /// This structure implements an [`AsyncRead`] interface and will read uncompressed data from an
 /// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
+#[derive(Debug)]
 pub struct ZlibEncoder<R: AsyncBufRead> {
     #[pin]
     inner: R,

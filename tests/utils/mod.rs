@@ -184,13 +184,13 @@ pub fn gzip_stream_decompress(input: impl Stream<Item = io::Result<Bytes>>) -> V
 }
 
 pub fn zstd_compress(bytes: &[u8]) -> Vec<u8> {
-    use zstd::stream::read::Encoder;
-    use zstd::DEFAULT_COMPRESSION_LEVEL;
+    use libzstd::stream::read::Encoder;
+    use libzstd::DEFAULT_COMPRESSION_LEVEL;
     read_to_vec(Encoder::new(bytes, DEFAULT_COMPRESSION_LEVEL).unwrap())
 }
 
 pub fn zstd_decompress(bytes: &[u8]) -> Vec<u8> {
-    use zstd::stream::read::Decoder;
+    use libzstd::stream::read::Decoder;
     read_to_vec(Decoder::new(bytes).unwrap())
 }
 

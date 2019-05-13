@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Wim Looman <wim@nemo157.com>", "Allen Bui <fairingrey@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
+keywords = ["compress", "compression", "flate", "deflate", "gzip", "zlib", "zstd", "zstandard", "brotli", "async", "futures"]
+categories = ["compression", "asynchronous"]
 
 [dependencies]
 brotli2 = "0.3.2"

@@ -38,6 +38,9 @@ pub trait Encode {
         output: &mut PartialBuffer<&mut [u8]>,
     ) -> Result<()>;
 
+    /// Returns whether the internal buffers are flushed
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
+
     /// Returns whether the internal buffers are flushed and the end of the stream is written
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
 }
@@ -49,6 +52,9 @@ pub trait Decode {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut PartialBuffer<&mut [u8]>,
     ) -> Result<bool>;
+
+    /// Returns whether the internal buffers are flushed
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
 
     /// Returns whether the internal buffers are flushed
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;

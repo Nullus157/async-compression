@@ -16,8 +16,9 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["bufread", "stream", "brotli", "bzip", "deflate", "gzip", "zlib", "zstd"]
+default = ["bufread", "stream", "write", "brotli", "bzip", "deflate", "gzip", "zlib", "zstd"]
 bufread = ["futures-io-preview"]
+write = ["futures-io-preview"]
 stream = ["bytes"]
 brotli = ["brotli2"]
 bzip = ["bzip2"]

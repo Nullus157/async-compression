@@ -52,6 +52,13 @@ impl Decode for BrotliDecoder {
         }
     }
 
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
+            DeStatus::Finished | DeStatus::NeedInput => Ok(true),
+            DeStatus::NeedOutput => Ok(false),
+        }
+    }
+
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
             DeStatus::Finished => Ok(true),

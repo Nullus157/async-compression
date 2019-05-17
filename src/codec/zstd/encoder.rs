@@ -30,6 +30,14 @@ impl Encode for ZstdEncoder {
         Ok(())
     }
 
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_mut());
+        let bytes_left = self.encoder.get_mut().flush(&mut out_buf)?;
+        let len = out_buf.as_slice().len();
+        output.advance(len);
+        Ok(bytes_left == 0)
+    }
+
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_mut());
         let bytes_left = self.encoder.get_mut().finish(&mut out_buf, true)?;

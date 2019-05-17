@@ -25,6 +25,10 @@ impl Encode for DeflateEncoder {
         self.inner.encode(input, output)
     }
 
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        self.inner.flush(output)
+    }
+
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         self.inner.finish(output)
     }

@@ -48,6 +48,28 @@ impl Decode for FlateDecoder {
         }
     }
 
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        self.decode(
+            &mut PartialBuffer::new(&[][..]),
+            output,
+            FlushDecompress::Sync,
+        )?;
+
+        loop {
+            let old_len = output.written().len();
+            self.decode(
+                &mut PartialBuffer::new(&[][..]),
+                output,
+                FlushDecompress::None,
+            )?;
+            if output.written().len() == old_len {
+                break;
+            }
+        }
+
+        Ok(!output.unwritten().is_empty())
+    }
+
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         match self.decode(
             &mut PartialBuffer::new(&[][..]),

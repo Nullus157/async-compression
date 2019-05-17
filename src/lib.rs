@@ -14,6 +14,9 @@
 //!  * [`bufread`] provides types which operate over [`AsyncBufRead`](futures_io::AsyncBufRead)
 //!    streams
 //!
+//!  * [`write`](crate::write) provides types which operate over
+//!    [`AsyncWrite`](futures_io::AsyncWrite) streams
+//!
 //!  * [`stream`] provides types which operate over [`Stream`](futures_core::stream::Stream)`<Item =
 //!    `[`io::Result`](std::io::Result)`<`[`Bytes`](bytes::Bytes)`>>` streams
 //!
@@ -45,6 +48,9 @@ pub mod bufread;
 #[cfg(feature = "stream")]
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
+#[cfg(feature = "write")]
+#[cfg_attr(docsrs, doc(cfg(feature = "write")))]
+pub mod write;
 
 /// Types to configure [`flate2`](::flate2) based encoders.
 #[cfg(feature = "flate2")]

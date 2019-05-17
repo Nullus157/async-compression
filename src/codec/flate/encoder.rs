@@ -6,12 +6,14 @@ use flate2::{Compress, Compression, FlushCompress, Status};
 #[derive(Debug)]
 pub struct FlateEncoder {
     compress: Compress,
+    flushed: bool,
 }
 
 impl FlateEncoder {
     pub(crate) fn new(level: Compression, zlib_header: bool) -> Self {
         Self {
             compress: Compress::new(level, zlib_header),
+            flushed: true,
         }
     }
 
@@ -41,6 +43,7 @@ impl Encode for FlateEncoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut PartialBuffer<&mut [u8]>,
     ) -> Result<()> {
+        self.flushed = false;
         match self.encode(input, output, FlushCompress::None)? {
             Status::Ok => Ok(()),
             Status::StreamEnd => unreachable!(),
@@ -48,7 +51,37 @@ impl Encode for FlateEncoder {
         }
     }
 
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        // We need to keep track of whether we've already flushed otherwise we'll just keep writing
+        // out sync blocks continuously and probably never complete flushing.
+        if self.flushed {
+            return Ok(true);
+        }
+
+        self.encode(
+            &mut PartialBuffer::new(&[][..]),
+            output,
+            FlushCompress::Sync,
+        )?;
+
+        loop {
+            let old_len = output.written().len();
+            self.encode(
+                &mut PartialBuffer::new(&[][..]),
+                output,
+                FlushCompress::None,
+            )?;
+            if output.written().len() == old_len {
+                break;
+            }
+        }
+
+        self.flushed = true;
+        Ok(!output.unwritten().is_empty())
+    }
+
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        self.flushed = false;
         match self.encode(
             &mut PartialBuffer::new(&[][..]),
             output,

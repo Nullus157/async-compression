@@ -48,17 +48,14 @@ impl GzipEncoder {
 
         output
     }
+}
 
-    fn process(
+impl Encode for GzipEncoder {
+    fn encode(
         &mut self,
         input: &mut PartialBuffer<&[u8]>,
         output: &mut PartialBuffer<&mut [u8]>,
-        inner: impl Fn(
-            &mut Self,
-            &mut PartialBuffer<&[u8]>,
-            &mut PartialBuffer<&mut [u8]>,
-        ) -> Result<bool>,
-    ) -> Result<bool> {
+    ) -> Result<()> {
         loop {
             self.state = match std::mem::replace(&mut self.state, State::Invalid) {
                 State::Header(mut header) => {
@@ -72,7 +69,79 @@ impl GzipEncoder {
                 }
 
                 State::Encoding => {
-                    if inner(self, &mut *input, &mut *output)? {
+                    let prior_written = input.written().len();
+                    self.inner.encode(input, output)?;
+                    self.crc.update(&input.written()[prior_written..]);
+                    State::Encoding
+                }
+
+                State::Footer(_) | State::Done => panic!("encode after complete"),
+
+                State::Invalid => panic!("Reached invalid state"),
+            };
+
+            if input.unwritten().is_empty() || output.unwritten().is_empty() {
+                return Ok(());
+            }
+        }
+    }
+
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        loop {
+            let (done, state) = match std::mem::replace(&mut self.state, State::Invalid) {
+                State::Header(mut header) => {
+                    output.copy_unwritten_from(&mut header);
+
+                    if header.unwritten().is_empty() {
+                        (false, State::Encoding)
+                    } else {
+                        (false, State::Header(header))
+                    }
+                }
+
+                State::Encoding => (self.inner.flush(output)?, State::Encoding),
+
+                State::Footer(mut footer) => {
+                    output.copy_unwritten_from(&mut footer);
+
+                    if footer.unwritten().is_empty() {
+                        (true, State::Done)
+                    } else {
+                        (false, State::Footer(footer))
+                    }
+                }
+
+                State::Done => (true, State::Done),
+                State::Invalid => panic!("Reached invalid state"),
+            };
+
+            self.state = state;
+
+            if done {
+                return Ok(true);
+            }
+
+            if output.unwritten().is_empty() {
+                return Ok(false);
+            }
+        }
+    }
+
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        loop {
+            self.state = match std::mem::replace(&mut self.state, State::Invalid) {
+                State::Header(mut header) => {
+                    output.copy_unwritten_from(&mut header);
+
+                    if header.unwritten().is_empty() {
+                        State::Encoding
+                    } else {
+                        State::Header(header)
+                    }
+                }
+
+                State::Encoding => {
+                    if self.inner.finish(output)? {
                         State::Footer(self.footer().into())
                     } else {
                         State::Encoding
@@ -97,36 +166,9 @@ impl GzipEncoder {
                 return Ok(true);
             }
 
-            if input.unwritten().is_empty() || output.unwritten().is_empty() {
+            if output.unwritten().is_empty() {
                 return Ok(false);
             }
         }
-    }
-}
-
-impl Encode for GzipEncoder {
-    fn encode(
-        &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
-    ) -> Result<()> {
-        self.process(input, output, |this, input, output| {
-            let prior_written = input.written().len();
-            this.inner.encode(input, output)?;
-            this.crc.update(&input.written()[prior_written..]);
-            Ok(false)
-        })
-        .map(drop)
-    }
-
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
-        self.process(
-            &mut PartialBuffer::new(&[][..]),
-            output,
-            |this, _, output| {
-                let done = this.inner.finish(output)?;
-                Ok(done)
-            },
-        )
     }
 }

@@ -34,5 +34,5 @@ zstd-safe = { version = "1.4", optional = true, default-features = false }
 proptest = "0.9.3"
 pin-utils = "0.1.0-alpha.4"
 proptest-derive = "0.1.1"
-rand = "0.6.5"
+rand = "0.7.0"
 futures-test-preview = "0.3.0-alpha.16"

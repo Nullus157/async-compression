@@ -16,6 +16,7 @@ use pin_project::unsafe_project;
 /// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
 #[derive(Debug)]
+#[cfg_attr(docsrs, doc(cfg(feature = "deflate")))]
 pub struct DeflateEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: FlateEncoder<S>,
@@ -27,6 +28,7 @@ pub struct DeflateEncoder<S: Stream<Item = Result<Bytes>>> {
 /// underlying stream and emit a stream of uncompressed data.
 #[unsafe_project(Unpin)]
 #[derive(Debug)]
+#[cfg_attr(docsrs, doc(cfg(feature = "deflate")))]
 pub struct DeflateDecoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: FlateDecoder<S>,

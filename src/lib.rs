@@ -28,6 +28,7 @@
 //!  * `zlib`
 //!  * `zstd`
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(
     missing_docs,
     rust_2018_idioms,
@@ -36,18 +37,25 @@
 )]
 
 #[cfg(feature = "bufread")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bufread")))]
 pub mod bufread;
 #[cfg(feature = "stream")]
+#[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
 
 /// Types to configure [`flate2`](::flate2) based encoders.
 #[cfg(any(feature = "deflate", feature = "zlib", feature = "gzip"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "deflate", feature = "zlib", feature = "gzip")))
+)]
 pub mod flate2 {
     pub use flate2::Compression;
 }
 
 /// Types to configure [`brotli2`](::brotli2) based encoders.
 #[cfg(feature = "brotli")]
+#[cfg_attr(docsrs, doc(cfg(feature = "brotli")))]
 pub mod brotli2 {
     pub use brotli2::CompressParams;
 }

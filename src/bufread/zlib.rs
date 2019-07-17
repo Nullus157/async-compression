@@ -17,6 +17,7 @@ use pin_project::unsafe_project;
 /// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
 #[derive(Debug)]
+#[cfg_attr(docsrs, doc(cfg(feature = "zlib")))]
 pub struct ZlibEncoder<R: AsyncBufRead> {
     #[pin]
     inner: R,

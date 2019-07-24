@@ -11,6 +11,10 @@ description = """
 Adaptors between compression crates and Rust's modern asynchronous IO types.
 """
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg docsrs"]
+
 [features]
 default = ["bufread", "stream", "brotli", "deflate", "gzip", "zlib", "zstd"]
 bufread = []

@@ -18,6 +18,7 @@ use pin_project::unsafe_project;
 /// This structure implements a [`Stream`] interface and will read uncompressed data from an
 /// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
+#[cfg_attr(docsrs, doc(cfg(feature = "brotli")))]
 pub struct BrotliEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
@@ -30,6 +31,7 @@ pub struct BrotliEncoder<S: Stream<Item = Result<Bytes>>> {
 /// This structure implements a [`Stream`] interface and will read compressed data from an
 /// underlying stream and emit a stream of uncompressed data.
 #[unsafe_project(Unpin)]
+#[cfg_attr(docsrs, doc(cfg(feature = "brotli")))]
 pub struct BrotliDecoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,

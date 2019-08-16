@@ -259,3 +259,10 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdDecoder<S> {
         }
     }
 }
+
+fn _assert() {
+    crate::util::_assert_send::<ZstdEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<ZstdEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+    crate::util::_assert_send::<ZstdDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<ZstdDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+}

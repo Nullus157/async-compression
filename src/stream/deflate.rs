@@ -127,3 +127,11 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for DeflateDecoder<S> {
         self.project().inner.poll_next(cx)
     }
 }
+
+fn _assert() {
+    use crate::util::{_assert_send, _assert_sync};
+    _assert_send::<DeflateEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    _assert_sync::<DeflateEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+    _assert_send::<DeflateDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    _assert_sync::<DeflateDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+}

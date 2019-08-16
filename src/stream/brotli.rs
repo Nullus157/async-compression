@@ -242,3 +242,10 @@ impl<S: Stream<Item = Result<Bytes>> + fmt::Debug> fmt::Debug for BrotliDecoder<
             .finish()
     }
 }
+
+fn _assert() {
+    crate::util::_assert_send::<BrotliEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<BrotliEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+    crate::util::_assert_send::<BrotliDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<BrotliDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+}

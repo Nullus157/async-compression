@@ -61,3 +61,4 @@ pub mod brotli2 {
 }
 
 mod unshared;
+mod util;

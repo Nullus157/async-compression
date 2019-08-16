@@ -403,3 +403,10 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for GzipDecoder<S> {
         }
     }
 }
+
+fn _assert() {
+    crate::util::_assert_send::<GzipEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<GzipEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+    crate::util::_assert_send::<GzipDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<GzipDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+}

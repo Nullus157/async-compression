@@ -96,3 +96,8 @@ impl<R: AsyncBufRead> AsyncRead for DeflateEncoder<R> {
         }
     }
 }
+
+fn _assert() {
+    crate::util::_assert_send::<DeflateEncoder<Pin<Box<dyn AsyncBufRead + Send>>>>();
+    crate::util::_assert_sync::<DeflateEncoder<Pin<Box<dyn AsyncBufRead + Sync>>>>();
+}

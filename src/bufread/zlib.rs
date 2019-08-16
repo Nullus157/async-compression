@@ -96,3 +96,8 @@ impl<R: AsyncBufRead> AsyncRead for ZlibEncoder<R> {
         }
     }
 }
+
+fn _assert() {
+    crate::util::_assert_send::<ZlibEncoder<Pin<Box<dyn AsyncBufRead + Send>>>>();
+    crate::util::_assert_sync::<ZlibEncoder<Pin<Box<dyn AsyncBufRead + Sync>>>>();
+}

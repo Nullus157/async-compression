@@ -1,11 +1,11 @@
 use std::{
-    fmt,
     io::Result,
     mem,
     pin::Pin,
     task::{Context, Poll},
 };
 
+use crate::unshared::Unshared;
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
 use libzstd::stream::raw::{Decoder, Encoder, Operation};
@@ -34,12 +34,13 @@ enum DeState {
 /// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
 #[cfg_attr(docsrs, doc(cfg(feature = "zstd")))]
+#[derive(Debug)]
 pub struct ZstdEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     state: State,
     output: BytesMut,
-    encoder: Encoder,
+    encoder: Unshared<Encoder>,
 }
 
 /// A zstd decoder, or decompressor.
@@ -48,12 +49,13 @@ pub struct ZstdEncoder<S: Stream<Item = Result<Bytes>>> {
 /// underlying stream and emit a stream of uncompressed data.
 #[unsafe_project(Unpin)]
 #[cfg_attr(docsrs, doc(cfg(feature = "zstd")))]
+#[derive(Debug)]
 pub struct ZstdDecoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: S,
     state: DeState,
     output: BytesMut,
-    decoder: Decoder,
+    decoder: Unshared<Decoder>,
 }
 
 impl<S: Stream<Item = Result<Bytes>>> ZstdEncoder<S> {
@@ -66,7 +68,7 @@ impl<S: Stream<Item = Result<Bytes>>> ZstdEncoder<S> {
             inner: stream,
             state: State::Reading,
             output: BytesMut::new(),
-            encoder: Encoder::new(level).unwrap(),
+            encoder: Unshared::new(Encoder::new(level).unwrap()),
         }
     }
 
@@ -108,7 +110,7 @@ impl<S: Stream<Item = Result<Bytes>>> ZstdDecoder<S> {
             inner: stream,
             state: DeState::Reading,
             output: BytesMut::new(),
-            decoder: Decoder::new().unwrap(),
+            decoder: Unshared::new(Decoder::new().unwrap()),
         }
     }
 
@@ -181,7 +183,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdEncoder<S> {
                         continue;
                     }
 
-                    let chunk = compress(&mut this.encoder, &mut input, &mut this.output)?;
+                    let chunk = compress(this.encoder.get_mut(), &mut input, &mut this.output)?;
 
                     *this.state = State::Writing(input);
 
@@ -190,9 +192,9 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdEncoder<S> {
                 State::Flushing => {
                     let mut output = zstd_safe::OutBuffer::around(this.output);
 
-                    let bytes_left = this.encoder.flush(&mut output).unwrap();
+                    let bytes_left = this.encoder.get_mut().flush(&mut output).unwrap();
                     *this.state = if bytes_left == 0 {
-                        let _ = this.encoder.finish(&mut output, true);
+                        let _ = this.encoder.get_mut().finish(&mut output, true);
                         State::Done
                     } else {
                         State::Flushing
@@ -245,7 +247,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdDecoder<S> {
                         continue;
                     }
 
-                    let chunk = decompress(&mut this.decoder, &mut input, &mut this.output)?;
+                    let chunk = decompress(this.decoder.get_mut(), &mut input, &mut this.output)?;
 
                     *this.state = DeState::Writing(input);
 
@@ -258,24 +260,9 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdDecoder<S> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>> + fmt::Debug> fmt::Debug for ZstdEncoder<S> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ZstdEncoder")
-            .field("inner", &self.inner)
-            .field("state", &self.state)
-            .field("output", &self.output)
-            .field("encoder", &"<no debug>")
-            .finish()
-    }
-}
-
-impl<S: Stream<Item = Result<Bytes>> + fmt::Debug> fmt::Debug for ZstdDecoder<S> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ZstdDecoder")
-            .field("inner", &self.inner)
-            .field("state", &self.state)
-            .field("output", &self.output)
-            .field("decoder", &"<no debug>")
-            .finish()
-    }
+fn _assert() {
+    crate::util::_assert_send::<ZstdEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<ZstdEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+    crate::util::_assert_send::<ZstdDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<ZstdDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
 }

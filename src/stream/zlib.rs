@@ -127,3 +127,10 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZlibDecoder<S> {
         self.project().inner.poll_next(cx)
     }
 }
+
+fn _assert() {
+    crate::util::_assert_send::<ZlibEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<ZlibEncoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+    crate::util::_assert_send::<ZlibDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();
+    crate::util::_assert_sync::<ZlibDecoder<Pin<Box<dyn Stream<Item = Result<Bytes>> + Sync>>>>();
+}

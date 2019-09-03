@@ -284,93 +284,169 @@ pub mod zstd {
 }
 
 macro_rules! test_cases {
-    ($variant:ident) => {
-        mod $variant {
-            mod stream {
-                mod compress {
-                    use crate::utils;
-                    use std::iter::FromIterator;
+    (@ [ $variant:ident :: stream :: compress ]) => {
+        mod compress {
+            use crate::utils;
+            use std::iter::FromIterator;
 
-                    #[test]
-                    fn empty() {
-                        // Can't use InputStream for this as it will inject extra empty chunks
-                        let compressed = utils::$variant::stream::compress(futures::stream::empty());
-                        let output = utils::$variant::sync::decompress(&compressed);
+            #[test]
+            fn empty() {
+                // Can't use InputStream for this as it will inject extra empty chunks
+                let compressed = utils::$variant::stream::compress(futures::stream::empty());
+                let output = utils::$variant::sync::decompress(&compressed);
 
-                        assert_eq!(output, &[][..]);
-                    }
-
-                    #[test]
-                    fn empty_chunk() {
-                        let input = utils::InputStream::from(vec![vec![]]);
-
-                        let compressed = utils::$variant::stream::compress(input.stream());
-                        let output = utils::$variant::sync::decompress(&compressed);
-
-                        assert_eq!(output, input.bytes());
-                    }
-
-                    #[test]
-                    fn short() {
-                        let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
-
-                        let compressed = utils::$variant::stream::compress(input.stream());
-                        let output = utils::$variant::sync::decompress(&compressed);
-
-                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
-                    }
-
-                    #[test]
-                    fn long() {
-                        let input = vec![
-                            Vec::from_iter((0..20_000).map(|_| rand::random())),
-                            Vec::from_iter((0..20_000).map(|_| rand::random())),
-                        ];
-                        let input = utils::InputStream::from(input);
-
-                        let compressed = utils::$variant::stream::compress(input.stream());
-                        let output = utils::$variant::sync::decompress(&compressed);
-
-                        assert_eq!(output, input.bytes());
-                    }
-                }
-
-                mod decompress {
-                    use crate::utils;
-                    use std::iter::FromIterator;
-
-                    #[test]
-                    fn empty() {
-                        let compressed = utils::$variant::sync::compress(&[]);
-
-                        let stream = utils::InputStream::from(vec![compressed]);
-                        let output = utils::$variant::stream::decompress(stream.stream());
-
-                        assert_eq!(output, &[][..]);
-                    }
-
-                    #[test]
-                    fn short() {
-                        let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
-
-                        let stream = utils::InputStream::from(vec![compressed]);
-                        let output = utils::$variant::stream::decompress(stream.stream());
-
-                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
-                    }
-
-                    #[test]
-                    fn long() {
-                        let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
-                        let compressed = utils::$variant::sync::compress(&input);
-
-                        let stream = utils::InputStream::from(vec![compressed]);
-                        let output = utils::$variant::stream::decompress(stream.stream());
-
-                        assert_eq!(output, input);
-                    }
-                }
+                assert_eq!(output, &[][..]);
             }
+
+            #[test]
+            fn empty_chunk() {
+                let input = utils::InputStream::from(vec![vec![]]);
+
+                let compressed = utils::$variant::stream::compress(input.stream());
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, input.bytes());
+            }
+
+            #[test]
+            fn short() {
+                let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                let compressed = utils::$variant::stream::compress(input.stream());
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            fn long() {
+                let input = vec![
+                    Vec::from_iter((0..20_000).map(|_| rand::random())),
+                    Vec::from_iter((0..20_000).map(|_| rand::random())),
+                ];
+                let input = utils::InputStream::from(input);
+
+                let compressed = utils::$variant::stream::compress(input.stream());
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, input.bytes());
+            }
+        }
+    };
+
+    (@ [ $variant:ident :: stream :: decompress ]) => {
+        mod decompress {
+            use crate::utils;
+            use std::iter::FromIterator;
+
+            #[test]
+            fn empty() {
+                let compressed = utils::$variant::sync::compress(&[]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::stream::decompress(stream.stream());
+
+                assert_eq!(output, &[][..]);
+            }
+
+            #[test]
+            fn short() {
+                let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::stream::decompress(stream.stream());
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            fn long() {
+                let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::stream::decompress(stream.stream());
+
+                assert_eq!(output, input);
+            }
+        }
+    };
+
+    (@ [ $variant:ident :: bufread :: compress ]) => {
+        mod compress {
+            use crate::utils;
+            use std::iter::FromIterator;
+
+            #[test]
+            fn empty() {
+                let mut input: &[u8] = &[];
+                let compressed = utils::$variant::bufread::compress(&mut input);
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, &[][..]);
+            }
+
+            #[test]
+            fn empty_chunk() {
+                let input = utils::InputStream::from(vec![vec![]]);
+
+                let compressed = utils::$variant::bufread::compress(input.reader());
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, input.bytes());
+            }
+
+            #[test]
+            fn short() {
+                let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                let compressed = utils::$variant::bufread::compress(input.reader());
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            fn long() {
+                let input = vec![
+                    Vec::from_iter((0..20_000).map(|_| rand::random())),
+                    Vec::from_iter((0..20_000).map(|_| rand::random())),
+                ];
+                let input = utils::InputStream::from(input);
+
+                let compressed = utils::$variant::bufread::compress(input.reader());
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, input.bytes());
+            }
+        }
+    };
+
+    (@ [ $variant:ident :: $io:ident :: $sub:ident ]) => {
+        compile_error!(concat!("Unknown test cases ", stringify!($variant::$io::$sub)));
+    };
+
+    (@ [ $variant:ident :: $io:ident ] :: $sub:ident) => {
+        test_cases!(@ [ $variant :: $io :: $sub ]);
+    };
+
+    (@ [ $variant:ident :: $io:ident ] :: { $($sub:tt),* $(,)? }) => {
+        $(test_cases!(@ [ $variant :: $io ] :: $sub);)+
+    };
+
+    (@ [ $variant:ident ] :: $io:ident :: $($rest:tt)+) => {
+        mod $io {
+            test_cases!(@ [ $variant :: $io ] :: $($rest)+);
+        }
+    };
+
+    (@ [ $variant:ident ] :: { $($io:ident :: $sub:tt),* $(,)? }) => {
+        $(test_cases!(@ [ $variant ] :: $io :: $sub );)+
+    };
+
+    ($variant:ident :: $($rest:tt)+) => {
+        mod $variant {
+            test_cases!(@ [ $variant ] :: $($rest)+);
         }
     };
 }

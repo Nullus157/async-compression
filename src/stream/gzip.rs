@@ -26,7 +26,8 @@ enum DeState {
     ReadingHeader,
     Reading,
     Writing,
-    ReadingFooter,
+    Flushing,
+    CheckingFooter,
     Done,
     Invalid,
 }
@@ -332,6 +333,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for GzipDecoder<S> {
                     };
                     continue;
                 }
+
                 DeState::Reading => {
                     *this.state = DeState::Reading;
                     *this.state = match ready!(this.inner.as_mut().poll_next(cx)) {
@@ -343,7 +345,7 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for GzipDecoder<S> {
                             }
                             DeState::Writing
                         }
-                        None => DeState::ReadingFooter,
+                        None => DeState::Flushing,
                     };
                     continue;
                 }
@@ -370,7 +372,25 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for GzipDecoder<S> {
                     Poll::Ready(Some(Ok(chunk)))
                 }
 
-                DeState::ReadingFooter => {
+                DeState::Flushing => {
+                    let (status, chunk) = decompress(
+                        &mut this.decompress,
+                        &mut Bytes::new(),
+                        &mut this.output,
+                        &mut this.crc,
+                        FlushDecompress::Finish,
+                    )?;
+
+                    *this.state = match status {
+                        Status::Ok => DeState::Flushing,
+                        Status::StreamEnd => DeState::CheckingFooter,
+                        Status::BufError => panic!("unexpected BufError"),
+                    };
+
+                    Poll::Ready(Some(Ok(chunk)))
+                }
+
+                DeState::CheckingFooter => {
                     *this.state = DeState::Done;
                     if this.input.len() == 8 {
                         let crc = &this.crc.sum().to_le_bytes()[..];

@@ -66,7 +66,9 @@ impl<S: Stream<Item = Result<Bytes>>> ZstdEncoder<S> {
     pub fn new(stream: S, level: i32) -> ZstdEncoder<S> {
         ZstdEncoder {
             inner: stream,
-            state: State::Reading,
+            // zstd needs to have 0 bytes written to it to create a valid compressed 0 byte stream,
+            // just flushing it after not writing to it is not enough.
+            state: State::Writing(Bytes::new()),
             output: BytesMut::new(),
             encoder: Unshared::new(Encoder::new(level).unwrap()),
         }
@@ -178,14 +180,17 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for ZstdEncoder<S> {
                     continue;
                 }
                 State::Writing(mut input) => {
-                    if input.is_empty() {
-                        *this.state = State::Reading;
-                        continue;
-                    }
-
                     let chunk = compress(this.encoder.get_mut(), &mut input, &mut this.output)?;
 
-                    *this.state = State::Writing(input);
+                    if input.is_empty() {
+                        *this.state = State::Reading;
+                    } else {
+                        *this.state = State::Writing(input);
+                    }
+
+                    if chunk.is_empty() {
+                        continue;
+                    }
 
                     Poll::Ready(Some(Ok(chunk)))
                 }

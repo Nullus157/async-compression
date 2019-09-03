@@ -1,21 +1,13 @@
-#![allow(unused)] // Different tests use a different subset of functions
+#![allow(dead_code, unused_macros)] // Different tests use a different subset of functions
 
 use bytes::Bytes;
 use futures::{
-    executor::{block_on, block_on_stream},
-    io::{AsyncBufRead, AsyncRead, AsyncReadExt},
-    stream::{self, Stream, TryStreamExt},
+    io::AsyncBufRead,
+    stream::{self, Stream},
 };
 use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
-use pin_project::unsafe_project;
-use pin_utils::pin_mut;
 use proptest_derive::Arbitrary;
-use std::{
-    io::{self, Cursor, Read},
-    pin::Pin,
-    task::{Context, Poll},
-    vec,
-};
+use std::io::{self, Cursor};
 
 #[derive(Arbitrary, Debug)]
 pub struct InputStream(Vec<Vec<u8>>);
@@ -70,15 +62,8 @@ mod prelude {
         stream::{self, Stream, TryStreamExt},
     };
     pub use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
-    pub use pin_project::unsafe_project;
     pub use pin_utils::pin_mut;
-    pub use proptest_derive::Arbitrary;
-    pub use std::{
-        io::{self, Cursor, Read},
-        pin::Pin,
-        task::{Context, Poll},
-        vec,
-    };
+    pub use std::io::{self, Read};
 
     pub fn read_to_vec(mut read: impl Read) -> Vec<u8> {
         let mut output = vec![];
@@ -86,7 +71,7 @@ mod prelude {
         output
     }
 
-    pub fn async_read_to_vec(mut read: impl AsyncRead) -> Vec<u8> {
+    pub fn async_read_to_vec(read: impl AsyncRead) -> Vec<u8> {
         let mut output = vec![];
         pin_mut!(read);
         block_on(read.read_to_end(&mut output)).unwrap();

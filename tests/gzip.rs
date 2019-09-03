@@ -115,3 +115,13 @@ fn gzip_stream_decompress_empty() {
 
     assert_eq!(output, vec![]);
 }
+
+#[test]
+fn gzip_stream_decompress_large() {
+    let compressed = utils::gzip_compress(&[1; 20_000]);
+
+    let stream = utils::InputStream::from(vec![compressed]);
+    let output = utils::gzip_stream_decompress(stream.stream());
+
+    assert_eq!(output, &[1; 20_000][..]);
+}

@@ -1,92 +1,135 @@
-use proptest::{prelude::any, proptest};
-use std::iter::FromIterator;
-
 mod utils;
 
-proptest! {
-    #[test]
-    fn brotli_stream_compress(ref input in any::<utils::InputStream>()) {
-        let compressed = utils::brotli_stream_compress(input.stream());
-        let output = utils::brotli_decompress(&compressed);
-        assert_eq!(output, input.bytes());
+mod brotli {
+    mod stream {
+        use crate::utils;
+        use proptest::{prelude::any, proptest};
+        use std::iter::FromIterator;
+        proptest! {
+            #[test]
+            fn compress(ref input in any::<utils::InputStream>()) {
+                let compressed = utils::brotli::stream::compress(input.stream());
+                let output = utils::brotli::sync::decompress(&compressed);
+                assert_eq!(output, input.bytes());
+            }
+
+            #[test]
+            fn decompress(
+                ref input in any::<Vec<u8>>(),
+                chunk_size in 1..20usize,
+            ) {
+                let compressed = utils::brotli::sync::compress(input);
+                let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                let output = utils::brotli::stream::decompress(stream.stream());
+                assert_eq!(&output, input);
+            }
+        }
+    }
+}
+
+mod deflate {
+    mod stream {
+        use crate::utils;
+        use proptest::{prelude::any, proptest};
+        use std::iter::FromIterator;
+        proptest! {
+            #[test]
+            fn compress(ref input in any::<utils::InputStream>()) {
+                let compressed = utils::deflate::stream::compress(input.stream());
+                let output = utils::deflate::sync::decompress(&compressed);
+                assert_eq!(output, input.bytes());
+            }
+
+            #[test]
+            fn decompress(
+                ref input in any::<Vec<u8>>(),
+                chunk_size in 1..20usize,
+            ) {
+                let compressed = utils::deflate::sync::compress(input);
+                let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                let output = utils::deflate::stream::decompress(stream.stream());
+                assert_eq!(&output, input);
+            }
+        }
     }
 
-    #[test]
-    fn brotli_stream_decompress(
-        ref input in any::<Vec<u8>>(),
-        chunk_size in 1..20usize,
-    ) {
-        let compressed = utils::brotli_compress(input);
-        let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-        let output = utils::brotli_stream_decompress(stream.stream());
-        assert_eq!(&output, input);
+    mod bufread {
+        use crate::utils;
+        use proptest::{prelude::any, proptest};
+        proptest! {
+            #[test]
+            fn compress(ref input in any::<utils::InputStream>()) {
+                let compressed = utils::deflate::bufread::compress(input.reader());
+                let output = utils::deflate::sync::decompress(&compressed);
+                assert_eq!(output, input.bytes());
+            }
+        }
+    }
+}
+
+mod zlib {
+    mod stream {
+        use crate::utils;
+        use proptest::{prelude::any, proptest};
+        use std::iter::FromIterator;
+        proptest! {
+            #[test]
+            fn compress(ref input in any::<utils::InputStream>()) {
+                let compressed = utils::zlib::stream::compress(input.stream());
+                let output = utils::zlib::sync::decompress(&compressed);
+                assert_eq!(output, input.bytes());
+            }
+
+            #[test]
+            fn decompress(
+                ref input in any::<Vec<u8>>(),
+                chunk_size in 1..20usize,
+            ) {
+                let compressed = utils::zlib::sync::compress(input);
+                let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                let output = utils::zlib::stream::decompress(stream.stream());
+                assert_eq!(&output, input);
+            }
+        }
     }
 
-    #[test]
-    fn deflate_stream_compress(ref input in any::<utils::InputStream>()) {
-        let compressed = utils::deflate_stream_compress(input.stream());
-        let output = utils::deflate_decompress(&compressed);
-        assert_eq!(output, input.bytes());
+    mod bufread {
+        use crate::utils;
+        use proptest::{prelude::any, proptest};
+        proptest! {
+            #[test]
+            fn compress(ref input in any::<utils::InputStream>()) {
+                let compressed = utils::zlib::bufread::compress(input.reader());
+                let output = utils::zlib::sync::decompress(&compressed);
+                assert_eq!(output, input.bytes());
+            }
+        }
     }
+}
 
-    #[test]
-    fn deflate_stream_decompress(
-        ref input in any::<Vec<u8>>(),
-        chunk_size in 1..20usize,
-    ) {
-        let compressed = utils::deflate_compress(input);
-        let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-        let output = utils::deflate_stream_decompress(stream.stream());
-        assert_eq!(&output, input);
-    }
+mod gzip {
+    mod stream {
+        use crate::utils;
+        use proptest::{prelude::any, proptest};
+        use std::iter::FromIterator;
+        proptest! {
+            #[test]
+            fn compress(ref input in any::<utils::InputStream>()) {
+                let compressed = utils::gzip::stream::compress(input.stream());
+                let output = utils::gzip::sync::decompress(&compressed);
+                assert_eq!(output, input.bytes());
+            }
 
-    #[test]
-    fn deflate_bufread_compress(ref input in any::<utils::InputStream>()) {
-        let compressed = utils::deflate_bufread_compress(input.reader());
-        let output = utils::deflate_decompress(&compressed);
-        assert_eq!(output, input.bytes());
-    }
-
-    #[test]
-    fn zlib_stream_compress(ref input in any::<utils::InputStream>()) {
-        let compressed = utils::zlib_stream_compress(input.stream());
-        let output = utils::zlib_decompress(&compressed);
-        assert_eq!(output, input.bytes());
-    }
-
-    #[test]
-    fn zlib_stream_decompress(
-        ref input in any::<Vec<u8>>(),
-        chunk_size in 1..20usize,
-    ) {
-        let compressed = utils::zlib_compress(input);
-        let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-        let output = utils::zlib_stream_decompress(stream.stream());
-        assert_eq!(&output, input);
-    }
-
-    #[test]
-    fn zlib_bufread_compress(ref input in any::<utils::InputStream>()) {
-        let compressed = utils::zlib_bufread_compress(input.reader());
-        let output = utils::zlib_decompress(&compressed);
-        assert_eq!(output, input.bytes());
-    }
-
-    #[test]
-    fn gzip_stream_compress(ref input in any::<utils::InputStream>()) {
-        let compressed = utils::gzip_stream_compress(input.stream());
-        let output = utils::gzip_decompress(&compressed);
-        assert_eq!(output, input.bytes());
-    }
-
-    #[test]
-    fn gzip_stream_decompress(
-        ref input in any::<Vec<u8>>(),
-        chunk_size in 1..20usize,
-    ) {
-        let compressed = utils::gzip_compress(input);
-        let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-        let output = utils::gzip_stream_decompress(stream.stream());
-        assert_eq!(&output, input);
+            #[test]
+            fn decompress(
+                ref input in any::<Vec<u8>>(),
+                chunk_size in 1..20usize,
+            ) {
+                let compressed = utils::gzip::sync::compress(input);
+                let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                let output = utils::gzip::stream::decompress(stream.stream());
+                assert_eq!(&output, input);
+            }
+        }
     }
 }

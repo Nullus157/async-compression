@@ -1,10 +1,12 @@
+#![allow(dead_code)] // unused without any features
+
 use core::fmt::{self, Debug};
 
 /// Wraps a type and only allows unique borrowing, the main usecase is to wrap a `!Sync` type and
 /// implement `Sync` for it as this type blocks having multiple shared references to the inner
 /// value.
 ///
-/// # Safetay
+/// # Safety
 ///
 /// We must be careful when accessing `inner`, there must be no way to create a shared reference to
 /// it from a shared reference to an `Unshared`, as that would allow creating shared references on

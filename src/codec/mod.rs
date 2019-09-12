@@ -1,20 +1,30 @@
 use std::io::Result;
 
+#[cfg(feature = "brotli")]
 mod brotli;
+#[cfg(feature = "deflate")]
 mod deflate;
+#[cfg(feature = "flate2")]
 mod flate;
+#[cfg(feature = "gzip")]
 mod gzip;
+#[cfg(feature = "zlib")]
 mod zlib;
+#[cfg(feature = "zstd")]
 mod zstd;
 
-pub(crate) use self::{
-    brotli::{BrotliDecoder, BrotliEncoder},
-    deflate::{DeflateDecoder, DeflateEncoder},
-    flate::{FlateDecoder, FlateEncoder},
-    gzip::{GzipDecoder, GzipEncoder},
-    zlib::{ZlibDecoder, ZlibEncoder},
-    zstd::{ZstdDecoder, ZstdEncoder},
-};
+#[cfg(feature = "brotli")]
+pub(crate) use self::brotli::{BrotliDecoder, BrotliEncoder};
+#[cfg(feature = "deflate")]
+pub(crate) use self::deflate::{DeflateDecoder, DeflateEncoder};
+#[cfg(feature = "flate2")]
+pub(crate) use self::flate::{FlateDecoder, FlateEncoder};
+#[cfg(feature = "gzip")]
+pub(crate) use self::gzip::{GzipDecoder, GzipEncoder};
+#[cfg(feature = "zlib")]
+pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
+#[cfg(feature = "zstd")]
+pub(crate) use self::zstd::{ZstdDecoder, ZstdEncoder};
 
 pub trait Encoder {
     /// Return `Ok(bytes_produced)` when header was written

@@ -74,25 +74,28 @@ impl<S: Stream<Item = Result<Bytes>>, D: crate::codec::Decoder> Stream for Decod
                     *this.state = match ready!(this.stream.as_mut().poll_next(cx)) {
                         Some(chunk) => {
                             this.input.extend_from_slice(&chunk?);
-                            if this.input.len() >= 10 {
-                                let header = this.input.split_to(10);
-                                if header[0..3] != [0x1f, 0x8b, 0x08] {
-                                    return Poll::Ready(Some(Err(Error::new(
-                                        ErrorKind::InvalidData,
-                                        "Invalid file header",
-                                    ))));
+                            match this.decoder.parse_header(&this.input) {
+                                Some(Ok(len)) => {
+                                    this.input.split_to(len);
+                                    State::Writing
                                 }
-                                State::Writing
-                            } else {
-                                State::ReadingHeader
+                                Some(Err(err)) => return Poll::Ready(Some(Err(err))),
+                                None => State::ReadingHeader,
                             }
                         }
-                        None => {
-                            return Poll::Ready(Some(Err(Error::new(
-                                ErrorKind::InvalidData,
-                                "A valid header was not found",
-                            ))));
-                        }
+                        None => match this.decoder.parse_header(&this.input) {
+                            Some(Ok(len)) => {
+                                this.input.split_to(len);
+                                State::Writing
+                            }
+                            Some(Err(err)) => return Poll::Ready(Some(Err(err))),
+                            None => {
+                                return Poll::Ready(Some(Err(Error::new(
+                                    ErrorKind::InvalidData,
+                                    "A valid header was not found",
+                                ))));
+                            }
+                        },
                     };
                     continue;
                 }

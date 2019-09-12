@@ -1,8 +1,14 @@
 use std::io::Result;
 
+mod deflate;
+mod flate;
 mod gzip;
 
-pub(crate) use gzip::{GzipDecoder, GzipEncoder};
+pub(crate) use self::{
+    deflate::{DeflateDecoder, DeflateEncoder},
+    flate::{FlateDecoder, FlateEncoder},
+    gzip::{GzipDecoder, GzipEncoder},
+};
 
 pub trait Encoder {
     /// Return `Ok(bytes_produced)` when header was written

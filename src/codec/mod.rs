@@ -4,12 +4,14 @@ mod deflate;
 mod flate;
 mod gzip;
 mod zlib;
+mod zstd;
 
 pub(crate) use self::{
     deflate::{DeflateDecoder, DeflateEncoder},
     flate::{FlateDecoder, FlateEncoder},
     gzip::{GzipDecoder, GzipEncoder},
     zlib::{ZlibDecoder, ZlibEncoder},
+    zstd::{ZstdDecoder, ZstdEncoder},
 };
 
 pub trait Encoder {
@@ -17,10 +19,10 @@ pub trait Encoder {
     /// Return `Err(_)` if writing fails
     fn write_header(&mut self, output: &mut [u8]) -> Result<usize>;
 
-    /// Return `Ok((more_buffers_needed, input_consumed, output_produced))`
+    /// Return `Ok((done, input_consumed, output_produced))`
     fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
 
-    /// Return `Ok(more_buffer_needed, output_produced)`
+    /// Return `Ok(done, output_produced)`
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
 
     /// Return `Ok(bytes_produced)` if footer was written successfully
@@ -34,10 +36,10 @@ pub trait Decoder {
     /// Return `None` when more bytes needed
     fn parse_header(&mut self, input: &[u8]) -> Option<Result<usize>>;
 
-    /// Return `Ok((more_buffers_needed, input_consumed, output_produced))`
+    /// Return `Ok((done, input_consumed, output_produced))`
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
 
-    /// Return `Ok(more_buffer_needed, output_produced)`
+    /// Return `Ok(done, output_produced)`
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
 
     /// Return `Ok(())` if trailer was checked successfully

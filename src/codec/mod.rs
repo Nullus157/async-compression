@@ -1,5 +1,6 @@
 use std::io::Result;
 
+mod brotli;
 mod deflate;
 mod flate;
 mod gzip;
@@ -7,6 +8,7 @@ mod zlib;
 mod zstd;
 
 pub(crate) use self::{
+    brotli::{BrotliDecoder, BrotliEncoder},
     deflate::{DeflateDecoder, DeflateEncoder},
     flate::{FlateDecoder, FlateEncoder},
     gzip::{GzipDecoder, GzipEncoder},

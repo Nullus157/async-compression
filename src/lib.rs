@@ -36,6 +36,8 @@
     missing_debug_implementations
 )]
 
+mod codec;
+
 #[cfg(feature = "bufread")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bufread")))]
 pub mod bufread;

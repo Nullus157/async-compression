@@ -6,9 +6,11 @@ use std::{
 };
 
 use bytes::{BufMut, Bytes, BytesMut};
-use flate2::{Compress, Compression, Crc, Decompress, FlushCompress, FlushDecompress, Status};
+use flate2::{Compress, Compression, Crc, FlushCompress, Status};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
+
+use crate::codec::{self, Decoder};
 
 #[derive(Debug)]
 enum State {
@@ -61,8 +63,7 @@ pub struct GzipDecoder<S: Stream<Item = Result<Bytes>>> {
     state: DeState,
     input: Bytes,
     output: BytesMut,
-    crc: Crc,
-    decompress: Decompress,
+    decoder: codec::GzipDecoder,
 }
 
 impl<S: Stream<Item = Result<Bytes>>> GzipEncoder<S> {
@@ -117,8 +118,7 @@ impl<S: Stream<Item = Result<Bytes>>> GzipDecoder<S> {
             state: DeState::ReadingHeader,
             input: Bytes::new(),
             output: BytesMut::new(),
-            crc: Crc::new(),
-            decompress: Decompress::new(false),
+            decoder: codec::GzipDecoder::new(),
         }
     }
 
@@ -278,30 +278,9 @@ fn get_header(level: Compression) -> Bytes {
 impl<S: Stream<Item = Result<Bytes>>> Stream for GzipDecoder<S> {
     type Item = Result<Bytes>;
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
+        const OUTPUT_BUFFER_SIZE: usize = 8_000;
+
         let mut this = self.project();
-
-        fn decompress(
-            decompress: &mut Decompress,
-            input: &mut Bytes,
-            output: &mut BytesMut,
-            crc: &mut Crc,
-            flush: FlushDecompress,
-        ) -> Result<(Status, Bytes)> {
-            const OUTPUT_BUFFER_SIZE: usize = 8_000;
-
-            if output.len() < OUTPUT_BUFFER_SIZE {
-                output.resize(OUTPUT_BUFFER_SIZE, 0);
-            }
-
-            let (prior_in, prior_out) = (decompress.total_in(), decompress.total_out());
-            let status = decompress.decompress(input, output, flush)?;
-            let input_len = decompress.total_in() - prior_in;
-            let output_len = decompress.total_out() - prior_out;
-
-            crc.update(&output[0..output_len as usize]);
-            input.advance(input_len as usize);
-            Ok((status, output.split_to(output_len as usize).freeze()))
-        }
 
         #[allow(clippy::never_loop)] // https://github.com/rust-lang/rust-clippy/issues/4058
         loop {
@@ -351,69 +330,41 @@ impl<S: Stream<Item = Result<Bytes>>> Stream for GzipDecoder<S> {
                 }
 
                 DeState::Writing => {
-                    if this.input.len() <= 8 {
-                        *this.state = DeState::Reading;
-                        continue;
+                    if this.output.len() < OUTPUT_BUFFER_SIZE {
+                        this.output.resize(OUTPUT_BUFFER_SIZE, 0);
                     }
-                    let (status, chunk) = decompress(
-                        &mut this.decompress,
-                        this.input,
-                        &mut this.output,
-                        &mut this.crc,
-                        FlushDecompress::None,
-                    )?;
 
-                    *this.state = match status {
-                        Status::Ok => DeState::Writing,
-                        Status::StreamEnd => DeState::Reading,
-                        Status::BufError => panic!("unexpected BufError"),
+                    let (done, input_len, output_len) =
+                        this.decoder.decode(&this.input, &mut this.output)?;
+
+                    *this.state = if done {
+                        DeState::Reading
+                    } else {
+                        DeState::Writing
                     };
-
-                    Poll::Ready(Some(Ok(chunk)))
+                    this.input.advance(input_len);
+                    Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
                 }
 
                 DeState::Flushing => {
-                    let (status, chunk) = decompress(
-                        &mut this.decompress,
-                        &mut Bytes::new(),
-                        &mut this.output,
-                        &mut this.crc,
-                        FlushDecompress::Finish,
-                    )?;
+                    if this.output.len() < OUTPUT_BUFFER_SIZE {
+                        this.output.resize(OUTPUT_BUFFER_SIZE, 0);
+                    }
 
-                    *this.state = match status {
-                        Status::Ok => DeState::Flushing,
-                        Status::StreamEnd => DeState::CheckingFooter,
-                        Status::BufError => panic!("unexpected BufError"),
+                    let (done, output_len) = this.decoder.flush(&mut this.output)?;
+
+                    *this.state = if done {
+                        DeState::CheckingFooter
+                    } else {
+                        DeState::Reading
                     };
-
-                    Poll::Ready(Some(Ok(chunk)))
+                    Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
                 }
 
                 DeState::CheckingFooter => {
+                    this.decoder.check_footer(&this.input)?;
                     *this.state = DeState::Done;
-                    if this.input.len() == 8 {
-                        let crc = &this.crc.sum().to_le_bytes()[..];
-                        let bytes_read = &this.crc.amount().to_le_bytes()[..];
-                        if crc != &this.input[0..4] {
-                            Poll::Ready(Some(Err(Error::new(
-                                ErrorKind::InvalidData,
-                                "CRC computed does not match",
-                            ))))
-                        } else if bytes_read != &this.input[4..8] {
-                            Poll::Ready(Some(Err(Error::new(
-                                ErrorKind::InvalidData,
-                                "amount of bytes read does not match",
-                            ))))
-                        } else {
-                            Poll::Ready(None)
-                        }
-                    } else {
-                        Poll::Ready(Some(Err(Error::new(
-                            ErrorKind::UnexpectedEof,
-                            "reached unexpected EOF",
-                        ))))
-                    }
+                    Poll::Ready(None)
                 }
 
                 DeState::Done => Poll::Ready(None),

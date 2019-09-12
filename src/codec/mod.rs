@@ -4,7 +4,7 @@ mod gzip;
 
 pub(crate) use gzip::{GzipDecoder, GzipEncoder};
 
-pub(crate) trait Encoder {
+pub trait Encoder {
     /// Return `Ok(bytes_produced)` when header was written
     /// Return `Err(_)` if writing fails
     fn write_header(&mut self, output: &mut [u8]) -> Result<usize>;
@@ -20,7 +20,7 @@ pub(crate) trait Encoder {
     fn write_footer(&mut self, ouput: &mut [u8]) -> Result<usize>;
 }
 
-pub(crate) trait Decoder {
+pub trait Decoder {
     /// Return `Some(Ok(bytes_consumed)` when header was finished
     /// Return `Some(Err(_))` if parsing fails
     /// Return `None` when more bytes needed

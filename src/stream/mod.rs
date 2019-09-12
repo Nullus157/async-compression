@@ -8,6 +8,8 @@
 //! stream, the encoders and decoders will buffer the incoming data and choose their own boundaries
 //! at which to yield a new item.
 
+mod generic;
+
 #[cfg(feature = "brotli")]
 mod brotli;
 #[cfg(feature = "deflate")]

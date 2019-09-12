@@ -4,7 +4,7 @@ use std::io::{Error, ErrorKind, Result};
 use flate2::{Crc, Decompress, FlushDecompress, Status};
 
 #[derive(Debug)]
-pub(crate) struct GzipDecoder {
+pub struct GzipDecoder {
     crc: Crc,
     decompress: Decompress,
 }

@@ -1,39 +1,20 @@
 use crate::codec::Decoder;
 use std::io::{Error, ErrorKind, Result};
 
-use flate2::{Crc, Decompress, FlushDecompress, Status};
+use flate2::Crc;
 
 #[derive(Debug)]
 pub struct GzipDecoder {
+    inner: crate::codec::FlateDecoder,
     crc: Crc,
-    decompress: Decompress,
 }
 
 impl GzipDecoder {
     pub(crate) fn new() -> Self {
         Self {
+            inner: crate::codec::FlateDecoder::new(false),
             crc: Crc::new(),
-            decompress: Decompress::new(false),
         }
-    }
-
-    fn do_decode(
-        &mut self,
-        input: &[u8],
-        output: &mut [u8],
-        flush: FlushDecompress,
-    ) -> Result<(Status, usize, usize)> {
-        let prior_in = self.decompress.total_in();
-        let prior_out = self.decompress.total_out();
-
-        let status = self.decompress.decompress(input, output, flush)?;
-
-        let in_length = (self.decompress.total_in() - prior_in) as usize;
-        let out_length = (self.decompress.total_out() - prior_out) as usize;
-
-        self.crc.update(&output[..out_length]);
-
-        Ok((status, in_length, out_length))
     }
 }
 
@@ -54,28 +35,15 @@ impl Decoder for GzipDecoder {
     }
 
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        if input.is_empty() {
-            return Ok((true, 0, 0));
-        }
-
-        let (status, in_length, out_length) =
-            self.do_decode(input, output, FlushDecompress::None)?;
-
-        match status {
-            Status::Ok => Ok((false, in_length, out_length)),
-            Status::StreamEnd => Ok((true, in_length, out_length)),
-            Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
-        }
+        let (done, in_length, out_length) = self.inner.decode(input, output)?;
+        self.crc.update(&output[..out_length]);
+        Ok((done, in_length, out_length))
     }
 
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let (status, _, out_length) = self.do_decode(&[], output, FlushDecompress::Finish)?;
-
-        match status {
-            Status::Ok => Ok((false, out_length)),
-            Status::StreamEnd => Ok((true, out_length)),
-            Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
-        }
+        let (done, out_length) = self.inner.flush(output)?;
+        self.crc.update(&output[..out_length]);
+        Ok((done, out_length))
     }
 
     fn check_footer(&mut self, input: &[u8]) -> Result<()> {

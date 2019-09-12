@@ -14,8 +14,6 @@ mod generic;
 mod brotli;
 #[cfg(feature = "deflate")]
 mod deflate;
-#[cfg(any(feature = "deflate", feature = "gzip", feature = "zlib"))]
-mod flate;
 #[cfg(feature = "gzip")]
 mod gzip;
 #[cfg(feature = "zlib")]

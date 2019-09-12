@@ -3,11 +3,13 @@ use std::io::Result;
 mod deflate;
 mod flate;
 mod gzip;
+mod zlib;
 
 pub(crate) use self::{
     deflate::{DeflateDecoder, DeflateEncoder},
     flate::{FlateDecoder, FlateEncoder},
     gzip::{GzipDecoder, GzipEncoder},
+    zlib::{ZlibDecoder, ZlibEncoder},
 };
 
 pub trait Encoder {

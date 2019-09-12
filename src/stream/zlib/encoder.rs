@@ -9,13 +9,13 @@ use flate2::Compression;
 use futures::stream::Stream;
 use pin_project::unsafe_project;
 
-/// A gzip encoder, or compressor.
+/// A zlib encoder, or compressor.
 ///
 /// This structure implements a [`Stream`] interface and will read uncompressed data from an
 /// underlying stream and emit a stream of compressed data.
 #[unsafe_project(Unpin)]
 #[derive(Debug)]
-#[cfg_attr(docsrs, doc(cfg(feature = "gzip")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "zlib")))]
 pub struct ZlibEncoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: crate::stream::generic::Encoder<S, crate::codec::ZlibEncoder>,

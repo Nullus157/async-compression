@@ -8,13 +8,13 @@ use bytes::Bytes;
 use futures::stream::Stream;
 use pin_project::unsafe_project;
 
-/// A gzip decoder, or compressor.
+/// A deflate decoder, or decompressor.
 ///
 /// This structure implements a [`Stream`] interface and will read compressed data from an
 /// underlying stream and emit a stream of uncompressed data.
 #[unsafe_project(Unpin)]
 #[derive(Debug)]
-#[cfg_attr(docsrs, doc(cfg(feature = "gzip")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "deflate")))]
 pub struct DeflateDecoder<S: Stream<Item = Result<Bytes>>> {
     #[pin]
     inner: crate::stream::generic::Decoder<S, crate::codec::DeflateDecoder>,

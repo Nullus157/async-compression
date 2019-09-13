@@ -34,10 +34,6 @@ impl FlateEncoder {
 }
 
 impl Encode for FlateEncoder {
-    fn write_header(&mut self, _output: &mut [u8]) -> Result<usize> {
-        Ok(0)
-    }
-
     fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
         if input.is_empty() {
             return Ok((true, 0, 0));
@@ -60,9 +56,5 @@ impl Encode for FlateEncoder {
             Status::StreamEnd => Ok((true, out_length)),
             Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
         }
-    }
-
-    fn write_footer(&mut self, _output: &mut [u8]) -> Result<usize> {
-        Ok(0)
     }
 }

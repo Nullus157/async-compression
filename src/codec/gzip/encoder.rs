@@ -1,5 +1,5 @@
 use crate::codec::Encode;
-use std::io::{Error, ErrorKind, Result};
+use std::io::Result;
 
 use flate2::{Compression, Crc};
 
@@ -21,14 +21,7 @@ impl GzipEncoder {
 }
 
 impl Encode for GzipEncoder {
-    fn write_header(&mut self, output: &mut [u8]) -> Result<usize> {
-        if output.len() < 10 {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "output buffer too short",
-            ));
-        }
-
+    fn header(&mut self) -> Vec<u8> {
         let level_byte = if self.level.level() >= Compression::best().level() {
             0x02
         } else if self.level.level() <= Compression::fast().level() {
@@ -37,11 +30,7 @@ impl Encode for GzipEncoder {
             0x00
         };
 
-        let header = [0x1f, 0x8b, 0x08, 0, 0, 0, 0, 0, level_byte, 0xff];
-
-        output[0..10].copy_from_slice(&header);
-
-        Ok(10)
+        vec![0x1f, 0x8b, 0x08, 0, 0, 0, 0, 0, level_byte, 0xff]
     }
 
     fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
@@ -54,15 +43,12 @@ impl Encode for GzipEncoder {
         self.inner.flush(output)
     }
 
-    fn write_footer(&mut self, output: &mut [u8]) -> Result<usize> {
-        if output.len() < 8 {}
+    fn footer(&mut self) -> Vec<u8> {
+        let mut output = Vec::with_capacity(8);
 
-        let crc = self.crc.sum().to_le_bytes();
-        let bytes_read = self.crc.amount().to_le_bytes();
+        output.extend(&self.crc.sum().to_le_bytes());
+        output.extend(&self.crc.amount().to_le_bytes());
 
-        output[0..4].copy_from_slice(&crc);
-        output[4..8].copy_from_slice(&bytes_read);
-
-        Ok(8)
+        output
     }
 }

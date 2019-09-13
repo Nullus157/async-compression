@@ -27,9 +27,9 @@ pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
 pub(crate) use self::zstd::{ZstdDecoder, ZstdEncoder};
 
 pub trait Encode {
-    /// Return `Ok(bytes_produced)` when header was written
-    /// Return `Err(_)` if writing fails
-    fn write_header(&mut self, output: &mut [u8]) -> Result<usize>;
+    fn header(&mut self) -> Vec<u8> {
+        Vec::new()
+    }
 
     /// Return `Ok((done, input_consumed, output_produced))`
     fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
@@ -37,9 +37,9 @@ pub trait Encode {
     /// Return `Ok(done, output_produced)`
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
 
-    /// Return `Ok(bytes_produced)` if footer was written successfully
-    /// Return `Err(_)` if writing fails
-    fn write_footer(&mut self, ouput: &mut [u8]) -> Result<usize>;
+    fn footer(&mut self) -> Vec<u8> {
+        Vec::new()
+    }
 }
 
 pub trait Decode {

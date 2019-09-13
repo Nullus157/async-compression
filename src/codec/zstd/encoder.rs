@@ -16,13 +16,14 @@ impl ZstdEncoder {
 }
 
 impl Encode for ZstdEncoder {
-    fn write_header(&mut self, output: &mut [u8]) -> Result<usize> {
+    fn header(&mut self) -> Vec<u8> {
         // zstd needs to have 0 bytes written to it to create a valid compressed 0 byte stream,
         // just flushing it after not writing to it is not enough, here seems a decent place to do
         // it.
-        let status = self.encoder.get_mut().run_on_buffers(&[], output)?;
-        dbg!(status.bytes_read);
-        Ok(dbg!(status.bytes_written))
+        let mut output = vec![0; 128];
+        let status = self.encoder.get_mut().run_on_buffers(&[], &mut output).unwrap();
+        output.truncate(status.bytes_written);
+        output
     }
 
     fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
@@ -46,9 +47,5 @@ impl Encode for ZstdEncoder {
             self.encoder.get_mut().finish(&mut output, true)?;
         }
         Ok((bytes_left == 0, dbg!(output.as_slice().len())))
-    }
-
-    fn write_footer(&mut self, _output: &mut [u8]) -> Result<usize> {
-        Ok(0)
     }
 }

@@ -13,10 +13,10 @@ use pin_project::unsafe_project;
 
 #[derive(Debug)]
 enum State {
-    Header,
+    Header(PartialBuffer<Vec<u8>>),
     Encoding,
     Flushing,
-    Footer,
+    Footer(PartialBuffer<Vec<u8>>),
     Done,
 }
 
@@ -30,11 +30,12 @@ pub struct Encoder<R: AsyncBufRead, E: Encode> {
 }
 
 impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
-    pub fn new(reader: R, encoder: E) -> Self {
+    pub fn new(reader: R, mut encoder: E) -> Self {
+        let header = PartialBuffer::new(encoder.header());
         Self {
             reader,
             encoder,
-            state: State::Header,
+            state: State::Header(header),
         }
     }
 
@@ -55,22 +56,23 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
     }
 }
 
-struct PartialBuffer<'a> {
-    buffer: &'a mut [u8],
+#[derive(Debug)]
+struct PartialBuffer<B: AsMut<[u8]>> {
+    buffer: B,
     index: usize,
 }
 
-impl<'a> PartialBuffer<'a> {
-    fn new(buffer: &'a mut [u8]) -> Self {
+impl<B: AsMut<[u8]>> PartialBuffer<B> {
+    fn new(buffer: B) -> Self {
         Self { buffer, index: 0 }
     }
 
     fn written(&mut self) -> &mut [u8] {
-        &mut self.buffer[..self.index]
+        &mut self.buffer.as_mut()[..self.index]
     }
 
     fn unwritten(&mut self) -> &mut [u8] {
-        &mut self.buffer[self.index..]
+        &mut self.buffer.as_mut()[self.index..]
     }
 
     fn advance(&mut self, amount: usize) {
@@ -89,12 +91,16 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
         let mut output = PartialBuffer::new(buf);
         loop {
             let (state, done) = match this.state {
-                State::Header => {
-                    // TODO: This will error if the output buffer is small, need to allow partial
-                    // writes of the header.
-                    let output_len = this.encoder.write_header(output.unwritten())?;
-                    output.advance(output_len);
-                    (State::Encoding, false)
+                State::Header(header) => {
+                    let len = std::cmp::min(output.unwritten().len(), header.unwritten().len());
+                    output.unwritten()[..len].copy_from_slice(&header.unwritten()[..len]);
+                    output.advance(len);
+                    header.advance(len);
+                    if header.unwritten().is_empty() {
+                        (State::Encoding, false)
+                    } else {
+                        (State::Header(std::mem::replace(header, PartialBuffer::new(Vec::new()))), false)
+                    }
                 }
 
                 State::Encoding => {
@@ -115,18 +121,22 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
                     output.advance(output_len);
 
                     if done {
-                        (State::Footer, false)
+                        (State::Footer(PartialBuffer::new(this.encoder.footer())), false)
                     } else {
                         (State::Flushing, true)
                     }
                 }
 
-                State::Footer => {
-                    // TODO: This will error if the output buffer is small, need to allow partial
-                    // writes of the footer.
-                    let output_len = this.encoder.write_footer(output.unwritten())?;
-                    output.advance(output_len);
-                    (State::Done, true)
+                State::Footer(footer) => {
+                    let len = std::cmp::min(output.unwritten().len(), footer.unwritten().len());
+                    output.unwritten()[..len].copy_from_slice(&footer.unwritten()[..len]);
+                    output.advance(len);
+                    footer.advance(len);
+                    if footer.unwritten().is_empty() {
+                        (State::Done, true)
+                    } else {
+                        (State::Footer(std::mem::replace(footer, PartialBuffer::new(Vec::new()))), false)
+                    }
                 }
 
                 State::Done => (State::Done, true),

@@ -72,10 +72,8 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
         loop {
             break match mem::replace(this.state, State::Invalid) {
                 State::WritingHeader => {
-                    this.output.resize(OUTPUT_BUFFER_SIZE, 0);
-                    let output_len = this.encoder.write_header(&mut this.output)?;
                     *this.state = State::Reading;
-                    Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
+                    Poll::Ready(Some(Ok(this.encoder.header().into())))
                 }
 
                 State::Reading => {
@@ -120,16 +118,13 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
                 }
 
                 State::WritingFooter => {
-                    this.output.resize(OUTPUT_BUFFER_SIZE, 0);
-
-                    let output_len = this.encoder.write_footer(&mut this.output)?;
                     *this.state = State::Done;
-                    Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
+                    Poll::Ready(Some(Ok(this.encoder.footer().into())))
                 }
 
                 State::Done => Poll::Ready(None),
 
-                State::Invalid => panic!("GzipEncoder reached invalid state"),
+                State::Invalid => panic!("Encoder reached invalid state"),
             };
         }
     }

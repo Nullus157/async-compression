@@ -75,28 +75,22 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                     *this.state = match ready!(this.stream.as_mut().poll_next(cx)) {
                         Some(chunk) => {
                             this.input.extend_from_slice(&chunk?);
-                            match this.decoder.parse_header(&this.input) {
-                                Some(Ok(len)) => {
-                                    this.input.split_to(len);
-                                    State::Writing
-                                }
-                                Some(Err(err)) => return Poll::Ready(Some(Err(err))),
-                                None => State::ReadingHeader,
-                            }
-                        }
-                        None => match this.decoder.parse_header(&this.input) {
-                            Some(Ok(len)) => {
+                            if let Some(len) = this.decoder.parse_header(&this.input)? {
                                 this.input.split_to(len);
                                 State::Writing
+                            } else {
+                                State::ReadingHeader
                             }
-                            Some(Err(err)) => return Poll::Ready(Some(Err(err))),
-                            None => {
+                        }
+                        None => if let Some(len) = this.decoder.parse_header(&this.input)? {
+                                this.input.split_to(len);
+                                State::Writing
+                            } else {
                                 return Poll::Ready(Some(Err(Error::new(
                                     ErrorKind::InvalidData,
                                     "A valid header was not found",
                                 ))));
                             }
-                        },
                     };
                     continue;
                 }
@@ -146,9 +140,13 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                 }
 
                 State::CheckingFooter => {
-                    this.decoder.check_footer(&this.input)?;
-                    *this.state = State::Done;
-                    Poll::Ready(None)
+                    if let Some(len) = this.decoder.check_footer(&this.input)? {
+                        this.input.advance(len);
+                        *this.state = State::Done;
+                        Poll::Ready(None)
+                    } else {
+                        Poll::Ready(Some(Err(Error::new(ErrorKind::UnexpectedEof, "could not read footer"))))
+                    }
                 }
 
                 State::Done => Poll::Ready(None),

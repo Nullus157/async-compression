@@ -32,10 +32,6 @@ impl BrotliDecoder {
 }
 
 impl Decode for BrotliDecoder {
-    fn parse_header(&mut self, _input: &[u8]) -> Option<Result<usize>> {
-        Some(Ok(0))
-    }
-
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
         if input.is_empty() {
             return Ok((true, 0, 0));
@@ -59,17 +55,6 @@ impl Decode for BrotliDecoder {
                 ErrorKind::UnexpectedEof,
                 "reached unexpected EOF",
             )),
-        }
-    }
-
-    fn check_footer(&mut self, input: &[u8]) -> Result<()> {
-        if input.is_empty() {
-            Ok(())
-        } else {
-            Err(Error::new(
-                ErrorKind::InvalidData,
-                "extra data after end of compressed block",
-            ))
         }
     }
 }

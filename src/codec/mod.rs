@@ -43,10 +43,13 @@ pub trait Encode {
 }
 
 pub trait Decode {
-    /// Return `Some(Ok(bytes_consumed)` when header was finished
-    /// Return `Some(Err(_))` if parsing fails
-    /// Return `None` when more bytes needed
-    fn parse_header(&mut self, input: &[u8]) -> Option<Result<usize>>;
+    /// Return `Ok(Some(bytes_consumed)` if header was finished
+    /// Return `Ok(None)` if more bytes needed
+    /// Return `Err(_)` if parsing fails
+    fn parse_header(&mut self, input: &[u8]) -> Result<Option<usize>> {
+        let _ = input;
+        Ok(Some(0))
+    }
 
     /// Return `Ok((done, input_consumed, output_produced))`
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
@@ -54,7 +57,11 @@ pub trait Decode {
     /// Return `Ok(done, output_produced)`
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
 
-    /// Return `Ok(())` if trailer was checked successfully
+    /// Return `Ok(Some(bytes_consumed))` if trailer was checked successfully
+    /// Return `Ok(None)` if more bytes needed
     /// Return `Err(_)` if checking fails
-    fn check_footer(&mut self, input: &[u8]) -> Result<()>;
+    fn check_footer(&mut self, input: &[u8]) -> Result<Option<usize>> {
+        let _ = input;
+        Ok(Some(0))
+    }
 }

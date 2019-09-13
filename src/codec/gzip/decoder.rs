@@ -19,19 +19,20 @@ impl GzipDecoder {
 }
 
 impl Decode for GzipDecoder {
-    fn parse_header(&mut self, input: &[u8]) -> Option<Result<usize>> {
-        if input.len() >= 10 {
-            if input[0..3] == [0x1f, 0x8b, 0x08] {
-                Some(Ok(10))
-            } else {
-                Some(Err(Error::new(
-                    ErrorKind::InvalidData,
-                    "Invalid gzip header",
-                )))
-            }
-        } else {
-            None
+    fn parse_header(&mut self, input: &[u8]) -> Result<Option<usize>> {
+        if input.len() < 10 {
+            return Ok(None);
         }
+
+        if input[0..3] != [0x1f, 0x8b, 0x08] {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Invalid gzip header",
+            ));
+        }
+
+        // TODO: Check that header doesn't contain any extra headers
+        Ok(Some(10))
     }
 
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
@@ -46,34 +47,28 @@ impl Decode for GzipDecoder {
         Ok((done, out_length))
     }
 
-    fn check_footer(&mut self, input: &[u8]) -> Result<()> {
-        match input.len().cmp(&8) {
-            std::cmp::Ordering::Less => Err(Error::new(
-                ErrorKind::UnexpectedEof,
-                "reached unexpected EOF",
-            )),
-            std::cmp::Ordering::Greater => Err(Error::new(
-                ErrorKind::InvalidData,
-                "extra data after end of compressed block",
-            )),
-            std::cmp::Ordering::Equal => {
-                let crc = self.crc.sum().to_le_bytes();
-                let bytes_read = self.crc.amount().to_le_bytes();
-
-                if crc != input[0..4] {
-                    Err(Error::new(
-                        ErrorKind::InvalidData,
-                        "CRC computed does not match",
-                    ))
-                } else if bytes_read != input[4..8] {
-                    Err(Error::new(
-                        ErrorKind::InvalidData,
-                        "amount of bytes read does not match",
-                    ))
-                } else {
-                    Ok(())
-                }
-            }
+    fn check_footer(&mut self, input: &[u8]) -> Result<Option<usize>> {
+        if input.len() < 8 {
+            return Ok(None);
         }
+
+        let crc = self.crc.sum().to_le_bytes();
+        let bytes_read = self.crc.amount().to_le_bytes();
+
+        if crc != input[0..4] {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "CRC computed does not match",
+            ))
+        }
+
+        if bytes_read != input[4..8] {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "amount of bytes read does not match",
+            ))
+        }
+
+        Ok(Some(8))
     }
 }

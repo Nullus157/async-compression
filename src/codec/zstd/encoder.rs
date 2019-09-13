@@ -38,8 +38,8 @@ impl Encode for ZstdEncoder {
         let status = self.encoder.get_mut().run_on_buffers(input, output)?;
         Ok((
             status.bytes_read == input.len(),
-            dbg!(status.bytes_read),
-            dbg!(status.bytes_written),
+            status.bytes_read,
+            status.bytes_written,
         ))
     }
 
@@ -50,6 +50,6 @@ impl Encode for ZstdEncoder {
         if bytes_left == 0 {
             self.encoder.get_mut().finish(&mut output, true)?;
         }
-        Ok((bytes_left == 0, dbg!(output.as_slice().len())))
+        Ok((bytes_left == 0, output.as_slice().len()))
     }
 }

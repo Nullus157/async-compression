@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-use crate::{codec::Encode, bufread::generic::PartialBuffer};
+use crate::{bufread::generic::PartialBuffer, codec::Encode};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
@@ -31,11 +31,11 @@ pub struct Encoder<R: AsyncBufRead, E: Encode> {
 
 impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
     pub fn new(reader: R, mut encoder: E) -> Self {
-        let header = PartialBuffer::new(encoder.header());
+        let header = encoder.header();
         Self {
             reader,
             encoder,
-            state: State::Header(header),
+            state: State::Header(header.into()),
         }
     }
 
@@ -75,7 +75,7 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
                     if header.unwritten().is_empty() {
                         (State::Encoding, false)
                     } else {
-                        (State::Header(std::mem::replace(header, PartialBuffer::new(Vec::new()))), false)
+                        (State::Header(header.take()), false)
                     }
                 }
 
@@ -97,7 +97,7 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
                     output.advance(output_len);
 
                     if done {
-                        (State::Footer(PartialBuffer::new(this.encoder.footer())), false)
+                        (State::Footer(this.encoder.footer().into()), false)
                     } else {
                         (State::Flushing, true)
                     }
@@ -111,7 +111,7 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
                     if footer.unwritten().is_empty() {
                         (State::Done, true)
                     } else {
-                        (State::Footer(std::mem::replace(footer, PartialBuffer::new(Vec::new()))), false)
+                        (State::Footer(footer.take()), false)
                     }
                 }
 

@@ -21,7 +21,11 @@ impl Encode for ZstdEncoder {
         // just flushing it after not writing to it is not enough, here seems a decent place to do
         // it.
         let mut output = vec![0; 128];
-        let status = self.encoder.get_mut().run_on_buffers(&[], &mut output).unwrap();
+        let status = self
+            .encoder
+            .get_mut()
+            .run_on_buffers(&[], &mut output)
+            .unwrap();
         output.truncate(status.bytes_written);
         output
     }

@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-use crate::{codec::Decode, bufread::generic::PartialBuffer};
+use crate::{bufread::generic::PartialBuffer, codec::Decode};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
@@ -75,7 +75,8 @@ impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
 
                 State::Decoding => {
                     let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
-                    let (done, input_len, output_len) = this.decoder.decode(input, output.unwritten())?;
+                    let (done, input_len, output_len) =
+                        this.decoder.decode(input, output.unwritten())?;
                     this.reader.as_mut().consume(input_len);
                     output.advance(output_len);
                     if done {
@@ -125,9 +126,7 @@ impl<R: AsyncBufRead, E: Decode> AsyncRead for Decoder<R, E> {
     ) -> Poll<Result<usize>> {
         let mut output = PartialBuffer::new(buf);
         match self.do_poll_read(cx, &mut output)? {
-            Poll::Pending if output.written().is_empty() => {
-                Poll::Pending
-            }
+            Poll::Pending if output.written().is_empty() => Poll::Pending,
             _ => Poll::Ready(Ok(output.written().len())),
         }
     }

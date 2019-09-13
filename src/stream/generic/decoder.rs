@@ -82,7 +82,8 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                                 State::ReadingHeader
                             }
                         }
-                        None => if let Some(len) = this.decoder.parse_header(&this.input)? {
+                        None => {
+                            if let Some(len) = this.decoder.parse_header(&this.input)? {
                                 this.input.split_to(len);
                                 State::Writing
                             } else {
@@ -91,6 +92,7 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                                     "A valid header was not found",
                                 ))));
                             }
+                        }
                     };
                     continue;
                 }
@@ -145,7 +147,10 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                         *this.state = State::Done;
                         Poll::Ready(None)
                     } else {
-                        Poll::Ready(Some(Err(Error::new(ErrorKind::UnexpectedEof, "could not read footer"))))
+                        Poll::Ready(Some(Err(Error::new(
+                            ErrorKind::UnexpectedEof,
+                            "could not read footer",
+                        ))))
                     }
                 }
 

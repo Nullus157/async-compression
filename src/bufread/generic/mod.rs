@@ -1,7 +1,7 @@
-mod encoder;
 mod decoder;
+mod encoder;
 
-pub use self::{encoder::Encoder, decoder::Decoder};
+pub use self::{decoder::Decoder, encoder::Encoder};
 
 #[derive(Debug)]
 struct PartialBuffer<B: AsRef<[u8]> + AsMut<[u8]>> {
@@ -27,3 +27,14 @@ impl<B: AsRef<[u8]> + AsMut<[u8]>> PartialBuffer<B> {
     }
 }
 
+impl<B: AsRef<[u8]> + AsMut<[u8]> + Default> PartialBuffer<B> {
+    fn take(&mut self) -> Self {
+        std::mem::replace(self, Self::new(B::default()))
+    }
+}
+
+impl<B: AsRef<[u8]> + AsMut<[u8]>> From<B> for PartialBuffer<B> {
+    fn from(buffer: B) -> Self {
+        Self::new(buffer)
+    }
+}

@@ -1,4 +1,4 @@
-mod encoder;
 mod decoder;
+mod encoder;
 
-pub use self::{encoder::DeflateEncoder, decoder::DeflateDecoder};
+pub use self::{decoder::DeflateDecoder, encoder::DeflateEncoder};

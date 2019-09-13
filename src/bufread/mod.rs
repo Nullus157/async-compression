@@ -3,7 +3,7 @@
 
 mod generic;
 
-pub(crate) use generic::{Encoder, Decoder};
+pub(crate) use generic::{Decoder, Encoder};
 
 #[cfg(feature = "deflate")]
 mod deflate;
@@ -11,6 +11,6 @@ mod deflate;
 mod zlib;
 
 #[cfg(feature = "deflate")]
-pub use deflate::{DeflateEncoder, DeflateDecoder};
+pub use deflate::{DeflateDecoder, DeflateEncoder};
 #[cfg(feature = "zlib")]
 pub use zlib::ZlibEncoder;

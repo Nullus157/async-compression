@@ -25,10 +25,7 @@ impl Decode for GzipDecoder {
         }
 
         if input[0..3] != [0x1f, 0x8b, 0x08] {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Invalid gzip header",
-            ));
+            return Err(Error::new(ErrorKind::InvalidData, "Invalid gzip header"));
         }
 
         // TODO: Check that header doesn't contain any extra headers
@@ -59,14 +56,14 @@ impl Decode for GzipDecoder {
             return Err(Error::new(
                 ErrorKind::InvalidData,
                 "CRC computed does not match",
-            ))
+            ));
         }
 
         if bytes_read != input[4..8] {
             return Err(Error::new(
                 ErrorKind::InvalidData,
                 "amount of bytes read does not match",
-            ))
+            ));
         }
 
         Ok(Some(8))

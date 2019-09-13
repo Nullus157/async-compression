@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-use crate::codec::Encode;
+use crate::{codec::Encode, bufread::generic::PartialBuffer};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
@@ -53,30 +53,6 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
 
     pub fn into_inner(self) -> R {
         self.reader
-    }
-}
-
-#[derive(Debug)]
-struct PartialBuffer<B: AsMut<[u8]>> {
-    buffer: B,
-    index: usize,
-}
-
-impl<B: AsMut<[u8]>> PartialBuffer<B> {
-    fn new(buffer: B) -> Self {
-        Self { buffer, index: 0 }
-    }
-
-    fn written(&mut self) -> &mut [u8] {
-        &mut self.buffer.as_mut()[..self.index]
-    }
-
-    fn unwritten(&mut self) -> &mut [u8] {
-        &mut self.buffer.as_mut()[self.index..]
-    }
-
-    fn advance(&mut self, amount: usize) {
-        self.index += amount;
     }
 }
 

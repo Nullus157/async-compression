@@ -158,6 +158,12 @@ pub mod deflate {
             pin_mut!(input);
             async_read_to_vec(DeflateEncoder::new(input, Compression::fast()))
         }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::DeflateDecoder;
+            pin_mut!(input);
+            async_read_to_vec(DeflateDecoder::new(input))
+        }
     }
 }
 
@@ -403,6 +409,44 @@ macro_rules! test_cases {
                 let output = utils::$variant::sync::decompress(&compressed);
 
                 assert_eq!(output, input.bytes());
+            }
+        }
+    };
+
+    (@ [ $variant:ident :: bufread :: decompress ]) => {
+        mod decompress {
+            use crate::utils;
+            use std::iter::FromIterator;
+
+            #[test]
+            fn empty() {
+                let compressed = utils::$variant::sync::compress(&[]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, &[][..]);
+            }
+
+            #[test]
+            fn short() {
+                let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            fn long() {
+                let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, input);
             }
         }
     };

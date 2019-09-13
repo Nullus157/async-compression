@@ -26,7 +26,7 @@ pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
 #[cfg(feature = "zstd")]
 pub(crate) use self::zstd::{ZstdDecoder, ZstdEncoder};
 
-pub trait Encoder {
+pub trait Encode {
     /// Return `Ok(bytes_produced)` when header was written
     /// Return `Err(_)` if writing fails
     fn write_header(&mut self, output: &mut [u8]) -> Result<usize>;
@@ -42,7 +42,7 @@ pub trait Encoder {
     fn write_footer(&mut self, ouput: &mut [u8]) -> Result<usize>;
 }
 
-pub trait Decoder {
+pub trait Decode {
     /// Return `Some(Ok(bytes_consumed)` when header was finished
     /// Return `Some(Err(_))` if parsing fails
     /// Return `None` when more bytes needed

@@ -1,4 +1,4 @@
-use crate::codec::Encoder;
+use crate::codec::Encode;
 use std::io::{Error, ErrorKind, Result};
 
 use flate2::{Compress, Compression, FlushCompress, Status};
@@ -33,7 +33,7 @@ impl FlateEncoder {
     }
 }
 
-impl Encoder for FlateEncoder {
+impl Encode for FlateEncoder {
     fn write_header(&mut self, _output: &mut [u8]) -> Result<usize> {
         Ok(0)
     }

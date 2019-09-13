@@ -1,4 +1,4 @@
-use crate::codec::Encoder;
+use crate::codec::Encode;
 use std::io::Result;
 
 use flate2::Compression;
@@ -16,7 +16,7 @@ impl ZlibEncoder {
     }
 }
 
-impl Encoder for ZlibEncoder {
+impl Encode for ZlibEncoder {
     fn write_header(&mut self, output: &mut [u8]) -> Result<usize> {
         self.inner.write_header(output)
     }

@@ -1,4 +1,4 @@
-use crate::codec::Encoder;
+use crate::codec::Encode;
 use std::{fmt, io::Result};
 
 use brotli2::{
@@ -32,7 +32,7 @@ impl BrotliEncoder {
     }
 }
 
-impl Encoder for BrotliEncoder {
+impl Encode for BrotliEncoder {
     fn write_header(&mut self, _output: &mut [u8]) -> Result<usize> {
         Ok(0)
     }

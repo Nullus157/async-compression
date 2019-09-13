@@ -1,4 +1,4 @@
-use crate::codec::Encoder;
+use crate::codec::Encode;
 use std::io::{Error, ErrorKind, Result};
 
 use flate2::{Compression, Crc};
@@ -20,7 +20,7 @@ impl GzipEncoder {
     }
 }
 
-impl Encoder for GzipEncoder {
+impl Encode for GzipEncoder {
     fn write_header(&mut self, output: &mut [u8]) -> Result<usize> {
         if output.len() < 10 {
             return Err(Error::new(

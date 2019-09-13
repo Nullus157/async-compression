@@ -1,6 +1,6 @@
 use std::io::{Error, ErrorKind, Result};
 
-use crate::unshared::Unshared;
+use crate::{codec::Decode, unshared::Unshared};
 use libzstd::stream::raw::{Decoder, Operation};
 
 #[derive(Debug)]
@@ -16,7 +16,7 @@ impl ZstdDecoder {
     }
 }
 
-impl crate::codec::Decoder for ZstdDecoder {
+impl Decode for ZstdDecoder {
     fn parse_header(&mut self, _input: &[u8]) -> Option<Result<usize>> {
         Some(Ok(0))
     }

@@ -13,7 +13,7 @@ impl DeflateDecoder {
     }
 }
 
-impl crate::codec::Decoder for DeflateDecoder {
+impl crate::codec::Decode for DeflateDecoder {
     fn parse_header(&mut self, input: &[u8]) -> Option<Result<usize>> {
         self.inner.parse_header(input)
     }

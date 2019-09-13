@@ -1,4 +1,4 @@
-use crate::codec::Decoder;
+use crate::codec::Decode;
 use std::io::{Error, ErrorKind, Result};
 
 use flate2::{Decompress, FlushDecompress, Status};
@@ -33,7 +33,7 @@ impl FlateDecoder {
     }
 }
 
-impl Decoder for FlateDecoder {
+impl Decode for FlateDecoder {
     fn parse_header(&mut self, _input: &[u8]) -> Option<Result<usize>> {
         Some(Ok(0))
     }

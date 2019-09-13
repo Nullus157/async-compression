@@ -1,4 +1,4 @@
-use crate::codec::Decoder;
+use crate::codec::Decode;
 use std::io::{Error, ErrorKind, Result};
 
 use flate2::Crc;
@@ -18,7 +18,7 @@ impl GzipDecoder {
     }
 }
 
-impl Decoder for GzipDecoder {
+impl Decode for GzipDecoder {
     fn parse_header(&mut self, input: &[u8]) -> Option<Result<usize>> {
         if input.len() >= 10 {
             if input[0..3] == [0x1f, 0x8b, 0x08] {

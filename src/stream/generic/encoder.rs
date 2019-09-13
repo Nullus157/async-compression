@@ -5,6 +5,7 @@ use std::{
     task::{Context, Poll},
 };
 
+use crate::codec::Encode;
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
@@ -24,7 +25,7 @@ enum State {
 
 #[unsafe_project(Unpin)]
 #[derive(Debug)]
-pub struct Encoder<S: Stream<Item = Result<Bytes>>, E: crate::codec::Encoder> {
+pub struct Encoder<S: Stream<Item = Result<Bytes>>, E: Encode> {
     #[pin]
     stream: S,
     encoder: E,
@@ -33,7 +34,7 @@ pub struct Encoder<S: Stream<Item = Result<Bytes>>, E: crate::codec::Encoder> {
     output: BytesMut,
 }
 
-impl<S: Stream<Item = Result<Bytes>>, E: crate::codec::Encoder> Encoder<S, E> {
+impl<S: Stream<Item = Result<Bytes>>, E: Encode> Encoder<S, E> {
     pub(crate) fn new(stream: S, encoder: E) -> Self {
         Self {
             stream,
@@ -61,7 +62,7 @@ impl<S: Stream<Item = Result<Bytes>>, E: crate::codec::Encoder> Encoder<S, E> {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>, E: crate::codec::Encoder> Stream for Encoder<S, E> {
+impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {

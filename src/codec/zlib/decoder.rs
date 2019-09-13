@@ -13,7 +13,7 @@ impl ZlibDecoder {
     }
 }
 
-impl crate::codec::Decoder for ZlibDecoder {
+impl crate::codec::Decode for ZlibDecoder {
     fn parse_header(&mut self, input: &[u8]) -> Option<Result<usize>> {
         self.inner.parse_header(input)
     }

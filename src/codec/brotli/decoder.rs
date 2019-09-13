@@ -1,4 +1,4 @@
-use crate::codec::Decoder;
+use crate::codec::Decode;
 use std::{
     fmt,
     io::{Error, ErrorKind, Result},
@@ -31,7 +31,7 @@ impl BrotliDecoder {
     }
 }
 
-impl Decoder for BrotliDecoder {
+impl Decode for BrotliDecoder {
     fn parse_header(&mut self, _input: &[u8]) -> Option<Result<usize>> {
         Some(Ok(0))
     }

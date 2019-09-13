@@ -1,4 +1,4 @@
-use crate::unshared::Unshared;
+use crate::{codec::Encode, unshared::Unshared};
 use libzstd::stream::raw::{Encoder, Operation};
 use std::io::Result;
 
@@ -15,7 +15,7 @@ impl ZstdEncoder {
     }
 }
 
-impl crate::codec::Encoder for ZstdEncoder {
+impl Encode for ZstdEncoder {
     fn write_header(&mut self, output: &mut [u8]) -> Result<usize> {
         // zstd needs to have 0 bytes written to it to create a valid compressed 0 byte stream,
         // just flushing it after not writing to it is not enough, here seems a decent place to do

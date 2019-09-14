@@ -3,11 +3,11 @@
 use bytes::Bytes;
 use futures::{
     io::AsyncBufRead,
-    stream::{self, Stream},
+    stream::{self, Stream, TryStreamExt},
 };
-use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
+use futures_test::stream::StreamTestExt;
 use proptest_derive::Arbitrary;
-use std::io::{self, Cursor};
+use std::io;
 
 #[derive(Arbitrary, Debug)]
 pub struct InputStream(Vec<Vec<u8>>);
@@ -31,10 +31,8 @@ impl InputStream {
 
     pub fn reader(&self) -> impl AsyncBufRead {
         // TODO: By using the stream here we ensure that each chunk will require a separate
-        // read/poll_fill_buf call to process to help test reading multiple chunks. This is
-        // blocked on fixing AsyncBufRead for IntoAsyncRead:
-        // (https://github.com/rust-lang-nursery/futures-rs/pull/1595)
-        Cursor::new(self.bytes()).interleave_pending()
+        // read/poll_fill_buf call to process to help test reading multiple chunks.
+        self.stream().into_async_read()
     }
 
     pub fn bytes(&self) -> Vec<u8> {
@@ -449,11 +447,32 @@ macro_rules! test_cases {
             }
 
             #[test]
+            fn short_chunks() {
+                let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                let stream = utils::InputStream::from(compressed.chunks(2).map(Vec::from).collect::<Vec<_>>());
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
             fn long() {
                 let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
 
                 let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, input);
+            }
+
+            #[test]
+            fn long_chunks() {
+                let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(compressed.chunks(2).map(Vec::from).collect::<Vec<_>>());
                 let output = utils::$variant::bufread::decompress(stream.reader());
 
                 assert_eq!(output, input);

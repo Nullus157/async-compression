@@ -9,6 +9,8 @@
 //! at which to yield a new item.
 
 mod generic;
+#[macro_use]
+mod macros;
 
 #[cfg(feature = "brotli")]
 mod brotli;
@@ -20,6 +22,8 @@ mod gzip;
 mod zlib;
 #[cfg(feature = "zstd")]
 mod zstd;
+
+pub(crate) use self::generic::{Decoder, Encoder};
 
 #[cfg(feature = "brotli")]
 pub use self::brotli::{BrotliDecoder, BrotliEncoder};

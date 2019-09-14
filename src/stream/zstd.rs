@@ -4,18 +4,12 @@ use std::io::Result;
 
 decoder! {
     /// A zstd decoder, or decompressor.
-    ///
-    /// This structure implements a [`Stream`] interface and will read compressed data from an
-    /// underlying stream and emit a stream of uncompressed data.
     #[cfg_attr(docsrs, doc(cfg(feature = "zstd")))]
     ZstdDecoder
 }
 
 encoder! {
     /// A zstd encoder, or compressor.
-    ///
-    /// This structure implements a [`Stream`] interface and will read uncompressed data from an
-    /// underlying stream and emit a stream of compressed data.
     #[cfg_attr(docsrs, doc(cfg(feature = "zstd")))]
     ZstdEncoder
 }

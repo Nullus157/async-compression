@@ -3,6 +3,9 @@ macro_rules! encoder {
         $(#[$attr])*
         #[pin_project::unsafe_project(Unpin)]
         #[derive(Debug)]
+        ///
+        /// This structure implements a [`Stream`](futures::stream::Stream) interface and will read
+        /// uncompressed data from an underlying stream and emit a stream of compressed data.
         pub struct $name<S: futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
             #[pin]
             inner: crate::stream::Encoder<S, crate::codec::$name>,

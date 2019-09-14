@@ -5,18 +5,12 @@ use std::io::Result;
 
 decoder! {
     /// A brotli decoder, or decompressor.
-    ///
-    /// This structure implements a [`Stream`] interface and will read compressed data from an
-    /// underlying stream and emit a stream of uncompressed data.
     #[cfg_attr(docsrs, doc(cfg(feature = "brotli")))]
     BrotliDecoder
 }
 
 encoder! {
     /// A brotli encoder, or compressor.
-    ///
-    /// This structure implements a [`Stream`] interface and will read uncompressed data from an
-    /// underlying stream and emit a stream of compressed data.
     #[cfg_attr(docsrs, doc(cfg(feature = "brotli")))]
     BrotliEncoder
 }

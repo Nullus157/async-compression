@@ -3,18 +3,12 @@ use futures::io::AsyncBufRead;
 
 decoder! {
     /// A deflate decoder, or decompressor.
-    ///
-    /// This structure implements an [`AsyncRead`] interface and will read compressed data from an
-    /// underlying stream and emit a stream of uncompressed data.
     #[cfg_attr(docsrs, doc(cfg(feature = "deflate")))]
     DeflateDecoder
 }
 
 encoder! {
     /// A deflate encoder, or compressor.
-    ///
-    /// This structure implements an [`AsyncRead`] interface and will read uncompressed data from an
-    /// underlying stream and emit a stream of compressed data.
     #[cfg_attr(docsrs, doc(cfg(feature = "deflate")))]
     DeflateEncoder
 }

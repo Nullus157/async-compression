@@ -31,8 +31,8 @@ pub trait Encode {
         Vec::new()
     }
 
-    /// Return `Ok((done, input_consumed, output_produced))`
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
+    /// Return `Ok((input_consumed, output_produced))`
+    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)>;
 
     /// Return `Ok(done, output_produced)`
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;

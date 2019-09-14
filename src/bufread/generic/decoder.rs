@@ -128,6 +128,10 @@ impl<R: AsyncBufRead, E: Decode> AsyncRead for Decoder<R, E> {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<Result<usize>> {
+        if buf.is_empty() {
+            return Poll::Ready(Ok(0));
+        }
+
         let mut output = PartialBuffer::new(buf);
         match self.do_poll_read(cx, &mut output)? {
             Poll::Pending if output.written().is_empty() => Poll::Pending,

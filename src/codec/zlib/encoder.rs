@@ -17,7 +17,7 @@ impl ZlibEncoder {
 }
 
 impl Encode for ZlibEncoder {
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
+    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)> {
         self.inner.encode(input, output)
     }
 

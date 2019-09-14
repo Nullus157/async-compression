@@ -34,16 +34,12 @@ impl FlateEncoder {
 }
 
 impl Encode for FlateEncoder {
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        if input.is_empty() {
-            return Ok((true, 0, 0));
-        }
-
+    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)> {
         let (status, in_length, out_length) = self.do_encode(input, output, FlushCompress::None)?;
 
         match status {
-            Status::Ok => Ok((false, in_length, out_length)),
-            Status::StreamEnd => Ok((true, in_length, out_length)),
+            Status::Ok => Ok((in_length, out_length)),
+            Status::StreamEnd => unreachable!(),
             Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
         }
     }

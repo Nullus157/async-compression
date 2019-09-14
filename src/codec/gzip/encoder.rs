@@ -33,10 +33,10 @@ impl Encode for GzipEncoder {
         vec![0x1f, 0x8b, 0x08, 0, 0, 0, 0, 0, level_byte, 0xff]
     }
 
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        let (done, in_length, out_length) = self.inner.encode(input, output)?;
+    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)> {
+        let (in_length, out_length) = self.inner.encode(input, output)?;
         self.crc.update(&input[..in_length]);
-        Ok((done, in_length, out_length))
+        Ok((in_length, out_length))
     }
 
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {

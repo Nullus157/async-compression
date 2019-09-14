@@ -54,17 +54,14 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
     pub fn into_inner(self) -> R {
         self.reader
     }
-}
 
-impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
-    fn poll_read(
+    fn do_poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<Result<usize>> {
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Poll<Result<()>> {
         let mut this = self.project();
 
-        let mut output = PartialBuffer::new(buf);
         loop {
             let (state, done) = match this.state {
                 State::Header(header) => {
@@ -84,11 +81,11 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
                     if input.is_empty() {
                         (State::Flushing, false)
                     } else {
-                        let (done, input_len, output_len) =
+                        let (input_len, output_len) =
                             this.encoder.encode(input, output.unwritten())?;
                         this.reader.as_mut().consume(input_len);
                         output.advance(output_len);
-                        (State::Encoding, done)
+                        (State::Encoding, output.unwritten().is_empty())
                     }
                 }
 
@@ -119,9 +116,27 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
             };
 
             *this.state = state;
-            if done {
-                return Poll::Ready(Ok(output.written().len()));
+            if done || output.unwritten().is_empty() {
+                return Poll::Ready(Ok(()));
             }
+        }
+    }
+}
+
+impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<Result<usize>> {
+        if buf.is_empty() {
+            return Poll::Ready(Ok(0));
+        }
+
+        let mut output = PartialBuffer::new(buf);
+        match self.do_poll_read(cx, &mut output)? {
+            Poll::Pending if output.written().is_empty() => Poll::Pending,
+            _ => Poll::Ready(Ok(output.written().len())),
         }
     }
 }

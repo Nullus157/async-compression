@@ -30,17 +30,9 @@ impl Encode for ZstdEncoder {
         output
     }
 
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        if input.is_empty() {
-            return Ok((true, 0, 0));
-        }
-
+    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)> {
         let status = self.encoder.get_mut().run_on_buffers(input, output)?;
-        Ok((
-            status.bytes_read == input.len(),
-            status.bytes_read,
-            status.bytes_written,
-        ))
+        Ok((status.bytes_read, status.bytes_written))
     }
 
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {

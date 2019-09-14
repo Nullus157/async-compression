@@ -93,14 +93,19 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
                 }
 
                 State::Writing => {
+                    if this.input.is_empty() {
+                        *this.state = State::Reading;
+                        continue;
+                    }
+
+                    *this.state = State::Writing;
+
                     this.output.resize(OUTPUT_BUFFER_SIZE, 0);
 
-                    let (done, input_len, output_len) =
+                    let (input_len, output_len) =
                         this.encoder.encode(&this.input, &mut this.output)?;
 
-                    *this.state = if done { State::Reading } else { State::Writing };
-
-                    this.input.advance(input_len as usize);
+                    this.input.advance(input_len);
                     Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
                 }
 

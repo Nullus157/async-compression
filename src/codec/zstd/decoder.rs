@@ -23,11 +23,7 @@ impl Decode for ZstdDecoder {
         }
 
         let status = self.decoder.get_mut().run_on_buffers(input, output)?;
-        Ok((
-            status.bytes_read == input.len(),
-            status.bytes_read,
-            status.bytes_written,
-        ))
+        Ok((false, status.bytes_read, status.bytes_written))
     }
 
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {

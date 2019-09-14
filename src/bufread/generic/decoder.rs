@@ -22,19 +22,19 @@ enum State {
 
 #[unsafe_project(Unpin)]
 #[derive(Debug)]
-pub struct Decoder<R: AsyncBufRead, E: Decode> {
+pub struct Decoder<R: AsyncBufRead, D: Decode> {
     #[pin]
     reader: R,
-    decoder: E,
+    decoder: D,
     state: State,
 }
 
-impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
-    pub fn new(reader: R, decoder: E) -> Self {
+impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
+    pub fn new(reader: R, decoder: D) -> Self {
         Self {
             reader,
             decoder,
-            state: State::Header(vec![0; E::HEADER_LENGTH].into()),
+            state: State::Header(vec![0; D::HEADER_LENGTH].into()),
         }
     }
 
@@ -71,7 +71,7 @@ impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
                         this.decoder.parse_header(header.written())?;
                         (State::Decoding, false)
                     } else {
-                        (State::Header(header.take()), true)
+                        (State::Header(header.take()), false)
                     }
                 }
 
@@ -93,7 +93,7 @@ impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
                     output.advance(output_len);
 
                     if done {
-                        (State::Footer(vec![0; E::FOOTER_LENGTH].into()), false)
+                        (State::Footer(vec![0; D::FOOTER_LENGTH].into()), false)
                     } else {
                         (State::Flushing, true)
                     }
@@ -122,7 +122,7 @@ impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
     }
 }
 
-impl<R: AsyncBufRead, E: Decode> AsyncRead for Decoder<R, E> {
+impl<R: AsyncBufRead, D: Decode> AsyncRead for Decoder<R, D> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

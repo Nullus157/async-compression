@@ -40,8 +40,8 @@ impl Decode for BrotliDecoder {
         let (status, in_length, out_length) = self.do_decode(input, output)?;
 
         match status {
-            DeStatus::NeedOutput => Ok((false, in_length, out_length)),
-            DeStatus::Finished | DeStatus::NeedInput => Ok((true, in_length, out_length)),
+            DeStatus::NeedOutput | DeStatus::NeedInput => Ok((false, in_length, out_length)),
+            DeStatus::Finished => Ok((true, in_length, out_length)),
         }
     }
 

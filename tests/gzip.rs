@@ -3,7 +3,7 @@ use std::iter::FromIterator;
 #[macro_use]
 mod utils;
 
-test_cases!(gzip::stream::{compress, decompress});
+test_cases!(gzip::{bufread::{compress, decompress}, stream::{compress, decompress}});
 
 /// Splits the input bytes into the first 10 bytes, the rest and the last 8 bytes, taking apart the
 /// 3 parts of compressed gzip data.

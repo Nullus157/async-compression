@@ -119,6 +119,22 @@ pub mod brotli {
             stream_to_vec(BrotliDecoder::new(input))
         }
     }
+
+    pub mod bufread {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::BrotliEncoder;
+            pin_mut!(input);
+            async_read_to_vec(BrotliEncoder::new(input, 1))
+        }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::BrotliDecoder;
+            pin_mut!(input);
+            async_read_to_vec(BrotliDecoder::new(input))
+        }
+    }
 }
 
 pub mod deflate {
@@ -247,6 +263,22 @@ pub mod gzip {
             stream_to_vec(GzipDecoder::new(input))
         }
     }
+
+    pub mod bufread {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::{bufread::GzipEncoder, flate2::Compression};
+            pin_mut!(input);
+            async_read_to_vec(GzipEncoder::new(input, Compression::fast()))
+        }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::GzipDecoder;
+            pin_mut!(input);
+            async_read_to_vec(GzipDecoder::new(input))
+        }
+    }
 }
 
 pub mod zstd {
@@ -278,6 +310,22 @@ pub mod zstd {
             use async_compression::stream::ZstdDecoder;
             pin_mut!(input);
             stream_to_vec(ZstdDecoder::new(input))
+        }
+    }
+
+    pub mod bufread {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::ZstdEncoder;
+            pin_mut!(input);
+            async_read_to_vec(ZstdEncoder::new(input, 0))
+        }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::ZstdDecoder;
+            pin_mut!(input);
+            async_read_to_vec(ZstdDecoder::new(input))
         }
     }
 }

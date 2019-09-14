@@ -38,10 +38,7 @@ impl Encode for ZstdEncoder {
     fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
         let mut output = zstd_safe::OutBuffer::around(output);
 
-        let bytes_left = self.encoder.get_mut().flush(&mut output)?;
-        if bytes_left == 0 {
-            self.encoder.get_mut().finish(&mut output, true)?;
-        }
+        let bytes_left = self.encoder.get_mut().finish(&mut output, true)?;
         Ok((bytes_left == 0, output.as_slice().len()))
     }
 }

@@ -145,3 +145,30 @@ mod gzip {
         }
     }
 }
+
+mod zstd {
+    mod stream {
+        use crate::utils;
+        use proptest::{prelude::any, proptest};
+        use std::iter::FromIterator;
+        proptest! {
+            #[test]
+            fn compress(ref input in any::<utils::InputStream>()) {
+                let compressed = utils::zstd::stream::compress(input.stream());
+                let output = utils::zstd::sync::decompress(&compressed);
+                assert_eq!(output, input.bytes());
+            }
+
+            #[test]
+            fn decompress(
+                ref input in any::<Vec<u8>>(),
+                chunk_size in 1..20usize,
+            ) {
+                let compressed = utils::zstd::sync::compress(input);
+                let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                let output = utils::zstd::stream::decompress(stream.stream());
+                assert_eq!(&output, input);
+            }
+        }
+    }
+}

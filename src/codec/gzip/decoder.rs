@@ -19,9 +19,12 @@ impl GzipDecoder {
 }
 
 impl Decode for GzipDecoder {
-    fn parse_header(&mut self, input: &[u8]) -> Result<Option<usize>> {
+    const HEADER_LENGTH: usize = 10;
+    const FOOTER_LENGTH: usize = 8;
+
+    fn parse_header(&mut self, input: &[u8]) -> Result<()> {
         if input.len() < 10 {
-            return Ok(None);
+            return Err(Error::new(ErrorKind::InvalidData, "Invalid gzip header length"));
         }
 
         if input[0..3] != [0x1f, 0x8b, 0x08] {
@@ -29,7 +32,7 @@ impl Decode for GzipDecoder {
         }
 
         // TODO: Check that header doesn't contain any extra headers
-        Ok(Some(10))
+        Ok(())
     }
 
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
@@ -44,9 +47,9 @@ impl Decode for GzipDecoder {
         Ok((done, out_length))
     }
 
-    fn check_footer(&mut self, input: &[u8]) -> Result<Option<usize>> {
+    fn check_footer(&mut self, input: &[u8]) -> Result<()> {
         if input.len() < 8 {
-            return Ok(None);
+            return Err(Error::new(ErrorKind::InvalidData, "Invalid gzip footer length"));
         }
 
         let crc = self.crc.sum().to_le_bytes();
@@ -66,6 +69,6 @@ impl Decode for GzipDecoder {
             ));
         }
 
-        Ok(Some(8))
+        Ok(())
     }
 }

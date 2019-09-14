@@ -75,23 +75,19 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                     *this.state = match ready!(this.stream.as_mut().poll_next(cx)) {
                         Some(chunk) => {
                             this.input.extend_from_slice(&chunk?);
-                            if let Some(len) = this.decoder.parse_header(&this.input)? {
-                                this.input.split_to(len);
+                            if this.input.len() >= D::HEADER_LENGTH {
+                                this.decoder.parse_header(&this.input)?;
+                                this.input.advance(D::HEADER_LENGTH);
                                 State::Writing
                             } else {
                                 State::ReadingHeader
                             }
                         }
                         None => {
-                            if let Some(len) = this.decoder.parse_header(&this.input)? {
-                                this.input.split_to(len);
-                                State::Writing
-                            } else {
-                                return Poll::Ready(Some(Err(Error::new(
-                                    ErrorKind::InvalidData,
-                                    "A valid header was not found",
-                                ))));
-                            }
+                            return Poll::Ready(Some(Err(Error::new(
+                                ErrorKind::InvalidData,
+                                "A valid header was not found",
+                            ))));
                         }
                     };
                     continue;
@@ -142,8 +138,9 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                 }
 
                 State::CheckingFooter => {
-                    if let Some(len) = this.decoder.check_footer(&this.input)? {
-                        this.input.advance(len);
+                    if this.input.len() >= D::FOOTER_LENGTH {
+                        this.decoder.check_footer(&this.input)?;
+                        this.input.advance(D::FOOTER_LENGTH);
                         *this.state = State::Done;
                         Poll::Ready(None)
                     } else {

@@ -13,10 +13,10 @@ use pin_project::unsafe_project;
 
 #[derive(Debug)]
 enum State {
-    Header,
+    Header(PartialBuffer<Vec<u8>>),
     Decoding,
     Flushing,
-    Footer,
+    Footer(PartialBuffer<Vec<u8>>),
     Done,
 }
 
@@ -34,7 +34,7 @@ impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
         Self {
             reader,
             decoder,
-            state: State::Header,
+            state: State::Header(vec![0; E::HEADER_LENGTH].into()),
         }
     }
 
@@ -63,13 +63,15 @@ impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
 
         loop {
             let (state, done) = match this.state {
-                State::Header => {
-                    let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
-                    if let Some(len) = this.decoder.parse_header(input)? {
-                        this.reader.as_mut().consume(len);
+                State::Header(header) => {
+                    let len = ready!(this.reader.as_mut().poll_read(cx, header.unwritten()))?;
+                    header.advance(len);
+
+                    if header.unwritten().is_empty() {
+                        this.decoder.parse_header(header.written())?;
                         (State::Decoding, false)
                     } else {
-                        (State::Header, true)
+                        (State::Header(header.take()), true)
                     }
                 }
 
@@ -91,19 +93,21 @@ impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
                     output.advance(output_len);
 
                     if done {
-                        (State::Footer, false)
+                        (State::Footer(vec![0; E::FOOTER_LENGTH].into()), false)
                     } else {
                         (State::Flushing, true)
                     }
                 }
 
-                State::Footer => {
-                    let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
-                    if let Some(len) = this.decoder.check_footer(input)? {
-                        this.reader.as_mut().consume(len);
+                State::Footer(footer) => {
+                    let len = ready!(this.reader.as_mut().poll_read(cx, footer.unwritten()))?;
+                    footer.advance(len);
+
+                    if footer.unwritten().is_empty() {
+                        this.decoder.check_footer(footer.written())?;
                         (State::Done, true)
                     } else {
-                        (State::Footer, true)
+                        (State::Footer(footer.take()), true)
                     }
                 }
 

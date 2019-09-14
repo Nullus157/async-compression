@@ -115,7 +115,7 @@ impl<R: AsyncBufRead, E: Decode> Decoder<R, E> {
             };
 
             *this.state = state;
-            if done {
+            if done || output.unwritten().is_empty() {
                 return Poll::Ready(Ok(()));
             }
         }

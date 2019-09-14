@@ -56,12 +56,12 @@ mod prelude {
     pub use bytes::Bytes;
     pub use futures::{
         executor::{block_on, block_on_stream},
-        io::{AsyncBufRead, AsyncRead, AsyncReadExt, AsyncBufReadExt, BufReader},
+        io::{AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader},
         stream::{self, Stream, TryStreamExt},
     };
-    pub use futures_test::{io::{AsyncReadTestExt}, stream::StreamTestExt};
+    pub use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
     pub use pin_utils::pin_mut;
-    pub use std::io::{self, Read, Cursor};
+    pub use std::io::{self, Cursor, Read};
 
     pub fn read_to_vec(mut read: impl Read) -> Vec<u8> {
         let mut output = vec![];

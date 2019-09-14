@@ -58,12 +58,12 @@ mod prelude {
     pub use bytes::Bytes;
     pub use futures::{
         executor::{block_on, block_on_stream},
-        io::{AsyncBufRead, AsyncRead, AsyncReadExt},
+        io::{AsyncBufRead, AsyncRead, AsyncReadExt, AsyncBufReadExt, BufReader},
         stream::{self, Stream, TryStreamExt},
     };
-    pub use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
+    pub use futures_test::{io::{AsyncReadTestExt}, stream::StreamTestExt};
     pub use pin_utils::pin_mut;
-    pub use std::io::{self, Read};
+    pub use std::io::{self, Read, Cursor};
 
     pub fn read_to_vec(mut read: impl Read) -> Vec<u8> {
         let mut output = vec![];
@@ -72,9 +72,13 @@ mod prelude {
     }
 
     pub fn async_read_to_vec(read: impl AsyncRead) -> Vec<u8> {
-        let mut output = vec![];
+        // TODO: https://github.com/rust-lang-nursery/futures-rs/issues/1510
+        // All current test cases are < 100kB
+        let mut output = Cursor::new(vec![0; 102_400]);
         pin_mut!(read);
-        block_on(read.read_to_end(&mut output)).unwrap();
+        let len = block_on(BufReader::with_capacity(2, read).copy_buf_into(&mut output)).unwrap();
+        let mut output = output.into_inner();
+        output.truncate(len as usize);
         output
     }
 

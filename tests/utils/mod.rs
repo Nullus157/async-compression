@@ -320,8 +320,8 @@ macro_rules! test_cases {
             #[test]
             fn long() {
                 let input = vec![
-                    Vec::from_iter((0..20_000).map(|_| rand::random())),
-                    Vec::from_iter((0..20_000).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
                 ];
                 let input = utils::InputStream::from(input);
 
@@ -360,10 +360,21 @@ macro_rules! test_cases {
 
             #[test]
             fn long() {
-                let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
 
                 let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::stream::decompress(stream.stream());
+
+                assert_eq!(output, input);
+            }
+
+            #[test]
+            fn long_chunks() {
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>());
                 let output = utils::$variant::stream::decompress(stream.stream());
 
                 assert_eq!(output, input);
@@ -408,8 +419,8 @@ macro_rules! test_cases {
             #[test]
             fn long() {
                 let input = vec![
-                    Vec::from_iter((0..20_000).map(|_| rand::random())),
-                    Vec::from_iter((0..20_000).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
                 ];
                 let input = utils::InputStream::from(input);
 
@@ -437,6 +448,16 @@ macro_rules! test_cases {
             }
 
             #[test]
+            fn zeros() {
+                let compressed = utils::$variant::sync::compress(&[0; 10]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, &[0; 10][..]);
+            }
+
+            #[test]
             fn short() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -458,7 +479,7 @@ macro_rules! test_cases {
 
             #[test]
             fn long() {
-                let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
 
                 let stream = utils::InputStream::from(vec![compressed]);
@@ -469,10 +490,10 @@ macro_rules! test_cases {
 
             #[test]
             fn long_chunks() {
-                let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
 
-                let stream = utils::InputStream::from(compressed.chunks(2).map(Vec::from).collect::<Vec<_>>());
+                let stream = utils::InputStream::from(compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>());
                 let output = utils::$variant::bufread::decompress(stream.reader());
 
                 assert_eq!(output, input);

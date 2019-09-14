@@ -2,6 +2,8 @@
 //! decoders for various formats.
 
 mod generic;
+#[macro_use]
+mod macros;
 
 pub(crate) use generic::{Decoder, Encoder};
 
@@ -13,4 +15,4 @@ mod zlib;
 #[cfg(feature = "deflate")]
 pub use deflate::{DeflateDecoder, DeflateEncoder};
 #[cfg(feature = "zlib")]
-pub use zlib::ZlibEncoder;
+pub use zlib::{ZlibDecoder, ZlibEncoder};

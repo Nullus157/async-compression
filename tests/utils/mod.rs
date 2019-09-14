@@ -206,6 +206,12 @@ pub mod zlib {
             pin_mut!(input);
             async_read_to_vec(ZlibEncoder::new(input, Compression::fast()))
         }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::ZlibDecoder;
+            pin_mut!(input);
+            async_read_to_vec(ZlibDecoder::new(input))
+        }
     }
 }
 

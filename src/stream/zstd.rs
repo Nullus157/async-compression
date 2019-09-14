@@ -33,5 +33,4 @@ impl<S: Stream<Item = Result<Bytes>>> ZstdEncoder<S> {
             ),
         }
     }
-
 }

@@ -1,5 +1,5 @@
-use flate2::Compression;
 use bytes::Bytes;
+use flate2::Compression;
 use futures::stream::Stream;
 use std::io::Result;
 

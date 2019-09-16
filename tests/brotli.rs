@@ -1,4 +1,4 @@
 #[macro_use]
 mod utils;
 
-test_cases!(brotli::stream::{compress, decompress});
+test_cases!(brotli::{bufread::{compress, decompress}, stream::{compress, decompress}});

@@ -3,11 +3,11 @@
 use bytes::Bytes;
 use futures::{
     io::AsyncBufRead,
-    stream::{self, Stream},
+    stream::{self, Stream, TryStreamExt},
 };
-use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
+use futures_test::stream::StreamTestExt;
 use proptest_derive::Arbitrary;
-use std::io::{self, Cursor};
+use std::io;
 
 #[derive(Arbitrary, Debug)]
 pub struct InputStream(Vec<Vec<u8>>);
@@ -31,10 +31,8 @@ impl InputStream {
 
     pub fn reader(&self) -> impl AsyncBufRead {
         // TODO: By using the stream here we ensure that each chunk will require a separate
-        // read/poll_fill_buf call to process to help test reading multiple chunks. This is
-        // blocked on fixing AsyncBufRead for IntoAsyncRead:
-        // (https://github.com/rust-lang-nursery/futures-rs/pull/1595)
-        Cursor::new(self.bytes()).interleave_pending()
+        // read/poll_fill_buf call to process to help test reading multiple chunks.
+        self.stream().into_async_read()
     }
 
     pub fn bytes(&self) -> Vec<u8> {
@@ -58,12 +56,12 @@ mod prelude {
     pub use bytes::Bytes;
     pub use futures::{
         executor::{block_on, block_on_stream},
-        io::{AsyncBufRead, AsyncRead, AsyncReadExt},
+        io::{AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader},
         stream::{self, Stream, TryStreamExt},
     };
     pub use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
     pub use pin_utils::pin_mut;
-    pub use std::io::{self, Read};
+    pub use std::io::{self, Cursor, Read};
 
     pub fn read_to_vec(mut read: impl Read) -> Vec<u8> {
         let mut output = vec![];
@@ -72,9 +70,13 @@ mod prelude {
     }
 
     pub fn async_read_to_vec(read: impl AsyncRead) -> Vec<u8> {
-        let mut output = vec![];
+        // TODO: https://github.com/rust-lang-nursery/futures-rs/issues/1510
+        // All current test cases are < 100kB
+        let mut output = Cursor::new(vec![0; 102_400]);
         pin_mut!(read);
-        block_on(read.read_to_end(&mut output)).unwrap();
+        let len = block_on(BufReader::with_capacity(2, read).copy_buf_into(&mut output)).unwrap();
+        let mut output = output.into_inner();
+        output.truncate(len as usize);
         output
     }
 
@@ -115,6 +117,22 @@ pub mod brotli {
             use async_compression::stream::BrotliDecoder;
             pin_mut!(input);
             stream_to_vec(BrotliDecoder::new(input))
+        }
+    }
+
+    pub mod bufread {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::BrotliEncoder;
+            pin_mut!(input);
+            async_read_to_vec(BrotliEncoder::new(input, 1))
+        }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::BrotliDecoder;
+            pin_mut!(input);
+            async_read_to_vec(BrotliDecoder::new(input))
         }
     }
 }
@@ -158,6 +176,12 @@ pub mod deflate {
             pin_mut!(input);
             async_read_to_vec(DeflateEncoder::new(input, Compression::fast()))
         }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::DeflateDecoder;
+            pin_mut!(input);
+            async_read_to_vec(DeflateDecoder::new(input))
+        }
     }
 }
 
@@ -200,6 +224,12 @@ pub mod zlib {
             pin_mut!(input);
             async_read_to_vec(ZlibEncoder::new(input, Compression::fast()))
         }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::ZlibDecoder;
+            pin_mut!(input);
+            async_read_to_vec(ZlibDecoder::new(input))
+        }
     }
 }
 
@@ -233,6 +263,22 @@ pub mod gzip {
             stream_to_vec(GzipDecoder::new(input))
         }
     }
+
+    pub mod bufread {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::{bufread::GzipEncoder, flate2::Compression};
+            pin_mut!(input);
+            async_read_to_vec(GzipEncoder::new(input, Compression::fast()))
+        }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::GzipDecoder;
+            pin_mut!(input);
+            async_read_to_vec(GzipDecoder::new(input))
+        }
+    }
 }
 
 pub mod zstd {
@@ -264,6 +310,22 @@ pub mod zstd {
             use async_compression::stream::ZstdDecoder;
             pin_mut!(input);
             stream_to_vec(ZstdDecoder::new(input))
+        }
+    }
+
+    pub mod bufread {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::ZstdEncoder;
+            pin_mut!(input);
+            async_read_to_vec(ZstdEncoder::new(input, 0))
+        }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::ZstdDecoder;
+            pin_mut!(input);
+            async_read_to_vec(ZstdDecoder::new(input))
         }
     }
 }
@@ -306,8 +368,8 @@ macro_rules! test_cases {
             #[test]
             fn long() {
                 let input = vec![
-                    Vec::from_iter((0..20_000).map(|_| rand::random())),
-                    Vec::from_iter((0..20_000).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
                 ];
                 let input = utils::InputStream::from(input);
 
@@ -346,10 +408,21 @@ macro_rules! test_cases {
 
             #[test]
             fn long() {
-                let input = Vec::from_iter((0..20_000).map(|_| rand::random()));
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
 
                 let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::stream::decompress(stream.stream());
+
+                assert_eq!(output, input);
+            }
+
+            #[test]
+            fn long_chunks() {
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>());
                 let output = utils::$variant::stream::decompress(stream.stream());
 
                 assert_eq!(output, input);
@@ -394,8 +467,8 @@ macro_rules! test_cases {
             #[test]
             fn long() {
                 let input = vec![
-                    Vec::from_iter((0..20_000).map(|_| rand::random())),
-                    Vec::from_iter((0..20_000).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
                 ];
                 let input = utils::InputStream::from(input);
 
@@ -403,6 +476,75 @@ macro_rules! test_cases {
                 let output = utils::$variant::sync::decompress(&compressed);
 
                 assert_eq!(output, input.bytes());
+            }
+        }
+    };
+
+    (@ [ $variant:ident :: bufread :: decompress ]) => {
+        mod decompress {
+            use crate::utils;
+            use std::iter::FromIterator;
+
+            #[test]
+            fn empty() {
+                let compressed = utils::$variant::sync::compress(&[]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, &[][..]);
+            }
+
+            #[test]
+            fn zeros() {
+                let compressed = utils::$variant::sync::compress(&[0; 10]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, &[0; 10][..]);
+            }
+
+            #[test]
+            fn short() {
+                let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            fn short_chunks() {
+                let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                let stream = utils::InputStream::from(compressed.chunks(2).map(Vec::from).collect::<Vec<_>>());
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            fn long() {
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, input);
+            }
+
+            #[test]
+            fn long_chunks() {
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>());
+                let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, input);
             }
         }
     };

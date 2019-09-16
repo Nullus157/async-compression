@@ -8,18 +8,22 @@
 //! stream, the encoders and decoders will buffer the incoming data and choose their own boundaries
 //! at which to yield a new item.
 
+mod generic;
+#[macro_use]
+mod macros;
+
 #[cfg(feature = "brotli")]
 mod brotli;
 #[cfg(feature = "deflate")]
 mod deflate;
-#[cfg(any(feature = "deflate", feature = "gzip", feature = "zlib"))]
-mod flate;
 #[cfg(feature = "gzip")]
 mod gzip;
 #[cfg(feature = "zlib")]
 mod zlib;
 #[cfg(feature = "zstd")]
 mod zstd;
+
+pub(crate) use self::generic::{Decoder, Encoder};
 
 #[cfg(feature = "brotli")]
 pub use self::brotli::{BrotliDecoder, BrotliEncoder};

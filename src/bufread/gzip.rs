@@ -1,7 +1,5 @@
-use bytes::Bytes;
 use flate2::Compression;
-use futures::stream::Stream;
-use std::io::Result;
+use futures::io::AsyncBufRead;
 
 decoder! {
     /// A gzip decoder, or decompressor.
@@ -15,15 +13,12 @@ encoder! {
     GzipEncoder
 }
 
-impl<S: Stream<Item = Result<Bytes>>> GzipEncoder<S> {
+impl<R: AsyncBufRead> GzipEncoder<R> {
     /// Creates a new encoder which will read uncompressed data from the given stream and emit a
     /// compressed stream.
-    pub fn new(stream: S, level: Compression) -> Self {
-        Self {
-            inner: crate::stream::generic::Encoder::new(
-                stream,
-                crate::codec::GzipEncoder::new(level),
-            ),
+    pub fn new(read: R, level: Compression) -> GzipEncoder<R> {
+        GzipEncoder {
+            inner: crate::bufread::Encoder::new(read, crate::codec::GzipEncoder::new(level)),
         }
     }
 }

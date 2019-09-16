@@ -1,7 +1,5 @@
 use brotli2::CompressParams;
-use bytes::Bytes;
-use futures::stream::Stream;
-use std::io::Result;
+use futures::io::AsyncBufRead;
 
 decoder! {
     /// A brotli decoder, or decompressor.
@@ -15,22 +13,22 @@ encoder! {
     BrotliEncoder
 }
 
-impl<S: Stream<Item = Result<Bytes>>> BrotliEncoder<S> {
+impl<R: AsyncBufRead> BrotliEncoder<R> {
     /// Creates a new encoder which will read uncompressed data from the given stream and emit a
     /// compressed stream.
     ///
     /// The `level` argument here is typically 0-11.
-    pub fn new(stream: S, level: u32) -> BrotliEncoder<S> {
+    pub fn new(reader: R, level: u32) -> Self {
         let mut params = CompressParams::new();
         params.quality(level);
-        BrotliEncoder::from_params(stream, &params)
+        Self::from_params(reader, &params)
     }
 
     /// Creates a new encoder with a custom [`CompressParams`].
-    pub fn from_params(stream: S, params: &CompressParams) -> BrotliEncoder<S> {
-        BrotliEncoder {
-            inner: crate::stream::generic::Encoder::new(
-                stream,
+    pub fn from_params(reader: R, params: &CompressParams) -> Self {
+        Self {
+            inner: crate::bufread::generic::Encoder::new(
+                reader,
                 crate::codec::BrotliEncoder::new(params),
             ),
         }

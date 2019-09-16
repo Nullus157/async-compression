@@ -36,6 +36,8 @@
     missing_debug_implementations
 )]
 
+mod codec;
+
 #[cfg(feature = "bufread")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bufread")))]
 pub mod bufread;
@@ -44,7 +46,7 @@ pub mod bufread;
 pub mod stream;
 
 /// Types to configure [`flate2`](::flate2) based encoders.
-#[cfg(any(feature = "deflate", feature = "zlib", feature = "gzip"))]
+#[cfg(feature = "flate2")]
 #[cfg_attr(
     docsrs,
     doc(cfg(any(feature = "deflate", feature = "zlib", feature = "gzip")))

@@ -1,6 +1,4 @@
-use bytes::Bytes;
-use futures::stream::Stream;
-use std::io::Result;
+use futures::io::AsyncBufRead;
 
 decoder! {
     /// A zstd decoder, or decompressor.
@@ -14,15 +12,15 @@ encoder! {
     ZstdEncoder
 }
 
-impl<S: Stream<Item = Result<Bytes>>> ZstdEncoder<S> {
+impl<R: AsyncBufRead> ZstdEncoder<R> {
     /// Creates a new encoder which will read uncompressed data from the given stream and emit a
     /// compressed stream.
     ///
     /// The `level` argument here can range from 1-21. A level of `0` will use zstd's default, which is `3`.
-    pub fn new(stream: S, level: i32) -> Self {
+    pub fn new(reader: R, level: i32) -> Self {
         Self {
-            inner: crate::stream::generic::Encoder::new(
-                stream,
+            inner: crate::bufread::generic::Encoder::new(
+                reader,
                 crate::codec::ZstdEncoder::new(level),
             ),
         }

@@ -18,7 +18,7 @@ impl crate::codec::Decode for ZlibDecoder {
         self.inner.decode(input, output)
     }
 
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        self.inner.flush(output)
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
+        self.inner.finish(output)
     }
 }

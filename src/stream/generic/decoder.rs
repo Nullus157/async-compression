@@ -127,7 +127,7 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                         this.output.resize(OUTPUT_BUFFER_SIZE, 0);
                     }
 
-                    let (done, output_len) = this.decoder.flush(&mut this.output)?;
+                    let (done, output_len) = this.decoder.finish(&mut this.output)?;
 
                     *this.state = if done {
                         State::CheckingFooter

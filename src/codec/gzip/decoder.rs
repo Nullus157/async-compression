@@ -44,8 +44,8 @@ impl Decode for GzipDecoder {
         Ok((done, in_length, out_length))
     }
 
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let (done, out_length) = self.inner.flush(output)?;
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
+        let (done, out_length) = self.inner.finish(output)?;
         self.crc.update(&output[..out_length]);
         Ok((done, out_length))
     }

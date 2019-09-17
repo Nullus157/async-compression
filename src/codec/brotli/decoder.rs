@@ -45,7 +45,7 @@ impl Decode for BrotliDecoder {
         }
     }
 
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
         let (status, _, out_length) = self.do_decode(&[], output)?;
 
         match status {

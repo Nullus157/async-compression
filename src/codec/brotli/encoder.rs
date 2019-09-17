@@ -38,7 +38,7 @@ impl Encode for BrotliEncoder {
         Ok((in_length, out_length))
     }
 
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
         let (status, _, out_length) = self.do_encode(&[], output, CompressOp::Finish)?;
 
         match status {

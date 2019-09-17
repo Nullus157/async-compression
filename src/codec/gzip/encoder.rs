@@ -39,8 +39,8 @@ impl Encode for GzipEncoder {
         Ok((in_length, out_length))
     }
 
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        self.inner.flush(output)
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
+        self.inner.finish(output)
     }
 
     fn footer(&mut self) -> Vec<u8> {

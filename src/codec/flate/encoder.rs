@@ -44,7 +44,7 @@ impl Encode for FlateEncoder {
         }
     }
 
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
         let (status, _, out_length) = self.do_encode(&[], output, FlushCompress::Finish)?;
 
         match status {

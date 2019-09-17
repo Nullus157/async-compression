@@ -35,7 +35,7 @@ pub trait Encode {
     fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)>;
 
     /// Return `Ok(done, output_produced)`
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
 
     fn footer(&mut self) -> Vec<u8> {
         Vec::new()
@@ -57,7 +57,7 @@ pub trait Decode {
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
 
     /// Return `Ok(done, output_produced)`
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
 
     /// Return `Ok(())` if trailer was checked successfully
     /// Return `Err(_)` if checking fails

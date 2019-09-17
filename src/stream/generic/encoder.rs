@@ -112,7 +112,7 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
                 State::Flushing => {
                     this.output.resize(OUTPUT_BUFFER_SIZE, 0);
 
-                    let (done, output_len) = this.encoder.flush(&mut this.output)?;
+                    let (done, output_len) = this.encoder.finish(&mut this.output)?;
 
                     *this.state = if done {
                         State::WritingFooter

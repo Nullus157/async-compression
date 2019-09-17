@@ -90,7 +90,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                 }
 
                 State::Flushing => {
-                    let (done, output_len) = this.decoder.flush(output.unwritten_mut())?;
+                    let (done, output_len) = this.decoder.finish(output.unwritten_mut())?;
                     output.advance(output_len);
 
                     if done {

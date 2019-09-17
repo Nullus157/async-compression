@@ -1,12 +1,22 @@
-use crate::codec::Decode;
+use crate::{codec::Decode, util::PartialBuffer};
 use std::io::{Error, ErrorKind, Result};
 
 use flate2::Crc;
 
 #[derive(Debug)]
+enum State {
+    Header(PartialBuffer<Vec<u8>>),
+    Decoding,
+    Footer(PartialBuffer<Vec<u8>>),
+    Done,
+    Invalid,
+}
+
+#[derive(Debug)]
 pub struct GzipDecoder {
     inner: crate::codec::FlateDecoder,
     crc: Crc,
+    state: State,
 }
 
 impl GzipDecoder {
@@ -14,13 +24,9 @@ impl GzipDecoder {
         Self {
             inner: crate::codec::FlateDecoder::new(false),
             crc: Crc::new(),
+            state: State::Header(vec![0; 10].into()),
         }
     }
-}
-
-impl Decode for GzipDecoder {
-    const HEADER_LENGTH: usize = 10;
-    const FOOTER_LENGTH: usize = 8;
 
     fn parse_header(&mut self, input: &[u8]) -> Result<()> {
         if input.len() < 10 {
@@ -36,18 +42,6 @@ impl Decode for GzipDecoder {
 
         // TODO: Check that header doesn't contain any extra headers
         Ok(())
-    }
-
-    fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        let (done, in_length, out_length) = self.inner.decode(input, output)?;
-        self.crc.update(&output[..out_length]);
-        Ok((done, in_length, out_length))
-    }
-
-    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let (done, out_length) = self.inner.finish(output)?;
-        self.crc.update(&output[..out_length]);
-        Ok((done, out_length))
     }
 
     fn check_footer(&mut self, input: &[u8]) -> Result<()> {
@@ -76,5 +70,94 @@ impl Decode for GzipDecoder {
         }
 
         Ok(())
+    }
+
+    fn process(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+        inner: impl Fn(
+            &mut Self,
+            &mut PartialBuffer<&[u8]>,
+            &mut PartialBuffer<&mut [u8]>,
+        ) -> Result<bool>,
+    ) -> Result<bool> {
+        loop {
+            self.state = match std::mem::replace(&mut self.state, State::Invalid) {
+                State::Header(mut header) => {
+                    header.copy_unwritten_from(input);
+
+                    if header.unwritten().is_empty() {
+                        self.parse_header(header.written())?;
+                        State::Decoding
+                    } else {
+                        State::Header(header)
+                    }
+                }
+
+                State::Decoding => {
+                    if inner(self, input, output)? {
+                        State::Footer(vec![0; 8].into())
+                    } else {
+                        State::Decoding
+                    }
+                }
+
+                State::Footer(mut footer) => {
+                    footer.copy_unwritten_from(input);
+
+                    if footer.unwritten().is_empty() {
+                        self.check_footer(footer.written())?;
+                        State::Done
+                    } else {
+                        State::Footer(footer.take())
+                    }
+                }
+
+                State::Done => State::Done,
+                State::Invalid => panic!("Reached invalid state"),
+            };
+
+            if let State::Footer(_) | State::Done = self.state {
+                return Ok(true);
+            }
+
+            if input.unwritten().is_empty() || output.unwritten().is_empty() {
+                return Ok(false);
+            }
+        }
+    }
+}
+
+impl Decode for GzipDecoder {
+    fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
+        let mut input = PartialBuffer::new(input);
+        let mut output = PartialBuffer::new(output);
+
+        let done = self.process(&mut input, &mut output, |this, input, output| {
+            let (done, in_length, out_length) = this
+                .inner
+                .decode(input.unwritten(), output.unwritten_mut())?;
+            this.crc.update(&output.unwritten()[..out_length]);
+            input.advance(in_length);
+            output.advance(out_length);
+            Ok(done)
+        })?;
+
+        Ok((done, input.written().len(), output.written().len()))
+    }
+
+    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
+        let mut input = PartialBuffer::new(&[][..]);
+        let mut output = PartialBuffer::new(output);
+
+        let done = self.process(&mut input, &mut output, |this, _, output| {
+            let (done, out_length) = this.inner.finish(output.unwritten_mut())?;
+            this.crc.update(&output.unwritten()[..out_length]);
+            output.advance(out_length);
+            Ok(done)
+        })?;
+
+        Ok((done, output.written().len()))
     }
 }

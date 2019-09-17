@@ -18,10 +18,6 @@ impl ZstdDecoder {
 
 impl Decode for ZstdDecoder {
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        if input.is_empty() {
-            return Ok((true, 0, 0));
-        }
-
         let status = self.decoder.get_mut().run_on_buffers(input, output)?;
         Ok((false, status.bytes_read, status.bytes_written))
     }

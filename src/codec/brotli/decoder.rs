@@ -33,10 +33,6 @@ impl BrotliDecoder {
 
 impl Decode for BrotliDecoder {
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        if input.is_empty() {
-            return Ok((true, 0, 0));
-        }
-
         let (status, in_length, out_length) = self.do_decode(input, output)?;
 
         match status {

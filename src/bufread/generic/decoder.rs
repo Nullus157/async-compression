@@ -78,14 +78,18 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
 
                 State::Decoding => {
                     let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
-                    let (done, input_len, output_len) =
-                        this.decoder.decode(input, output.unwritten_mut())?;
-                    this.reader.as_mut().consume(input_len);
-                    output.advance(output_len);
-                    if done {
+                    if input.is_empty() {
                         (State::Flushing, false)
                     } else {
-                        (State::Decoding, false)
+                        let (done, input_len, output_len) =
+                            this.decoder.decode(input, output.unwritten_mut())?;
+                        this.reader.as_mut().consume(input_len);
+                        output.advance(output_len);
+                        if done {
+                            (State::Flushing, false)
+                        } else {
+                            (State::Decoding, false)
+                        }
                     }
                 }
 

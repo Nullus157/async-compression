@@ -110,6 +110,11 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                 }
 
                 State::Writing => {
+                    if this.input.is_empty() {
+                        *this.state = State::Reading;
+                        continue;
+                    }
+
                     if this.output.len() < OUTPUT_BUFFER_SIZE {
                         this.output.resize(OUTPUT_BUFFER_SIZE, 0);
                     }
@@ -117,8 +122,12 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                     let (done, input_len, output_len) =
                         this.decoder.decode(&this.input, &mut this.output)?;
 
-                    *this.state = if done { State::Reading } else { State::Writing };
                     this.input.advance(input_len);
+                    *this.state = if done {
+                        State::Flushing
+                    } else {
+                        State::Writing
+                    };
                     Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
                 }
 

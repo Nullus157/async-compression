@@ -25,13 +25,22 @@ impl<B: AsRef<[u8]>> PartialBuffer<B> {
     }
 }
 
-impl<B: AsRef<[u8]> + AsMut<[u8]> + Default> PartialBuffer<B> {
+impl<B: AsRef<[u8]> + AsMut<[u8]>> PartialBuffer<B> {
     pub(crate) fn unwritten_mut(&mut self) -> &mut [u8] {
         &mut self.buffer.as_mut()[self.index..]
     }
+
+    pub(crate) fn copy_unwritten_from<C: AsRef<[u8]>>(&mut self, other: &mut PartialBuffer<C>) {
+        let len = std::cmp::min(self.unwritten().len(), other.unwritten().len());
+
+        self.unwritten_mut()[..len].copy_from_slice(&other.unwritten()[..len]);
+
+        self.advance(len);
+        other.advance(len);
+    }
 }
 
-impl<B: AsRef<[u8]> + AsMut<[u8]> + Default> PartialBuffer<B> {
+impl<B: AsRef<[u8]> + Default> PartialBuffer<B> {
     pub(crate) fn take(&mut self) -> Self {
         std::mem::replace(self, Self::new(B::default()))
     }

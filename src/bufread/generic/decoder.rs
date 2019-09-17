@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-use crate::{bufread::generic::PartialBuffer, codec::Decode};
+use crate::{codec::Decode, util::PartialBuffer};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
@@ -31,10 +31,11 @@ pub struct Decoder<R: AsyncBufRead, D: Decode> {
 
 impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
     pub fn new(reader: R, decoder: D) -> Self {
+        let state = State::Header(vec![0; D::HEADER_LENGTH].into());
         Self {
             reader,
             decoder,
-            state: State::Header(vec![0; D::HEADER_LENGTH].into()),
+            state,
         }
     }
 
@@ -64,7 +65,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
         loop {
             let (state, done) = match this.state {
                 State::Header(header) => {
-                    let len = ready!(this.reader.as_mut().poll_read(cx, header.unwritten()))?;
+                    let len = ready!(this.reader.as_mut().poll_read(cx, header.unwritten_mut()))?;
                     header.advance(len);
 
                     if header.unwritten().is_empty() {
@@ -78,7 +79,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                 State::Decoding => {
                     let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
                     let (done, input_len, output_len) =
-                        this.decoder.decode(input, output.unwritten())?;
+                        this.decoder.decode(input, output.unwritten_mut())?;
                     this.reader.as_mut().consume(input_len);
                     output.advance(output_len);
                     if done {
@@ -89,7 +90,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                 }
 
                 State::Flushing => {
-                    let (done, output_len) = this.decoder.flush(output.unwritten())?;
+                    let (done, output_len) = this.decoder.flush(output.unwritten_mut())?;
                     output.advance(output_len);
 
                     if done {
@@ -100,7 +101,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                 }
 
                 State::Footer(footer) => {
-                    let len = ready!(this.reader.as_mut().poll_read(cx, footer.unwritten()))?;
+                    let len = ready!(this.reader.as_mut().poll_read(cx, footer.unwritten_mut()))?;
                     footer.advance(len);
 
                     if footer.unwritten().is_empty() {

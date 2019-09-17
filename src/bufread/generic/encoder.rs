@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-use crate::{bufread::generic::PartialBuffer, codec::Encode};
+use crate::{codec::Encode, util::PartialBuffer};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
@@ -31,11 +31,11 @@ pub struct Encoder<R: AsyncBufRead, E: Encode> {
 
 impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
     pub fn new(reader: R, mut encoder: E) -> Self {
-        let header = encoder.header();
+        let state = State::Header(encoder.header().into());
         Self {
             reader,
             encoder,
-            state: State::Header(header.into()),
+            state,
         }
     }
 
@@ -66,7 +66,7 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
             let (state, done) = match this.state {
                 State::Header(header) => {
                     let len = std::cmp::min(output.unwritten().len(), header.unwritten().len());
-                    output.unwritten()[..len].copy_from_slice(&header.unwritten()[..len]);
+                    output.unwritten_mut()[..len].copy_from_slice(&header.unwritten()[..len]);
                     output.advance(len);
                     header.advance(len);
                     if header.unwritten().is_empty() {
@@ -82,7 +82,7 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
                         (State::Flushing, false)
                     } else {
                         let (input_len, output_len) =
-                            this.encoder.encode(input, output.unwritten())?;
+                            this.encoder.encode(input, output.unwritten_mut())?;
                         this.reader.as_mut().consume(input_len);
                         output.advance(output_len);
                         (State::Encoding, output.unwritten().is_empty())
@@ -90,7 +90,7 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
                 }
 
                 State::Flushing => {
-                    let (done, output_len) = this.encoder.flush(output.unwritten())?;
+                    let (done, output_len) = this.encoder.flush(output.unwritten_mut())?;
                     output.advance(output_len);
 
                     if done {
@@ -102,7 +102,7 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
 
                 State::Footer(footer) => {
                     let len = std::cmp::min(output.unwritten().len(), footer.unwritten().len());
-                    output.unwritten()[..len].copy_from_slice(&footer.unwritten()[..len]);
+                    output.unwritten_mut()[..len].copy_from_slice(&footer.unwritten()[..len]);
                     output.advance(len);
                     footer.advance(len);
                     if footer.unwritten().is_empty() {

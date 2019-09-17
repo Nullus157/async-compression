@@ -27,42 +27,17 @@ pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
 pub(crate) use self::zstd::{ZstdDecoder, ZstdEncoder};
 
 pub trait Encode {
-    fn header(&mut self) -> Vec<u8> {
-        Vec::new()
-    }
-
     /// Return `Ok((input_consumed, output_produced))`
     fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)>;
 
     /// Return `Ok(done, output_produced)`
     fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
-
-    fn footer(&mut self) -> Vec<u8> {
-        Vec::new()
-    }
 }
 
 pub trait Decode {
-    const HEADER_LENGTH: usize = 0;
-    const FOOTER_LENGTH: usize = 0;
-
-    /// Return `Ok(())` if header was finished
-    /// Return `Err(_)` if parsing fails
-    fn parse_header(&mut self, input: &[u8]) -> Result<()> {
-        let _ = input;
-        Ok(())
-    }
-
     /// Return `Ok((done, input_consumed, output_produced))`
     fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
 
     /// Return `Ok(done, output_produced)`
     fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
-
-    /// Return `Ok(())` if trailer was checked successfully
-    /// Return `Err(_)` if checking fails
-    fn check_footer(&mut self, input: &[u8]) -> Result<()> {
-        let _ = input;
-        Ok(())
-    }
 }

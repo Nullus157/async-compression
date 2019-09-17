@@ -14,11 +14,9 @@ const OUTPUT_BUFFER_SIZE: usize = 8_000;
 
 #[derive(Debug)]
 enum State {
-    WritingHeader,
     Reading,
     Writing,
     Flushing,
-    WritingFooter,
     Done,
     Invalid,
 }
@@ -39,7 +37,7 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Encoder<S, E> {
         Self {
             stream,
             encoder,
-            state: State::WritingHeader,
+            state: State::Reading,
             input: Bytes::new(),
             output: BytesMut::new(),
         }
@@ -71,11 +69,6 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
         #[allow(clippy::never_loop)] // https://github.com/rust-lang/rust-clippy/issues/4058
         loop {
             break match mem::replace(this.state, State::Invalid) {
-                State::WritingHeader => {
-                    *this.state = State::Reading;
-                    Poll::Ready(Some(Ok(this.encoder.header().into())))
-                }
-
                 State::Reading => {
                     *this.state = State::Reading;
                     *this.state = match ready!(this.stream.as_mut().poll_next(cx)) {
@@ -114,17 +107,8 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
 
                     let (done, output_len) = this.encoder.finish(&mut this.output)?;
 
-                    *this.state = if done {
-                        State::WritingFooter
-                    } else {
-                        State::Flushing
-                    };
+                    *this.state = if done { State::Done } else { State::Flushing };
                     Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
-                }
-
-                State::WritingFooter => {
-                    *this.state = State::Done;
-                    Poll::Ready(Some(Ok(this.encoder.footer().into())))
                 }
 
                 State::Done => Poll::Ready(None),

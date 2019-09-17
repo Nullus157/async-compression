@@ -13,10 +13,8 @@ use pin_project::unsafe_project;
 
 #[derive(Debug)]
 enum State {
-    Header(PartialBuffer<Vec<u8>>),
     Encoding,
     Flushing,
-    Footer(PartialBuffer<Vec<u8>>),
     Done,
 }
 
@@ -30,12 +28,11 @@ pub struct Encoder<R: AsyncBufRead, E: Encode> {
 }
 
 impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
-    pub fn new(reader: R, mut encoder: E) -> Self {
-        let state = State::Header(encoder.header().into());
+    pub fn new(reader: R, encoder: E) -> Self {
         Self {
             reader,
             encoder,
-            state,
+            state: State::Encoding,
         }
     }
 
@@ -63,29 +60,17 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
         let mut this = self.project();
 
         loop {
-            let (state, done) = match this.state {
-                State::Header(header) => {
-                    let len = std::cmp::min(output.unwritten().len(), header.unwritten().len());
-                    output.unwritten_mut()[..len].copy_from_slice(&header.unwritten()[..len]);
-                    output.advance(len);
-                    header.advance(len);
-                    if header.unwritten().is_empty() {
-                        (State::Encoding, false)
-                    } else {
-                        (State::Header(header.take()), false)
-                    }
-                }
-
+            *this.state = match this.state {
                 State::Encoding => {
                     let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
                     if input.is_empty() {
-                        (State::Flushing, false)
+                        State::Flushing
                     } else {
                         let (input_len, output_len) =
                             this.encoder.encode(input, output.unwritten_mut())?;
                         this.reader.as_mut().consume(input_len);
                         output.advance(output_len);
-                        (State::Encoding, output.unwritten().is_empty())
+                        State::Encoding
                     }
                 }
 
@@ -94,29 +79,19 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
                     output.advance(output_len);
 
                     if done {
-                        (State::Footer(this.encoder.footer().into()), false)
+                        State::Done
                     } else {
-                        (State::Flushing, true)
+                        State::Flushing
                     }
                 }
 
-                State::Footer(footer) => {
-                    let len = std::cmp::min(output.unwritten().len(), footer.unwritten().len());
-                    output.unwritten_mut()[..len].copy_from_slice(&footer.unwritten()[..len]);
-                    output.advance(len);
-                    footer.advance(len);
-                    if footer.unwritten().is_empty() {
-                        (State::Done, true)
-                    } else {
-                        (State::Footer(footer.take()), false)
-                    }
-                }
-
-                State::Done => (State::Done, true),
+                State::Done => State::Done,
             };
 
-            *this.state = state;
-            if done || output.unwritten().is_empty() {
+            if let State::Done = *this.state {
+                return Poll::Ready(Ok(()));
+            }
+            if output.unwritten().is_empty() {
                 return Poll::Ready(Ok(()));
             }
         }

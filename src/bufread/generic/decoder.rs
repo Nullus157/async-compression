@@ -13,10 +13,8 @@ use pin_project::unsafe_project;
 
 #[derive(Debug)]
 enum State {
-    Header(PartialBuffer<Vec<u8>>),
     Decoding,
     Flushing,
-    Footer(PartialBuffer<Vec<u8>>),
     Done,
 }
 
@@ -31,11 +29,10 @@ pub struct Decoder<R: AsyncBufRead, D: Decode> {
 
 impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
     pub fn new(reader: R, decoder: D) -> Self {
-        let state = State::Header(vec![0; D::HEADER_LENGTH].into());
         Self {
             reader,
             decoder,
-            state,
+            state: State::Decoding,
         }
     }
 
@@ -63,32 +60,20 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
         let mut this = self.project();
 
         loop {
-            let (state, done) = match this.state {
-                State::Header(header) => {
-                    let len = ready!(this.reader.as_mut().poll_read(cx, header.unwritten_mut()))?;
-                    header.advance(len);
-
-                    if header.unwritten().is_empty() {
-                        this.decoder.parse_header(header.written())?;
-                        (State::Decoding, false)
-                    } else {
-                        (State::Header(header.take()), false)
-                    }
-                }
-
+            *this.state = match this.state {
                 State::Decoding => {
                     let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
                     if input.is_empty() {
-                        (State::Flushing, false)
+                        State::Flushing
                     } else {
                         let (done, input_len, output_len) =
                             this.decoder.decode(input, output.unwritten_mut())?;
                         this.reader.as_mut().consume(input_len);
                         output.advance(output_len);
                         if done {
-                            (State::Flushing, false)
+                            State::Flushing
                         } else {
-                            (State::Decoding, false)
+                            State::Decoding
                         }
                     }
                 }
@@ -98,29 +83,19 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                     output.advance(output_len);
 
                     if done {
-                        (State::Footer(vec![0; D::FOOTER_LENGTH].into()), false)
+                        State::Done
                     } else {
-                        (State::Flushing, true)
+                        State::Flushing
                     }
                 }
 
-                State::Footer(footer) => {
-                    let len = ready!(this.reader.as_mut().poll_read(cx, footer.unwritten_mut()))?;
-                    footer.advance(len);
-
-                    if footer.unwritten().is_empty() {
-                        this.decoder.check_footer(footer.written())?;
-                        (State::Done, true)
-                    } else {
-                        (State::Footer(footer.take()), true)
-                    }
-                }
-
-                State::Done => (State::Done, true),
+                State::Done => State::Done,
             };
 
-            *this.state = state;
-            if done || output.unwritten().is_empty() {
+            if let State::Done = *this.state {
+                return Poll::Ready(Ok(()));
+            }
+            if output.unwritten().is_empty() {
                 return Poll::Ready(Ok(()));
             }
         }

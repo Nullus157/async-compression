@@ -5,7 +5,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::codec::Decode;
+use crate::{codec::Decode, util::PartialBuffer};
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
@@ -72,11 +72,7 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                     *this.state = State::Reading;
                     *this.state = match ready!(this.stream.as_mut().poll_next(cx)) {
                         Some(chunk) => {
-                            if this.input.is_empty() {
-                                *this.input = chunk?;
-                            } else {
-                                this.input.extend_from_slice(&chunk?);
-                            }
+                            *this.input = chunk?;
                             State::Writing
                         }
                         None => State::Flushing,
@@ -94,15 +90,21 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                         this.output.resize(OUTPUT_BUFFER_SIZE, 0);
                     }
 
-                    let (done, input_len, output_len) =
-                        this.decoder.decode(&this.input, &mut this.output)?;
+                    let mut input = PartialBuffer::new(this.input.as_ref());
+                    let mut output = PartialBuffer::new(this.output.as_mut());
 
+                    let done = this.decoder.decode(&mut input, &mut output)?;
+
+                    let input_len = input.written().len();
                     this.input.advance(input_len);
+
                     *this.state = if done {
                         State::Flushing
                     } else {
                         State::Writing
                     };
+
+                    let output_len = output.written().len();
                     Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
                 }
 
@@ -111,9 +113,13 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
                         this.output.resize(OUTPUT_BUFFER_SIZE, 0);
                     }
 
-                    let (done, output_len) = this.decoder.finish(&mut this.output)?;
+                    let mut output = PartialBuffer::new(this.output.as_mut());
+
+                    let done = this.decoder.finish(&mut output)?;
 
                     *this.state = if done { State::Done } else { State::Reading };
+
+                    let output_len = output.written().len();
                     Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
                 }
 

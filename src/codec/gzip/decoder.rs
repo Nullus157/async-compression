@@ -130,34 +130,29 @@ impl GzipDecoder {
 }
 
 impl Decode for GzipDecoder {
-    fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        let mut input = PartialBuffer::new(input);
-        let mut output = PartialBuffer::new(output);
-
-        let done = self.process(&mut input, &mut output, |this, input, output| {
-            let (done, in_length, out_length) = this
-                .inner
-                .decode(input.unwritten(), output.unwritten_mut())?;
-            this.crc.update(&output.unwritten()[..out_length]);
-            input.advance(in_length);
-            output.advance(out_length);
+    fn decode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<bool> {
+        self.process(input, output, |this, input, output| {
+            let prior_written = output.written().len();
+            let done = this.inner.decode(input, output)?;
+            this.crc.update(&output.written()[prior_written..]);
             Ok(done)
-        })?;
-
-        Ok((done, input.written().len(), output.written().len()))
+        })
     }
 
-    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let mut input = PartialBuffer::new(&[][..]);
-        let mut output = PartialBuffer::new(output);
-
-        let done = self.process(&mut input, &mut output, |this, _, output| {
-            let (done, out_length) = this.inner.finish(output.unwritten_mut())?;
-            this.crc.update(&output.unwritten()[..out_length]);
-            output.advance(out_length);
-            Ok(done)
-        })?;
-
-        Ok((done, output.written().len()))
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        self.process(
+            &mut PartialBuffer::new(&[][..]),
+            output,
+            |this, _, output| {
+                let prior_written = output.written().len();
+                let done = this.inner.finish(output)?;
+                this.crc.update(&output.written()[prior_written..]);
+                Ok(done)
+            },
+        )
     }
 }

@@ -66,10 +66,10 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                     if input.is_empty() {
                         State::Flushing
                     } else {
-                        let (done, input_len, output_len) =
-                            this.decoder.decode(input, output.unwritten_mut())?;
-                        this.reader.as_mut().consume(input_len);
-                        output.advance(output_len);
+                        let mut input = PartialBuffer::new(input);
+                        let done = this.decoder.decode(&mut input, output)?;
+                        let len = input.written().len();
+                        this.reader.as_mut().consume(len);
                         if done {
                             State::Flushing
                         } else {
@@ -79,10 +79,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                 }
 
                 State::Flushing => {
-                    let (done, output_len) = this.decoder.finish(output.unwritten_mut())?;
-                    output.advance(output_len);
-
-                    if done {
+                    if this.decoder.finish(output)? {
                         State::Done
                     } else {
                         State::Flushing

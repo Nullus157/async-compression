@@ -1,3 +1,4 @@
+use crate::util::PartialBuffer;
 use std::io::Result;
 
 #[cfg(feature = "brotli")]
@@ -27,17 +28,24 @@ pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
 pub(crate) use self::zstd::{ZstdDecoder, ZstdEncoder};
 
 pub trait Encode {
-    /// Return `Ok((input_consumed, output_produced))`
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)>;
+    fn encode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<()>;
 
-    /// Return `Ok(done, output_produced)`
-    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
+    /// Returns whether the internal buffers are flushed and the end of the stream is written
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
 }
 
 pub trait Decode {
-    /// Return `Ok((done, input_consumed, output_produced))`
-    fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
+    /// Returns whether the end of the stream has been read
+    fn decode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<bool>;
 
-    /// Return `Ok(done, output_produced)`
-    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
+    /// Returns whether the internal buffers are flushed
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
 }

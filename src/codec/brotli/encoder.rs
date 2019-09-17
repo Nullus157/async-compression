@@ -1,4 +1,4 @@
-use crate::codec::Encode;
+use crate::{codec::Encode, util::PartialBuffer};
 use std::{fmt, io::Result};
 
 use brotli2::{
@@ -17,33 +17,43 @@ impl BrotliEncoder {
         Self { compress }
     }
 
-    fn do_encode(
+    fn encode(
         &mut self,
-        mut input: &[u8],
-        mut output: &mut [u8],
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
         op: CompressOp,
-    ) -> Result<(CoStatus, usize, usize)> {
-        let input_len = input.len();
-        let output_len = output.len();
+    ) -> Result<CoStatus> {
+        let mut in_buf = input.unwritten();
+        let mut out_buf = output.unwritten_mut();
 
-        let status = self.compress.compress(op, &mut input, &mut output)?;
+        let original_input_len = in_buf.len();
+        let original_output_len = out_buf.len();
 
-        Ok((status, input_len - input.len(), output_len - output.len()))
+        let status = self.compress.compress(op, &mut in_buf, &mut out_buf)?;
+
+        let input_len = original_input_len - in_buf.len();
+        let output_len = original_output_len - out_buf.len();
+
+        input.advance(input_len);
+        output.advance(output_len);
+
+        Ok(status)
     }
 }
 
 impl Encode for BrotliEncoder {
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)> {
-        let (_, in_length, out_length) = self.do_encode(input, output, CompressOp::Process)?;
-        Ok((in_length, out_length))
+    fn encode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<()> {
+        self.encode(input, output, CompressOp::Process).map(drop)
     }
 
-    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let (status, _, out_length) = self.do_encode(&[], output, CompressOp::Finish)?;
-
-        match status {
-            CoStatus::Unfinished => Ok((false, out_length)),
-            CoStatus::Finished => Ok((true, out_length)),
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        match self.encode(&mut PartialBuffer::new(&[][..]), output, CompressOp::Finish)? {
+            CoStatus::Unfinished => Ok(false),
+            CoStatus::Finished => Ok(true),
         }
     }
 }

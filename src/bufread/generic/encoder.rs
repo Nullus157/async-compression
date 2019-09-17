@@ -66,19 +66,16 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
                     if input.is_empty() {
                         State::Flushing
                     } else {
-                        let (input_len, output_len) =
-                            this.encoder.encode(input, output.unwritten_mut())?;
-                        this.reader.as_mut().consume(input_len);
-                        output.advance(output_len);
+                        let mut input = PartialBuffer::new(input);
+                        this.encoder.encode(&mut input, output)?;
+                        let len = input.written().len();
+                        this.reader.as_mut().consume(len);
                         State::Encoding
                     }
                 }
 
                 State::Flushing => {
-                    let (done, output_len) = this.encoder.finish(output.unwritten_mut())?;
-                    output.advance(output_len);
-
-                    if done {
+                    if this.encoder.finish(output)? {
                         State::Done
                     } else {
                         State::Flushing

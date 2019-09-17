@@ -1,3 +1,4 @@
+use crate::util::PartialBuffer;
 use std::io::Result;
 
 #[derive(Debug)]
@@ -14,11 +15,15 @@ impl DeflateDecoder {
 }
 
 impl crate::codec::Decode for DeflateDecoder {
-    fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
+    fn decode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<bool> {
         self.inner.decode(input, output)
     }
 
-    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         self.inner.finish(output)
     }
 }

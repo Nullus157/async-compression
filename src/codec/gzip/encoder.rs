@@ -105,33 +105,28 @@ impl GzipEncoder {
 }
 
 impl Encode for GzipEncoder {
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)> {
-        let mut input = PartialBuffer::new(input);
-        let mut output = PartialBuffer::new(output);
-
-        self.process(&mut input, &mut output, |this, input, output| {
-            let (in_length, out_length) = this
-                .inner
-                .encode(input.unwritten(), output.unwritten_mut())?;
-            this.crc.update(&input.unwritten()[..in_length]);
-            input.advance(in_length);
-            output.advance(out_length);
+    fn encode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<()> {
+        self.process(input, output, |this, input, output| {
+            let prior_written = input.written().len();
+            this.inner.encode(input, output)?;
+            this.crc.update(&input.written()[prior_written..]);
             Ok(false)
-        })?;
-
-        Ok((input.written().len(), output.written().len()))
+        })
+        .map(drop)
     }
 
-    fn finish(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let mut input = PartialBuffer::new(&[][..]);
-        let mut output = PartialBuffer::new(output);
-
-        let done = self.process(&mut input, &mut output, |this, _, output| {
-            let (done, out_length) = this.inner.finish(output.unwritten_mut())?;
-            output.advance(out_length);
-            Ok(done)
-        })?;
-
-        Ok((done, output.written().len()))
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        self.process(
+            &mut PartialBuffer::new(&[][..]),
+            output,
+            |this, _, output| {
+                let done = this.inner.finish(output)?;
+                Ok(done)
+            },
+        )
     }
 }

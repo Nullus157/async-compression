@@ -1,3 +1,4 @@
+use crate::util::PartialBuffer;
 use std::io::Result;
 
 #[cfg(feature = "brotli")]
@@ -27,42 +28,24 @@ pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
 pub(crate) use self::zstd::{ZstdDecoder, ZstdEncoder};
 
 pub trait Encode {
-    fn header(&mut self) -> Vec<u8> {
-        Vec::new()
-    }
+    fn encode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<()>;
 
-    /// Return `Ok((input_consumed, output_produced))`
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)>;
-
-    /// Return `Ok(done, output_produced)`
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
-
-    fn footer(&mut self) -> Vec<u8> {
-        Vec::new()
-    }
+    /// Returns whether the internal buffers are flushed and the end of the stream is written
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
 }
 
 pub trait Decode {
-    const HEADER_LENGTH: usize = 0;
-    const FOOTER_LENGTH: usize = 0;
+    /// Returns whether the end of the stream has been read
+    fn decode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<bool>;
 
-    /// Return `Ok(())` if header was finished
-    /// Return `Err(_)` if parsing fails
-    fn parse_header(&mut self, input: &[u8]) -> Result<()> {
-        let _ = input;
-        Ok(())
-    }
-
-    /// Return `Ok((done, input_consumed, output_produced))`
-    fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)>;
-
-    /// Return `Ok(done, output_produced)`
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)>;
-
-    /// Return `Ok(())` if trailer was checked successfully
-    /// Return `Err(_)` if checking fails
-    fn check_footer(&mut self, input: &[u8]) -> Result<()> {
-        let _ = input;
-        Ok(())
-    }
+    /// Returns whether the internal buffers are flushed
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
 }

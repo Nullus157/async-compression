@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-use crate::{bufread::generic::PartialBuffer, codec::Decode};
+use crate::{codec::Decode, util::PartialBuffer};
 use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
@@ -13,10 +13,8 @@ use pin_project::unsafe_project;
 
 #[derive(Debug)]
 enum State {
-    Header(PartialBuffer<Vec<u8>>),
     Decoding,
     Flushing,
-    Footer(PartialBuffer<Vec<u8>>),
     Done,
 }
 
@@ -34,7 +32,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
         Self {
             reader,
             decoder,
-            state: State::Header(vec![0; D::HEADER_LENGTH].into()),
+            state: State::Decoding,
         }
     }
 
@@ -62,60 +60,39 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
         let mut this = self.project();
 
         loop {
-            let (state, done) = match this.state {
-                State::Header(header) => {
-                    let len = ready!(this.reader.as_mut().poll_read(cx, header.unwritten()))?;
-                    header.advance(len);
-
-                    if header.unwritten().is_empty() {
-                        this.decoder.parse_header(header.written())?;
-                        (State::Decoding, false)
-                    } else {
-                        (State::Header(header.take()), false)
-                    }
-                }
-
+            *this.state = match this.state {
                 State::Decoding => {
                     let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
-                    let (done, input_len, output_len) =
-                        this.decoder.decode(input, output.unwritten())?;
-                    this.reader.as_mut().consume(input_len);
-                    output.advance(output_len);
-                    if done {
-                        (State::Flushing, false)
+                    if input.is_empty() {
+                        State::Flushing
                     } else {
-                        (State::Decoding, false)
+                        let mut input = PartialBuffer::new(input);
+                        let done = this.decoder.decode(&mut input, output)?;
+                        let len = input.written().len();
+                        this.reader.as_mut().consume(len);
+                        if done {
+                            State::Flushing
+                        } else {
+                            State::Decoding
+                        }
                     }
                 }
 
                 State::Flushing => {
-                    let (done, output_len) = this.decoder.flush(output.unwritten())?;
-                    output.advance(output_len);
-
-                    if done {
-                        (State::Footer(vec![0; D::FOOTER_LENGTH].into()), false)
+                    if this.decoder.finish(output)? {
+                        State::Done
                     } else {
-                        (State::Flushing, true)
+                        State::Flushing
                     }
                 }
 
-                State::Footer(footer) => {
-                    let len = ready!(this.reader.as_mut().poll_read(cx, footer.unwritten()))?;
-                    footer.advance(len);
-
-                    if footer.unwritten().is_empty() {
-                        this.decoder.check_footer(footer.written())?;
-                        (State::Done, true)
-                    } else {
-                        (State::Footer(footer.take()), true)
-                    }
-                }
-
-                State::Done => (State::Done, true),
+                State::Done => State::Done,
             };
 
-            *this.state = state;
-            if done || output.unwritten().is_empty() {
+            if let State::Done = *this.state {
+                return Poll::Ready(Ok(()));
+            }
+            if output.unwritten().is_empty() {
                 return Poll::Ready(Ok(()));
             }
         }

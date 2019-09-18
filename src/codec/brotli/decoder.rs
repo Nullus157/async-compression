@@ -1,4 +1,4 @@
-use crate::codec::Decode;
+use crate::{codec::Decode, util::PartialBuffer};
 use std::{
     fmt,
     io::{Error, ErrorKind, Result},
@@ -17,40 +17,45 @@ impl BrotliDecoder {
         }
     }
 
-    fn do_decode(
+    fn decode(
         &mut self,
-        mut input: &[u8],
-        mut output: &mut [u8],
-    ) -> Result<(DeStatus, usize, usize)> {
-        let input_len = input.len();
-        let output_len = output.len();
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<DeStatus> {
+        let mut in_buf = input.unwritten();
+        let mut out_buf = output.unwritten_mut();
 
-        let status = self.decompress.decompress(&mut input, &mut output)?;
+        let original_input_len = in_buf.len();
+        let original_output_len = out_buf.len();
 
-        Ok((status, input_len - input.len(), output_len - output.len()))
+        let status = self.decompress.decompress(&mut in_buf, &mut out_buf)?;
+
+        let input_len = original_input_len - in_buf.len();
+        let output_len = original_output_len - out_buf.len();
+
+        input.advance(input_len);
+        output.advance(output_len);
+
+        Ok(status)
     }
 }
 
 impl Decode for BrotliDecoder {
-    fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        if input.is_empty() {
-            return Ok((true, 0, 0));
-        }
-
-        let (status, in_length, out_length) = self.do_decode(input, output)?;
-
-        match status {
-            DeStatus::NeedOutput | DeStatus::NeedInput => Ok((false, in_length, out_length)),
-            DeStatus::Finished => Ok((true, in_length, out_length)),
+    fn decode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<bool> {
+        match self.decode(input, output)? {
+            DeStatus::Finished => Ok(true),
+            DeStatus::NeedOutput | DeStatus::NeedInput => Ok(false),
         }
     }
 
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let (status, _, out_length) = self.do_decode(&[], output)?;
-
-        match status {
-            DeStatus::Finished => Ok((true, out_length)),
-            DeStatus::NeedOutput => Ok((false, out_length)),
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
+            DeStatus::Finished => Ok(true),
+            DeStatus::NeedOutput => Ok(false),
             DeStatus::NeedInput => Err(Error::new(
                 ErrorKind::UnexpectedEof,
                 "reached unexpected EOF",

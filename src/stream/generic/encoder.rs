@@ -5,7 +5,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::codec::Encode;
+use crate::{codec::Encode, util::PartialBuffer};
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
 use pin_project::unsafe_project;
@@ -14,11 +14,9 @@ const OUTPUT_BUFFER_SIZE: usize = 8_000;
 
 #[derive(Debug)]
 enum State {
-    WritingHeader,
     Reading,
     Writing,
     Flushing,
-    WritingFooter,
     Done,
     Invalid,
 }
@@ -39,7 +37,7 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Encoder<S, E> {
         Self {
             stream,
             encoder,
-            state: State::WritingHeader,
+            state: State::Reading,
             input: Bytes::new(),
             output: BytesMut::new(),
         }
@@ -71,11 +69,6 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
         #[allow(clippy::never_loop)] // https://github.com/rust-lang/rust-clippy/issues/4058
         loop {
             break match mem::replace(this.state, State::Invalid) {
-                State::WritingHeader => {
-                    *this.state = State::Reading;
-                    Poll::Ready(Some(Ok(this.encoder.header().into())))
-                }
-
                 State::Reading => {
                     *this.state = State::Reading;
                     *this.state = match ready!(this.stream.as_mut().poll_next(cx)) {
@@ -102,29 +95,29 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
 
                     this.output.resize(OUTPUT_BUFFER_SIZE, 0);
 
-                    let (input_len, output_len) =
-                        this.encoder.encode(&this.input, &mut this.output)?;
+                    let mut input = PartialBuffer::new(this.input.as_ref());
+                    let mut output = PartialBuffer::new(this.output.as_mut());
 
+                    this.encoder.encode(&mut input, &mut output)?;
+
+                    let input_len = input.written().len();
                     this.input.advance(input_len);
+
+                    let output_len = output.written().len();
                     Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
                 }
 
                 State::Flushing => {
                     this.output.resize(OUTPUT_BUFFER_SIZE, 0);
 
-                    let (done, output_len) = this.encoder.flush(&mut this.output)?;
+                    let mut output = PartialBuffer::new(this.output.as_mut());
 
-                    *this.state = if done {
-                        State::WritingFooter
-                    } else {
-                        State::Flushing
-                    };
+                    let done = this.encoder.finish(&mut output)?;
+
+                    *this.state = if done { State::Done } else { State::Flushing };
+
+                    let output_len = output.written().len();
                     Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
-                }
-
-                State::WritingFooter => {
-                    *this.state = State::Done;
-                    Poll::Ready(Some(Ok(this.encoder.footer().into())))
                 }
 
                 State::Done => Poll::Ready(None),

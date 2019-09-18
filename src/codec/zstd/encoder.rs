@@ -1,4 +1,4 @@
-use crate::{codec::Encode, unshared::Unshared};
+use crate::{codec::Encode, unshared::Unshared, util::PartialBuffer};
 use libzstd::stream::raw::{Encoder, Operation};
 use std::io::Result;
 
@@ -16,29 +16,25 @@ impl ZstdEncoder {
 }
 
 impl Encode for ZstdEncoder {
-    fn header(&mut self) -> Vec<u8> {
-        // zstd needs to have 0 bytes written to it to create a valid compressed 0 byte stream,
-        // just flushing it after not writing to it is not enough, here seems a decent place to do
-        // it.
-        let mut output = vec![0; 128];
+    fn encode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<()> {
         let status = self
             .encoder
             .get_mut()
-            .run_on_buffers(&[], &mut output)
-            .unwrap();
-        output.truncate(status.bytes_written);
-        output
+            .run_on_buffers(input.unwritten(), output.unwritten_mut())?;
+        input.advance(status.bytes_read);
+        output.advance(status.bytes_written);
+        Ok(())
     }
 
-    fn encode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(usize, usize)> {
-        let status = self.encoder.get_mut().run_on_buffers(input, output)?;
-        Ok((status.bytes_read, status.bytes_written))
-    }
-
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let mut output = zstd_safe::OutBuffer::around(output);
-
-        let bytes_left = self.encoder.get_mut().finish(&mut output, true)?;
-        Ok((bytes_left == 0, output.as_slice().len()))
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_mut());
+        let bytes_left = self.encoder.get_mut().finish(&mut out_buf, true)?;
+        let len = out_buf.as_slice().len();
+        output.advance(len);
+        Ok(bytes_left == 0)
     }
 }

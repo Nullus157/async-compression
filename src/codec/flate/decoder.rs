@@ -1,4 +1,4 @@
-use crate::codec::Decode;
+use crate::{codec::Decode, util::PartialBuffer};
 use std::io::{Error, ErrorKind, Result};
 
 use flate2::{Decompress, FlushDecompress, Status};
@@ -15,46 +15,47 @@ impl FlateDecoder {
         }
     }
 
-    fn do_decode(
+    fn decode(
         &mut self,
-        input: &[u8],
-        output: &mut [u8],
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
         flush: FlushDecompress,
-    ) -> Result<(Status, usize, usize)> {
+    ) -> Result<Status> {
         let prior_in = self.decompress.total_in();
         let prior_out = self.decompress.total_out();
 
-        let status = self.decompress.decompress(input, output, flush)?;
+        let status =
+            self.decompress
+                .decompress(input.unwritten(), output.unwritten_mut(), flush)?;
 
-        let in_length = (self.decompress.total_in() - prior_in) as usize;
-        let out_length = (self.decompress.total_out() - prior_out) as usize;
+        input.advance((self.decompress.total_in() - prior_in) as usize);
+        output.advance((self.decompress.total_out() - prior_out) as usize);
 
-        Ok((status, in_length, out_length))
+        Ok(status)
     }
 }
 
 impl Decode for FlateDecoder {
-    fn decode(&mut self, input: &[u8], output: &mut [u8]) -> Result<(bool, usize, usize)> {
-        if input.is_empty() {
-            return Ok((true, 0, 0));
-        }
-
-        let (status, in_length, out_length) =
-            self.do_decode(input, output, FlushDecompress::None)?;
-
-        match status {
-            Status::Ok => Ok((false, in_length, out_length)),
-            Status::StreamEnd => Ok((true, in_length, out_length)),
+    fn decode(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<bool> {
+        match self.decode(input, output, FlushDecompress::None)? {
+            Status::Ok => Ok(false),
+            Status::StreamEnd => Ok(true),
             Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
         }
     }
 
-    fn flush(&mut self, output: &mut [u8]) -> Result<(bool, usize)> {
-        let (status, _, out_length) = self.do_decode(&[], output, FlushDecompress::Finish)?;
-
-        match status {
-            Status::Ok => Ok((false, out_length)),
-            Status::StreamEnd => Ok((true, out_length)),
+    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        match self.decode(
+            &mut PartialBuffer::new(&[][..]),
+            output,
+            FlushDecompress::Finish,
+        )? {
+            Status::Ok => Ok(false),
+            Status::StreamEnd => Ok(true),
             Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
         }
     }

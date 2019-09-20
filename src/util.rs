@@ -1,7 +1,7 @@
 pub fn _assert_send<T: Send>() {}
 pub fn _assert_sync<T: Sync>() {}
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct PartialBuffer<B: AsRef<[u8]>> {
     buffer: B,
     index: usize,
@@ -22,6 +22,10 @@ impl<B: AsRef<[u8]>> PartialBuffer<B> {
 
     pub(crate) fn advance(&mut self, amount: usize) {
         self.index += amount;
+    }
+
+    pub(crate) fn into_inner(self) -> B {
+        self.buffer
     }
 }
 

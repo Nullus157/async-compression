@@ -33,6 +33,7 @@ futures-preview = "0.3.0-alpha.18"
 pin-project = "0.3.2"
 libzstd = { version = "0.4", optional = true, package = "zstd", default-features = false }
 zstd-safe = { version = "1.4", optional = true, default-features = false }
+memchr = "2.2.1"
 
 [dev-dependencies]
 proptest = "0.9.3"

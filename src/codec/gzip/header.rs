@@ -110,6 +110,8 @@ impl Parser {
                         input.advance(len + 1);
                         self.state = State::Comment(<_>::default());
                     } else {
+                        data.extend_from_slice(input.unwritten());
+                        input.advance(input.unwritten().len());
                         return Ok(None);
                     }
                 }
@@ -125,6 +127,8 @@ impl Parser {
                         input.advance(len + 1);
                         self.state = State::Crc(<_>::default());
                     } else {
+                        data.extend_from_slice(input.unwritten());
+                        input.advance(input.unwritten().len());
                         return Ok(None);
                     }
                 }

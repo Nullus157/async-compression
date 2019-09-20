@@ -113,6 +113,16 @@ fn gzip_stream_decompress_with_extra_header() {
 }
 
 #[test]
+fn gzip_stream_chunks_decompress_with_extra_header() {
+    let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
+
+    let stream = utils::InputStream::from(bytes.chunks(2).map(Vec::from).collect::<Vec<_>>());
+    let output = utils::gzip::stream::decompress(stream.stream());
+
+    assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+}
+
+#[test]
 fn gzip_bufread_decompress_with_extra_header() {
     let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
 
@@ -123,10 +133,10 @@ fn gzip_bufread_decompress_with_extra_header() {
 }
 
 #[test]
-fn gzip_write_decompress_with_extra_header() {
+fn gzip_bufread_chunks_decompress_with_extra_header() {
     let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
 
-    let stream = utils::InputStream::from(vec![bytes]);
+    let stream = utils::InputStream::from(bytes.chunks(2).map(Vec::from).collect::<Vec<_>>());
     let output = utils::gzip::bufread::decompress(stream.reader());
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);

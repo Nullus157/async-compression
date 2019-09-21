@@ -10,3 +10,6 @@ script: |
   cargo build --no-default-features --verbose &&
   cargo build --all --verbose &&
   cargo test  --all --verbose
+
+branches:
+  only: [staging, trying, master]

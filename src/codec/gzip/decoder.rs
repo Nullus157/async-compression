@@ -1,11 +1,17 @@
-use crate::{codec::Decode, util::PartialBuffer};
+use crate::{
+    codec::{
+        gzip::header::{self, Header},
+        Decode,
+    },
+    util::PartialBuffer,
+};
 use std::io::{Error, ErrorKind, Result};
 
 use flate2::Crc;
 
 #[derive(Debug)]
 enum State {
-    Header(PartialBuffer<Vec<u8>>),
+    Header(header::Parser),
     Decoding,
     Footer(PartialBuffer<Vec<u8>>),
     Done,
@@ -17,6 +23,7 @@ pub struct GzipDecoder {
     inner: crate::codec::FlateDecoder,
     crc: Crc,
     state: State,
+    header: Header,
 }
 
 impl GzipDecoder {
@@ -24,24 +31,9 @@ impl GzipDecoder {
         Self {
             inner: crate::codec::FlateDecoder::new(false),
             crc: Crc::new(),
-            state: State::Header(vec![0; 10].into()),
+            state: State::Header(header::Parser::default()),
+            header: Header::default(),
         }
-    }
-
-    fn parse_header(&mut self, input: &[u8]) -> Result<()> {
-        if input.len() < 10 {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Invalid gzip header length",
-            ));
-        }
-
-        if input[0..3] != [0x1f, 0x8b, 0x08] {
-            return Err(Error::new(ErrorKind::InvalidData, "Invalid gzip header"));
-        }
-
-        // TODO: Check that header doesn't contain any extra headers
-        Ok(())
     }
 
     fn check_footer(&mut self, input: &[u8]) -> Result<()> {
@@ -84,14 +76,12 @@ impl GzipDecoder {
     ) -> Result<bool> {
         loop {
             self.state = match std::mem::replace(&mut self.state, State::Invalid) {
-                State::Header(mut header) => {
-                    header.copy_unwritten_from(input);
-
-                    if header.unwritten().is_empty() {
-                        self.parse_header(header.written())?;
+                State::Header(mut parser) => {
+                    if let Some(header) = parser.input(input)? {
+                        self.header = header;
                         State::Decoding
                     } else {
-                        State::Header(header)
+                        State::Header(parser)
                     }
                 }
 

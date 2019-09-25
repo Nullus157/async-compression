@@ -1,7 +1,7 @@
 macro_rules! encoder {
     ($(#[$attr:meta])* $name:ident) => {
         $(#[$attr])*
-        #[pin_project::unsafe_project(Unpin)]
+        #[pin_project::pin_project]
         #[derive(Debug)]
         ///
         /// This structure implements an [`AsyncRead`](futures::io::AsyncRead) interface and will

@@ -8,7 +8,7 @@ use std::{
 use crate::{codec::Encode, util::PartialBuffer};
 use bytes::{Bytes, BytesMut};
 use futures::{ready, stream::Stream};
-use pin_project::unsafe_project;
+use pin_project::pin_project;
 
 const OUTPUT_BUFFER_SIZE: usize = 8_000;
 
@@ -21,7 +21,7 @@ enum State {
     Invalid,
 }
 
-#[unsafe_project(Unpin)]
+#[pin_project]
 #[derive(Debug)]
 pub struct Encoder<S: Stream<Item = Result<Bytes>>, E: Encode> {
     #[pin]

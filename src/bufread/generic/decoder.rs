@@ -9,7 +9,7 @@ use futures::{
     io::{AsyncBufRead, AsyncRead},
     ready,
 };
-use pin_project::unsafe_project;
+use pin_project::pin_project;
 
 #[derive(Debug)]
 enum State {
@@ -18,7 +18,7 @@ enum State {
     Done,
 }
 
-#[unsafe_project(Unpin)]
+#[pin_project]
 #[derive(Debug)]
 pub struct Decoder<R: AsyncBufRead, D: Decode> {
     #[pin]

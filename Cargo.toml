@@ -30,7 +30,7 @@ brotli2 = { version = "0.3.2", optional = true }
 bytes = { version = "0.4.12", optional = true }
 flate2 = { version = "1.0.7", optional = true }
 futures-preview = "0.3.0-alpha.18"
-pin-project = "0.3.2"
+pin-project = "0.4"
 libzstd = { version = "0.4", optional = true, package = "zstd", default-features = false }
 zstd-safe = { version = "1.4", optional = true, default-features = false }
 memchr = "2.2.1"

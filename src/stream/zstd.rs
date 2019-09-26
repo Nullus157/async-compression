@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use futures::stream::Stream;
+use futures_core::stream::Stream;
 use std::io::Result;
 
 decoder! {

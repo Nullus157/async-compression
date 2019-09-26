@@ -1,4 +1,4 @@
-use futures::io::AsyncBufRead;
+use futures_io::AsyncBufRead;
 
 decoder! {
     /// A zstd decoder, or decompressor.

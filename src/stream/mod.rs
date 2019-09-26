@@ -1,4 +1,4 @@
-//! Types which operate over [`Stream`](futures::stream::Stream)`<Item =
+//! Types which operate over [`Stream`](futures_core::stream::Stream)`<Item =
 //! `[`io::Result`](std::io::Result)`<`[`Bytes`](bytes::Bytes)`>>` streams, both encoders and
 //! decoders for various formats.
 //!

@@ -4,14 +4,14 @@ macro_rules! encoder {
         #[pin_project::pin_project]
         #[derive(Debug)]
         ///
-        /// This structure implements a [`Stream`](futures::stream::Stream) interface and will read
+        /// This structure implements a [`Stream`](futures_core::stream::Stream) interface and will read
         /// uncompressed data from an underlying stream and emit a stream of compressed data.
-        pub struct $name<S: futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
+        pub struct $name<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
             #[pin]
             inner: crate::stream::Encoder<S, crate::codec::$name>,
         }
 
-        impl<S: futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>> $name<S> {
+        impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> $name<S> {
             /// Acquires a reference to the underlying stream that this encoder is wrapping.
             pub fn get_ref(&self) -> &S {
                 self.inner.get_ref()
@@ -44,8 +44,8 @@ macro_rules! encoder {
             }
         }
 
-        impl<S: futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>>
-            futures::stream::Stream for $name<S>
+        impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>>
+            futures_core::stream::Stream for $name<S>
         {
             type Item = std::io::Result<bytes::Bytes>;
 
@@ -61,7 +61,7 @@ macro_rules! encoder {
             fn _assert() {
                 use std::{pin::Pin, io::Result};
                 use bytes::Bytes;
-                use futures::stream::Stream;
+                use futures_core::stream::Stream;
                 use crate::util::{_assert_send, _assert_sync};
 
                 _assert_send::<$name<Pin<Box<dyn Stream<Item = Result<Bytes>> + Send>>>>();

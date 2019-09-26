@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use flate2::Compression;
-use futures::stream::Stream;
+use futures_core::stream::Stream;
 use std::io::Result;
 
 decoder! {

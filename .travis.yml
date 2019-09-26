@@ -1,15 +1,44 @@
 language: rust
-rust:
-- nightly-2019-08-11
 
-before_script: |
-  rustup component add rustfmt clippy
-script: |
-  cargo fmt --all -- --check &&
-  cargo clippy --all --all-targets -- -D warnings &&
-  cargo build --no-default-features --verbose &&
-  cargo build --all --verbose &&
-  cargo test  --all --verbose
+rust:
+- stable
+- beta
+- nightly
+
+script:
+- cargo test --all
+
+matrix:
+  include:
+  - os: osx
+
+  - name: cargo build --features
+    script:
+    # Need to remove dev-dependencies so that they don't affect feature resolution
+    - cargo run --manifest-path ci/remove-dev-dependencies/Cargo.toml
+    # A somewhat arbitrary selection of features to check
+    - cargo build --no-default-features
+    - cargo build --no-default-features --features brotli,deflate,gzip,zlib,zstd,stream
+    - cargo build --no-default-features --features brotli,deflate,gzip,zlib,zstd,bufread
+    - cargo build --no-default-features --features brotli,bufread,stream
+    - cargo build --no-default-features --features zstd,bufread,stream
+
+  - name: docs.rs
+    rust: nightly
+    script:
+    - RUSTDOCFLAGS='--cfg=docsrs -Dwarnings' cargo doc --all-features --no-deps
+
+  - name: cargo fmt
+    install:
+    - rustup component add rustfmt
+    script:
+    - cargo fmt --all -- --check
+
+  - name: cargo clippy
+    install:
+    - rustup component add clippy
+    script:
+    - cargo clippy --all --all-targets -- -D warnings
 
 branches:
   only: [staging, trying, master]

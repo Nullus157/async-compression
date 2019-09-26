@@ -4,14 +4,14 @@ macro_rules! decoder {
         #[pin_project::pin_project]
         #[derive(Debug)]
         ///
-        /// This structure implements an [`AsyncRead`](futures::io::AsyncRead) interface and will
+        /// This structure implements an [`AsyncRead`](futures_io::AsyncRead) interface and will
         /// read compressed data from an underlying stream and emit a stream of uncompressed data.
-        pub struct $name<R: futures::io::AsyncBufRead> {
+        pub struct $name<R: futures_io::AsyncBufRead> {
             #[pin]
             inner: crate::bufread::Decoder<R, crate::codec::$name>,
         }
 
-        impl<R: futures::io::AsyncBufRead> $name<R> {
+        impl<R: futures_io::AsyncBufRead> $name<R> {
             /// Creates a new decoder which will read compressed data from the given stream and
             /// emit a uncompressed stream.
             pub fn new(read: R) -> $name<R> {
@@ -52,7 +52,7 @@ macro_rules! decoder {
             }
         }
 
-        impl<R: futures::io::AsyncBufRead> futures::io::AsyncRead for $name<R> {
+        impl<R: futures_io::AsyncBufRead> futures_io::AsyncRead for $name<R> {
             fn poll_read(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,
@@ -66,7 +66,7 @@ macro_rules! decoder {
             fn _assert() {
                 use crate::util::{_assert_send, _assert_sync};
                 use core::pin::Pin;
-                use futures::io::AsyncBufRead;
+                use futures_io::AsyncBufRead;
 
                 _assert_send::<$name<Pin<Box<dyn AsyncBufRead + Send>>>>();
                 _assert_sync::<$name<Pin<Box<dyn AsyncBufRead + Sync>>>>();

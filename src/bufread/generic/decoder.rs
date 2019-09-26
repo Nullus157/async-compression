@@ -5,10 +5,8 @@ use core::{
 use std::io::Result;
 
 use crate::{codec::Decode, util::PartialBuffer};
-use futures::{
-    io::{AsyncBufRead, AsyncRead},
-    ready,
-};
+use futures_core::ready;
+use futures_io::{AsyncBufRead, AsyncRead};
 use pin_project::pin_project;
 
 #[derive(Debug)]

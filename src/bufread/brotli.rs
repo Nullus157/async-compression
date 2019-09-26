@@ -1,5 +1,5 @@
 use brotli2::CompressParams;
-use futures::io::AsyncBufRead;
+use futures_io::AsyncBufRead;
 
 decoder! {
     /// A brotli decoder, or decompressor.

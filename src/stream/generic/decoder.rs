@@ -7,7 +7,7 @@ use std::{
 
 use crate::{codec::Decode, util::PartialBuffer};
 use bytes::{Bytes, BytesMut};
-use futures::{ready, stream::Stream};
+use futures_core::{ready, stream::Stream};
 use pin_project::pin_project;
 
 const OUTPUT_BUFFER_SIZE: usize = 8_000;

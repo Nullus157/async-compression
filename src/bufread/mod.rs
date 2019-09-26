@@ -1,4 +1,4 @@
-//! Types which operate over [`AsyncBufRead`](futures::io::AsyncBufRead) streams, both encoders and
+//! Types which operate over [`AsyncBufRead`](futures_io::AsyncBufRead) streams, both encoders and
 //! decoders for various formats.
 
 mod generic;

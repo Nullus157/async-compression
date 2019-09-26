@@ -1,5 +1,5 @@
 use flate2::Compression;
-use futures::io::AsyncBufRead;
+use futures_io::AsyncBufRead;
 
 decoder! {
     /// A zlib decoder, or decompressor.

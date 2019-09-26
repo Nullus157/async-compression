@@ -17,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["bufread", "stream", "brotli", "deflate", "gzip", "zlib", "zstd"]
-bufread = []
+bufread = ["futures-io-preview"]
 stream = ["bytes"]
 brotli = ["brotli2"]
 deflate = ["flate2"]
@@ -29,7 +29,8 @@ zstd = ["libzstd", "zstd-safe"]
 brotli2 = { version = "0.3.2", optional = true }
 bytes = { version = "0.4.12", optional = true }
 flate2 = { version = "1.0.7", optional = true }
-futures-preview = "0.3.0-alpha.18"
+futures-core-preview = { version = "0.3.0-alpha.18", default-features = false }
+futures-io-preview = { version = "0.3.0-alpha.18", default-features = false, features = ["std"], optional = true }
 pin-project = "0.4"
 libzstd = { version = "0.4", optional = true, package = "zstd", default-features = false }
 zstd-safe = { version = "1.4", optional = true, default-features = false }
@@ -40,4 +41,5 @@ proptest = "0.9.3"
 pin-utils = "0.1.0-alpha.4"
 proptest-derive = "0.1.1"
 rand = "0.7.0"
+futures-preview = "0.3.0-alpha.18"
 futures-test-preview = "0.3.0-alpha.18"

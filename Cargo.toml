@@ -16,10 +16,11 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["bufread", "stream", "brotli", "deflate", "gzip", "zlib", "zstd"]
+default = ["bufread", "stream", "brotli", "bzip", "deflate", "gzip", "zlib", "zstd"]
 bufread = ["futures-io-preview"]
 stream = ["bytes"]
 brotli = ["brotli2"]
+bzip = ["bzip2"]
 deflate = ["flate2"]
 gzip = ["flate2"]
 zlib = ["flate2"]
@@ -28,6 +29,7 @@ zstd = ["libzstd", "zstd-safe"]
 [dependencies]
 brotli2 = { version = "0.3.2", optional = true }
 bytes = { version = "0.4.12", optional = true }
+bzip2 = { version = "0.3.3" , optional = true }
 flate2 = { version = "1.0.11", optional = true }
 futures-core-preview = { version = "0.3.0-alpha.19", default-features = false }
 futures-io-preview = { version = "0.3.0-alpha.19", default-features = false, features = ["std"], optional = true }

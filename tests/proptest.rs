@@ -58,4 +58,4 @@ macro_rules! tests {
     }
 }
 
-tests!(brotli, deflate, gzip, zlib, zstd);
+tests!(brotli, bzip2, deflate, gzip, zlib, zstd);

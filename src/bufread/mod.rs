@@ -7,6 +7,8 @@ mod macros;
 
 #[cfg(feature = "brotli")]
 mod brotli;
+#[cfg(feature = "bzip")]
+mod bzip2;
 #[cfg(feature = "deflate")]
 mod deflate;
 #[cfg(feature = "gzip")]
@@ -20,6 +22,8 @@ pub(crate) use generic::{Decoder, Encoder};
 
 #[cfg(feature = "brotli")]
 pub use self::brotli::{BrotliDecoder, BrotliEncoder};
+#[cfg(feature = "bzip")]
+pub use self::bzip2::{BzDecoder, BzEncoder};
 #[cfg(feature = "deflate")]
 pub use self::deflate::{DeflateDecoder, DeflateEncoder};
 #[cfg(feature = "gzip")]

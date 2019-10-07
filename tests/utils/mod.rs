@@ -137,6 +137,54 @@ pub mod brotli {
     }
 }
 
+pub mod bzip2 {
+    pub mod sync {
+        use crate::utils::prelude::*;
+
+        pub fn compress(bytes: &[u8]) -> Vec<u8> {
+            use bzip2::{bufread::BzEncoder, Compression};
+            read_to_vec(BzEncoder::new(bytes, Compression::Fastest))
+        }
+
+        pub fn decompress(bytes: &[u8]) -> Vec<u8> {
+            use bzip2::bufread::BzDecoder;
+            read_to_vec(BzDecoder::new(bytes))
+        }
+    }
+
+    pub mod stream {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
+            use async_compression::{bzip2::Compression, stream::BzEncoder};
+            pin_mut!(input);
+            stream_to_vec(BzEncoder::new(input, Compression::Fastest))
+        }
+
+        pub fn decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
+            use async_compression::stream::BzDecoder;
+            pin_mut!(input);
+            stream_to_vec(BzDecoder::new(input))
+        }
+    }
+
+    pub mod bufread {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::{bufread::BzEncoder, bzip2::Compression};
+            pin_mut!(input);
+            async_read_to_vec(BzEncoder::new(input, Compression::Fastest))
+        }
+
+        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+            use async_compression::bufread::BzDecoder;
+            pin_mut!(input);
+            async_read_to_vec(BzDecoder::new(input))
+        }
+    }
+}
+
 pub mod deflate {
     pub mod sync {
         use crate::utils::prelude::*;

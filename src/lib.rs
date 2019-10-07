@@ -23,6 +23,7 @@
 //! choices, these determine which types will be available inside the above modules:
 //!
 //!  * `brotli`
+//!  * `bzip2`
 //!  * `deflate`
 //!  * `gzip`
 //!  * `zlib`
@@ -62,5 +63,11 @@ pub mod brotli2 {
     pub use brotli2::CompressParams;
 }
 
+/// Types to configure [`bzip2`](::bzip2) based encoders.
+#[cfg(feature = "bzip")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bzip")))]
+pub mod bzip2 {
+    pub use bzip2::Compression;
+}
 mod unshared;
 mod util;

@@ -236,6 +236,24 @@ pub mod bzip2 {
             async_read_to_vec(BzDecoder::new(input))
         }
     }
+
+    pub mod write {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::{bzip2::Compression, write::BzEncoder};
+            async_write_to_vec(
+                input,
+                |input| Box::pin(BzEncoder::new(input, Compression::Fastest)),
+                limit,
+            )
+        }
+
+        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::BzDecoder;
+            async_write_to_vec(input, |input| Box::pin(BzDecoder::new(input)), limit)
+        }
+    }
 }
 
 pub mod deflate {

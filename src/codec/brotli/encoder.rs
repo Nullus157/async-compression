@@ -50,6 +50,13 @@ impl Encode for BrotliEncoder {
         self.encode(input, output, CompressOp::Process).map(drop)
     }
 
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        match self.encode(&mut PartialBuffer::new(&[][..]), output, CompressOp::Flush)? {
+            CoStatus::Unfinished => Ok(false),
+            CoStatus::Finished => Ok(true),
+        }
+    }
+
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         match self.encode(&mut PartialBuffer::new(&[][..]), output, CompressOp::Finish)? {
             CoStatus::Unfinished => Ok(false),

@@ -86,7 +86,10 @@ impl GzipDecoder {
                 }
 
                 State::Decoding => {
-                    if inner(self, input, output)? {
+                    let prior = output.written().len();
+                    let done = inner(self, input, output)?;
+                    self.crc.update(&output.written()[prior..]);
+                    if done {
                         State::Footer(vec![0; 8].into())
                     } else {
                         State::Decoding
@@ -108,7 +111,7 @@ impl GzipDecoder {
                 State::Invalid => panic!("Reached invalid state"),
             };
 
-            if let State::Footer(_) | State::Done = self.state {
+            if let State::Done = self.state {
                 return Ok(true);
             }
 
@@ -126,23 +129,37 @@ impl Decode for GzipDecoder {
         output: &mut PartialBuffer<&mut [u8]>,
     ) -> Result<bool> {
         self.process(input, output, |this, input, output| {
-            let prior_written = output.written().len();
-            let done = this.inner.decode(input, output)?;
-            this.crc.update(&output.written()[prior_written..]);
-            Ok(done)
+            this.inner.decode(input, output)
         })
+    }
+
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        loop {
+            match self.state {
+                State::Header(_) | State::Footer(_) | State::Done => return Ok(true),
+
+                State::Decoding => {
+                    let prior = output.written().len();
+                    let done = self.inner.flush(output)?;
+                    self.crc.update(&output.written()[prior..]);
+                    if done {
+                        return Ok(true);
+                    }
+                }
+                State::Invalid => panic!("Reached invalid state"),
+            };
+
+            if output.unwritten().is_empty() {
+                return Ok(false);
+            }
+        }
     }
 
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         self.process(
             &mut PartialBuffer::new(&[][..]),
             output,
-            |this, _, output| {
-                let prior_written = output.written().len();
-                let done = this.inner.finish(output)?;
-                this.crc.update(&output.written()[prior_written..]);
-                Ok(done)
-            },
+            |this, _, output| this.inner.finish(output),
         )
     }
 }

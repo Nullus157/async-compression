@@ -16,8 +16,9 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["bufread", "stream", "brotli", "bzip", "deflate", "gzip", "zlib", "zstd"]
+default = ["bufread", "stream", "write", "brotli", "bzip", "deflate", "gzip", "zlib", "zstd"]
 bufread = ["futures-io-preview"]
+write = ["futures-io-preview"]
 stream = ["bytes"]
 brotli = ["brotli2"]
 bzip = ["bzip2"]
@@ -45,3 +46,5 @@ proptest-derive = "0.1.2"
 rand = "0.7.2"
 futures-preview = "0.3.0-alpha.19"
 futures-test-preview = "0.3.0-alpha.19"
+ntest = "0.3.3"
+timebomb = "0.1.2"

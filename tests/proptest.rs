@@ -53,6 +53,22 @@ macro_rules! tests {
                         }
                     }
                 }
+
+                mod write {
+                    use crate::utils;
+                    use proptest::{prelude::any, proptest};
+                    proptest! {
+                        #[test]
+                        fn compress(
+                            ref input in any::<utils::InputStream>(),
+                            limit in 1..20usize,
+                        ) {
+                            let compressed = utils::$name::write::compress(input.as_ref(), limit);
+                            let output = utils::$name::sync::decompress(&compressed);
+                            assert_eq!(output, input.bytes());
+                        }
+                    }
+                }
             }
         )*
     }

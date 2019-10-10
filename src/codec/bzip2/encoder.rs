@@ -95,6 +95,29 @@ impl Encode for BzEncoder {
         }
     }
 
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        match self.encode(&mut PartialBuffer::new(&[][..]), output, Action::Flush)? {
+            // Decompression went fine, nothing much to report.
+            Status::Ok => unreachable!(),
+
+            // The Flush action on a compression went ok.
+            Status::FlushOk => Ok(false),
+
+            // The Run action on compression went ok.
+            Status::RunOk => Ok(true),
+
+            // The Finish action on compression went ok.
+            Status::FinishOk => unreachable!(),
+
+            // The stream's end has been met, meaning that no more data can be input.
+            Status::StreamEnd => unreachable!(),
+
+            // There was insufficient memory in the input or output buffer to complete
+            // the request, but otherwise everything went normally.
+            Status::MemNeeded => Err(Error::new(ErrorKind::Other, "out of memory")),
+        }
+    }
+
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         match self.encode(&mut PartialBuffer::new(&[][..]), output, Action::Finish)? {
             // Decompression went fine, nothing much to report.

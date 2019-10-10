@@ -9,10 +9,14 @@ use futures_test::stream::StreamTestExt;
 use proptest_derive::Arbitrary;
 use std::io;
 
-#[derive(Arbitrary, Debug)]
+#[derive(Arbitrary, Debug, Clone)]
 pub struct InputStream(Vec<Vec<u8>>);
 
 impl InputStream {
+    pub fn as_ref(&self) -> &[Vec<u8>] {
+        &self.0
+    }
+
     pub fn stream(&self) -> impl Stream<Item = io::Result<Bytes>> {
         // The resulting stream here will interleave empty chunks before and after each chunk, and
         // then interleave a `Poll::Pending` between each yielded chunk, that way we test the
@@ -38,6 +42,10 @@ impl InputStream {
     pub fn bytes(&self) -> Vec<u8> {
         self.0.iter().flatten().cloned().collect()
     }
+
+    pub fn len(&self) -> usize {
+        self.0.iter().map(Vec::len).sum()
+    }
 }
 
 // This happens to be the only dimension we're using
@@ -56,12 +64,21 @@ mod prelude {
     pub use bytes::Bytes;
     pub use futures::{
         executor::{block_on, block_on_stream},
-        io::{AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader},
+        io::{
+            AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt,
+            BufReader,
+        },
         stream::{self, Stream, TryStreamExt},
     };
-    pub use futures_test::{io::AsyncReadTestExt, stream::StreamTestExt};
+    pub use futures_test::{
+        io::{AsyncReadTestExt, AsyncWriteTestExt},
+        stream::StreamTestExt,
+    };
     pub use pin_utils::pin_mut;
-    pub use std::io::{self, Cursor, Read};
+    pub use std::{
+        io::{self, Cursor, Read},
+        pin::Pin,
+    };
 
     pub fn read_to_vec(mut read: impl Read) -> Vec<u8> {
         let mut output = vec![];
@@ -77,6 +94,28 @@ mod prelude {
         let len = block_on(BufReader::with_capacity(2, read).copy_buf_into(&mut output)).unwrap();
         let mut output = output.into_inner();
         output.truncate(len as usize);
+        output
+    }
+
+    pub fn async_write_to_vec(
+        input: &[Vec<u8>],
+        create_writer: impl for<'a> FnOnce(
+            &'a mut (dyn AsyncWrite + Unpin),
+        ) -> Pin<Box<dyn AsyncWrite + 'a>>,
+        limit: usize,
+    ) -> Vec<u8> {
+        let mut output = Vec::new();
+        {
+            let mut test_writer = (&mut output)
+                .limited_write(limit)
+                .interleave_pending_write();
+            let mut writer = create_writer(&mut test_writer);
+            for chunk in input {
+                block_on(writer.write_all(chunk)).unwrap();
+                block_on(writer.flush()).unwrap();
+            }
+            block_on(writer.close()).unwrap();
+        }
         output
     }
 
@@ -135,6 +174,20 @@ pub mod brotli {
             async_read_to_vec(BrotliDecoder::new(input))
         }
     }
+
+    pub mod write {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::BrotliEncoder;
+            async_write_to_vec(input, |input| Box::pin(BrotliEncoder::new(input, 1)), limit)
+        }
+
+        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::BrotliDecoder;
+            async_write_to_vec(input, |input| Box::pin(BrotliDecoder::new(input)), limit)
+        }
+    }
 }
 
 pub mod bzip2 {
@@ -181,6 +234,24 @@ pub mod bzip2 {
             use async_compression::bufread::BzDecoder;
             pin_mut!(input);
             async_read_to_vec(BzDecoder::new(input))
+        }
+    }
+
+    pub mod write {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::{bzip2::Compression, write::BzEncoder};
+            async_write_to_vec(
+                input,
+                |input| Box::pin(BzEncoder::new(input, Compression::Fastest)),
+                limit,
+            )
+        }
+
+        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::BzDecoder;
+            async_write_to_vec(input, |input| Box::pin(BzDecoder::new(input)), limit)
         }
     }
 }
@@ -231,6 +302,24 @@ pub mod deflate {
             async_read_to_vec(DeflateDecoder::new(input))
         }
     }
+
+    pub mod write {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::{flate2::Compression, write::DeflateEncoder};
+            async_write_to_vec(
+                input,
+                |input| Box::pin(DeflateEncoder::new(input, Compression::fast())),
+                limit,
+            )
+        }
+
+        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::DeflateDecoder;
+            async_write_to_vec(input, |input| Box::pin(DeflateDecoder::new(input)), limit)
+        }
+    }
 }
 
 pub mod zlib {
@@ -279,6 +368,24 @@ pub mod zlib {
             async_read_to_vec(ZlibDecoder::new(input))
         }
     }
+
+    pub mod write {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::{flate2::Compression, write::ZlibEncoder};
+            async_write_to_vec(
+                input,
+                |input| Box::pin(ZlibEncoder::new(input, Compression::fast())),
+                limit,
+            )
+        }
+
+        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::ZlibDecoder;
+            async_write_to_vec(input, |input| Box::pin(ZlibDecoder::new(input)), limit)
+        }
+    }
 }
 
 pub mod gzip {
@@ -325,6 +432,24 @@ pub mod gzip {
             use async_compression::bufread::GzipDecoder;
             pin_mut!(input);
             async_read_to_vec(GzipDecoder::new(input))
+        }
+    }
+
+    pub mod write {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::{flate2::Compression, write::GzipEncoder};
+            async_write_to_vec(
+                input,
+                |input| Box::pin(GzipEncoder::new(input, Compression::fast())),
+                limit,
+            )
+        }
+
+        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::GzipDecoder;
+            async_write_to_vec(input, |input| Box::pin(GzipDecoder::new(input)), limit)
         }
     }
 }
@@ -376,6 +501,20 @@ pub mod zstd {
             async_read_to_vec(ZstdDecoder::new(input))
         }
     }
+
+    pub mod write {
+        use crate::utils::prelude::*;
+
+        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::ZstdEncoder;
+            async_write_to_vec(input, |input| Box::pin(ZstdEncoder::new(input, 0)), limit)
+        }
+
+        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+            use async_compression::write::ZstdDecoder;
+            async_write_to_vec(input, |input| Box::pin(ZstdDecoder::new(input)), limit)
+        }
+    }
 }
 
 macro_rules! test_cases {
@@ -385,6 +524,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 // Can't use InputStream for this as it will inject extra empty chunks
                 let compressed = utils::$variant::stream::compress(futures::stream::empty());
@@ -394,6 +534,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty_chunk() {
                 let input = utils::InputStream::from(vec![vec![]]);
 
@@ -404,6 +545,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
@@ -414,6 +556,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = vec![
                     Vec::from_iter((0..32_768).map(|_| rand::random())),
@@ -435,6 +578,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 let compressed = utils::$variant::sync::compress(&[]);
 
@@ -445,6 +589,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -455,6 +600,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
@@ -466,6 +612,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long_chunks() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
@@ -484,6 +631,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 let mut input: &[u8] = &[];
                 let compressed = utils::$variant::bufread::compress(&mut input);
@@ -493,6 +641,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty_chunk() {
                 let input = utils::InputStream::from(vec![vec![]]);
 
@@ -503,6 +652,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
@@ -513,6 +663,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = vec![
                     Vec::from_iter((0..32_768).map(|_| rand::random())),
@@ -534,6 +685,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 let compressed = utils::$variant::sync::compress(&[]);
 
@@ -544,6 +696,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn zeros() {
                 let compressed = utils::$variant::sync::compress(&[0; 10]);
 
@@ -554,6 +707,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -564,6 +718,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short_chunks() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -574,6 +729,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
@@ -585,12 +741,168 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long_chunks() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
 
                 let stream = utils::InputStream::from(compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>());
                 let output = utils::$variant::bufread::decompress(stream.reader());
+
+                assert_eq!(output, input);
+            }
+        }
+    };
+
+    (@ [ $variant:ident :: write :: compress ]) => {
+        mod compress {
+            use crate::utils;
+            use std::iter::FromIterator;
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn empty() {
+                let input = utils::InputStream::from(vec![]);
+                let compressed = utils::$variant::write::compress(input.as_ref(), 65_536);
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, &[][..]);
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn empty_chunk() {
+                let input = utils::InputStream::from(vec![vec![]]);
+
+                let compressed = utils::$variant::write::compress(input.as_ref(), 65_536);
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, input.bytes());
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn short() {
+                let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                let compressed = utils::$variant::write::compress(input.as_ref(), 65_536);
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn short_chunk_output() {
+                let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                let compressed = utils::$variant::write::compress(input.as_ref(), 2);
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn long() {
+                let input = vec![
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
+                ];
+                let input = utils::InputStream::from(input);
+
+                let compressed = utils::$variant::write::compress(input.as_ref(), 65_536);
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, input.bytes());
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn long_chunk_output() {
+                let input = vec![
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
+                    Vec::from_iter((0..32_768).map(|_| rand::random())),
+                ];
+                let input = utils::InputStream::from(input);
+
+                let compressed = utils::$variant::write::compress(input.as_ref(), 20);
+                let output = utils::$variant::sync::decompress(&compressed);
+
+                assert_eq!(output, input.bytes());
+            }
+        }
+    };
+
+    (@ [ $variant:ident :: write :: decompress ]) => {
+        mod decompress {
+            use crate::utils;
+            use std::iter::FromIterator;
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn empty() {
+                let compressed = utils::$variant::sync::compress(&[]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::write::decompress(stream.as_ref(), 65_536);
+
+                assert_eq!(output, &[][..]);
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn zeros() {
+                let compressed = utils::$variant::sync::compress(&[0; 10]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::write::decompress(stream.as_ref(), 65_536);
+
+                assert_eq!(output, &[0; 10][..]);
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn short() {
+                let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::write::decompress(stream.as_ref(), 65_536);
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn short_chunks() {
+                let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                let stream = utils::InputStream::from(compressed.chunks(2).map(Vec::from).collect::<Vec<_>>());
+                let output = utils::$variant::write::decompress(stream.as_ref(), 65_536);
+
+                assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn long() {
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(vec![compressed]);
+                let output = utils::$variant::write::decompress(stream.as_ref(), 65_536);
+
+                assert_eq!(output, input);
+            }
+
+            #[test]
+            #[ntest::timeout(1000)]
+            fn long_chunks() {
+                let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                let compressed = utils::$variant::sync::compress(&input);
+
+                let stream = utils::InputStream::from(compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>());
+                let output = utils::$variant::write::decompress(stream.as_ref(), 65_536);
 
                 assert_eq!(output, input);
             }
@@ -623,5 +935,13 @@ macro_rules! test_cases {
         mod $variant {
             test_cases!(@ [ $variant ] :: $($rest)+);
         }
+    };
+
+    ($variant:ident) => {
+        test_cases!($variant::{
+            bufread::{compress, decompress},
+            stream::{compress, decompress},
+            write::{compress, decompress},
+        });
     };
 }

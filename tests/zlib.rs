@@ -1,4 +1,4 @@
 #[macro_use]
 mod utils;
 
-test_cases!(zlib::{stream::{compress, decompress}, bufread::{compress, decompress}});
+test_cases!(zlib);

@@ -74,6 +74,20 @@ impl Decode for BzDecoder {
         }
     }
 
+    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+        self.decode(&mut PartialBuffer::new(&[][..]), output)?;
+
+        loop {
+            let old_len = output.written().len();
+            self.decode(&mut PartialBuffer::new(&[][..]), output)?;
+            if output.written().len() == old_len {
+                break;
+            }
+        }
+
+        Ok(!output.unwritten().is_empty())
+    }
+
     fn finish(&mut self, _output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         Ok(true)
     }

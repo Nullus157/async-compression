@@ -524,6 +524,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 // Can't use InputStream for this as it will inject extra empty chunks
                 let compressed = utils::$variant::stream::compress(futures::stream::empty());
@@ -533,6 +534,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty_chunk() {
                 let input = utils::InputStream::from(vec![vec![]]);
 
@@ -543,6 +545,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
@@ -553,6 +556,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = vec![
                     Vec::from_iter((0..32_768).map(|_| rand::random())),
@@ -574,6 +578,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 let compressed = utils::$variant::sync::compress(&[]);
 
@@ -584,6 +589,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -594,6 +600,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
@@ -605,6 +612,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long_chunks() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
@@ -623,6 +631,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 let mut input: &[u8] = &[];
                 let compressed = utils::$variant::bufread::compress(&mut input);
@@ -632,6 +641,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty_chunk() {
                 let input = utils::InputStream::from(vec![vec![]]);
 
@@ -642,6 +652,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
@@ -652,6 +663,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = vec![
                     Vec::from_iter((0..32_768).map(|_| rand::random())),
@@ -673,6 +685,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 let compressed = utils::$variant::sync::compress(&[]);
 
@@ -683,6 +696,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn zeros() {
                 let compressed = utils::$variant::sync::compress(&[0; 10]);
 
@@ -693,6 +707,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -703,6 +718,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short_chunks() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -713,6 +729,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
@@ -724,6 +741,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long_chunks() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
@@ -742,6 +760,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 let input = utils::InputStream::from(vec![]);
                 let compressed = utils::$variant::write::compress(input.as_ref(), 65_536);
@@ -751,6 +770,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty_chunk() {
                 let input = utils::InputStream::from(vec![vec![]]);
 
@@ -761,6 +781,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
@@ -771,6 +792,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short_chunk_output() {
                 let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
@@ -781,6 +803,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = vec![
                     Vec::from_iter((0..32_768).map(|_| rand::random())),
@@ -795,6 +818,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long_chunk_output() {
                 let input = vec![
                     Vec::from_iter((0..32_768).map(|_| rand::random())),
@@ -816,6 +840,7 @@ macro_rules! test_cases {
             use std::iter::FromIterator;
 
             #[test]
+            #[ntest::timeout(1000)]
             fn empty() {
                 let compressed = utils::$variant::sync::compress(&[]);
 
@@ -826,6 +851,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn zeros() {
                 let compressed = utils::$variant::sync::compress(&[0; 10]);
 
@@ -836,6 +862,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -846,6 +873,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn short_chunks() {
                 let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -856,6 +884,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);
@@ -867,6 +896,7 @@ macro_rules! test_cases {
             }
 
             #[test]
+            #[ntest::timeout(1000)]
             fn long_chunks() {
                 let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
                 let compressed = utils::$variant::sync::compress(&input);

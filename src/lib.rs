@@ -18,14 +18,12 @@
 //! The first division is which underlying asynchronous IO type will be wrapped, these are
 //! available as two separate features that have corresponding top-level modules:
 //!
-//!  * [`bufread`] provides types which operate over [`AsyncBufRead`](futures_io::AsyncBufRead)
-//!    streams
+//!  Feature                 | Type
+//! -------------------------|------
+//!  [`bufread`]             | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead)
+//!  [`write`](crate::write) | [`futures::io::AsyncWrite`](futures_io::AsyncWrite)
+//!  [`stream`]              | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes::Bytes`]`>>`
 //!
-//!  * [`write`](crate::write) provides types which operate over
-//!    [`AsyncWrite`](futures_io::AsyncWrite) streams
-//!
-//!  * [`stream`] provides types which operate over [`Stream`](futures_core::stream::Stream)`<Item =
-//!    `[`io::Result`](std::io::Result)`<`[`Bytes`](bytes::Bytes)`>>` streams
 //!
 //! ## Compression implementation
 //!

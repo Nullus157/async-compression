@@ -20,12 +20,32 @@
 //!
 //!  Feature | Type
 //! ---------|------
-#![cfg_attr(feature = "bufread", doc = "[`bufread`] | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead)")]
-#![cfg_attr(not(feature = "bufread"), doc = "`bufread` (*inactive*) | `futures::io::AsyncBufRead`")]
-#![cfg_attr(feature = "write", doc = "[`write`](crate::write) | [`futures::io::AsyncWrite`](futures_io::AsyncWrite)")]
-#![cfg_attr(not(feature = "write"), doc = "`write` (*inactive*) | `futures::io::AsyncWrite`")]
-#![cfg_attr(feature = "stream", doc = "[`stream`] | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes::Bytes`]`>>`")]
-#![cfg_attr(not(feature = "stream"), doc = "`stream` (*inactive*) | `futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>`")]
+// TODO: Kill rustfmt on this section, `#![rustfmt::skip::attributes(cfg_attr)]` should do it, but
+// that's unstable
+#![cfg_attr(
+    feature = "bufread",
+    doc = "[`bufread`] | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead)"
+)]
+#![cfg_attr(
+    not(feature = "bufread"),
+    doc = "`bufread` (*inactive*) | `futures::io::AsyncBufRead`"
+)]
+#![cfg_attr(
+    feature = "write",
+    doc = "[`write`](crate::write) | [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
+)]
+#![cfg_attr(
+    not(feature = "write"),
+    doc = "`write` (*inactive*) | `futures::io::AsyncWrite`"
+)]
+#![cfg_attr(
+    feature = "stream",
+    doc = "[`stream`] | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes::Bytes`]`>>`"
+)]
+#![cfg_attr(
+    not(feature = "stream"),
+    doc = "`stream` (*inactive*) | `futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>`"
+)]
 //!
 //!
 //! ## Compression implementation
@@ -45,6 +65,7 @@
 #![cfg_attr(not(feature = "zlib"), doc = "* `zlib` (*inactive*)")]
 #![cfg_attr(feature = "zstd", doc = "* `zstd`")]
 #![cfg_attr(not(feature = "zstd"), doc = "* `zstd` (*inactive*)")]
+//!
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(

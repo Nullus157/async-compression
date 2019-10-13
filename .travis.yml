@@ -26,6 +26,7 @@ matrix:
   - name: docs.rs
     rust: nightly
     script:
+    - RUSTDOCFLAGS='--cfg=docsrs -Dwarnings' cargo doc --no-default-features --no-deps
     - RUSTDOCFLAGS='--cfg=docsrs -Dwarnings' cargo doc --all-features --no-deps
 
   - name: cargo fmt

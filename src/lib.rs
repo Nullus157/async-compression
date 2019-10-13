@@ -6,6 +6,13 @@
 //! This crate is divided up along two axes, which can each be individually selected via Cargo
 //! features.
 //!
+//! All features are default active, it's recommended you use this crate with `default-features =
+//! false` and enable just the features you need. (We're considering disabling this and shipping
+//! with no features active by default, please [leave a comment][#46] if you have an opinion either
+//! way).
+//!
+//! [#46]: https://github.com/rustasync/async-compression/issues/46
+//!
 //! ## IO type
 //!
 //! The first division is which underlying asynchronous IO type will be wrapped, these are

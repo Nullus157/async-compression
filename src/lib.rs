@@ -6,31 +6,66 @@
 //! This crate is divided up along two axes, which can each be individually selected via Cargo
 //! features.
 //!
+//! All features are default active, it's recommended you use this crate with `default-features =
+//! false` and enable just the features you need. (We're considering disabling this and shipping
+//! with no features active by default, please [leave a comment][#46] if you have an opinion either
+//! way).
+//!
+//! [#46]: https://github.com/rustasync/async-compression/issues/46
+//!
 //! ## IO type
 //!
 //! The first division is which underlying asynchronous IO type will be wrapped, these are
 //! available as two separate features that have corresponding top-level modules:
 //!
-//!  * [`bufread`] provides types which operate over [`AsyncBufRead`](futures_io::AsyncBufRead)
-//!    streams
+//!  Feature | Type
+//! ---------|------
+// TODO: Kill rustfmt on this section, `#![rustfmt::skip::attributes(cfg_attr)]` should do it, but
+// that's unstable
+#![cfg_attr(
+    feature = "bufread",
+    doc = "[`bufread`] | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead)"
+)]
+#![cfg_attr(
+    not(feature = "bufread"),
+    doc = "`bufread` (*inactive*) | `futures::io::AsyncBufRead`"
+)]
+#![cfg_attr(
+    feature = "write",
+    doc = "[`write`](crate::write) | [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
+)]
+#![cfg_attr(
+    not(feature = "write"),
+    doc = "`write` (*inactive*) | `futures::io::AsyncWrite`"
+)]
+#![cfg_attr(
+    feature = "stream",
+    doc = "[`stream`] | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes::Bytes`]`>>`"
+)]
+#![cfg_attr(
+    not(feature = "stream"),
+    doc = "`stream` (*inactive*) | `futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>`"
+)]
 //!
-//!  * [`write`](crate::write) provides types which operate over
-//!    [`AsyncWrite`](futures_io::AsyncWrite) streams
-//!
-//!  * [`stream`] provides types which operate over [`Stream`](futures_core::stream::Stream)`<Item =
-//!    `[`io::Result`](std::io::Result)`<`[`Bytes`](bytes::Bytes)`>>` streams
 //!
 //! ## Compression implementation
 //!
 //! The second division is which compression scheme to use, there are currently a few available
 //! choices, these determine which types will be available inside the above modules:
 //!
-//!  * `brotli`
-//!  * `bzip2`
-//!  * `deflate`
-//!  * `gzip`
-//!  * `zlib`
-//!  * `zstd`
+#![cfg_attr(feature = "brotli", doc = "* `brotli`")]
+#![cfg_attr(not(feature = "brotli"), doc = "* `brotli` (*inactive*)")]
+#![cfg_attr(feature = "bzip", doc = "* `bzip`")]
+#![cfg_attr(not(feature = "bzip"), doc = "* `bzip` (*inactive*)")]
+#![cfg_attr(feature = "deflate", doc = "* `deflate`")]
+#![cfg_attr(not(feature = "deflate"), doc = "* `deflate` (*inactive*)")]
+#![cfg_attr(feature = "gzip", doc = "* `gzip`")]
+#![cfg_attr(not(feature = "gzip"), doc = "* `gzip` (*inactive*)")]
+#![cfg_attr(feature = "zlib", doc = "* `zlib`")]
+#![cfg_attr(not(feature = "zlib"), doc = "* `zlib` (*inactive*)")]
+#![cfg_attr(feature = "zstd", doc = "* `zstd`")]
+#![cfg_attr(not(feature = "zstd"), doc = "* `zstd` (*inactive*)")]
+//!
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(

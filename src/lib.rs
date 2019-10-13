@@ -31,7 +31,7 @@
 //! choices, these determine which types will be available inside the above modules:
 //!
 //!  * `brotli`
-//!  * `bzip2`
+//!  * `bzip`
 //!  * `deflate`
 //!  * `gzip`
 //!  * `zlib`

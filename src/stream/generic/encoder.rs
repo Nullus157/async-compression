@@ -51,7 +51,7 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Encoder<S, E> {
         &mut self.stream
     }
 
-    pub(crate) fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut S> {
+    pub(crate) fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut S> {
         self.project().stream
     }
 

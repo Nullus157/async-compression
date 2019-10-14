@@ -31,7 +31,7 @@ macro_rules! encoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the writer which
             /// may otherwise confuse this encoder.
-            pub fn get_pin_mut<'a>(self: std::pin::Pin<&'a mut Self>) -> std::pin::Pin<&'a mut W> {
+            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut W> {
                 self.project().inner.get_pin_mut()
             }
 

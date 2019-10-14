@@ -51,7 +51,7 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Decoder<S, D> {
         &mut self.stream
     }
 
-    pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut S> {
+    pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut S> {
         self.project().stream
     }
 

@@ -46,7 +46,7 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
         self.writer.get_mut()
     }
 
-    pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut W> {
+    pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut W> {
         self.project().writer.get_pin_mut()
     }
 

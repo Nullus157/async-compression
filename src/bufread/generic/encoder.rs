@@ -42,7 +42,7 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
         &mut self.reader
     }
 
-    pub fn get_pin_mut<'a>(self: Pin<&'a mut Self>) -> Pin<&'a mut R> {
+    pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut R> {
         self.project().reader
     }
 

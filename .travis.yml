@@ -12,6 +12,17 @@ matrix:
   include:
   - os: osx
 
+  - name: cargo audit
+    cache: cargo
+    rust: nightly
+    install:
+    - cargo install -Z install-upgrade cargo-audit
+    script:
+    - cargo generate-lockfile -Z minimal-versions
+    - cargo audit
+    - cargo update
+    - cargo audit
+
   - name: cargo build --features
     script:
     # Need to remove dev-dependencies so that they don't affect feature resolution

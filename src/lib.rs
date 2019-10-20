@@ -75,6 +75,8 @@
     missing_debug_implementations
 )]
 
+#[macro_use]
+mod macros;
 mod codec;
 
 #[cfg(feature = "bufread")]

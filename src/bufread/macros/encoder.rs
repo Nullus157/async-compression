@@ -1,19 +1,26 @@
 macro_rules! encoder {
-    ($(#[$attr:meta])* $name:ident) => {
+    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
         $(#[$attr])*
         #[pin_project::pin_project]
         #[derive(Debug)]
         ///
         /// This structure implements an [`AsyncRead`](futures_io::AsyncRead) interface and will
         /// read uncompressed data from an underlying stream and emit a stream of compressed data.
-        pub struct $name<R: futures_io::AsyncBufRead> {
+        pub struct $name<$inner: futures_io::AsyncBufRead> {
             #[pin]
-            inner: crate::bufread::Encoder<R, crate::codec::$name>,
+            inner: crate::bufread::Encoder<$inner, crate::codec::$name>,
         }
 
-        impl<R: futures_io::AsyncBufRead> $name<R> {
+        impl<$inner: futures_io::AsyncBufRead> $name<$inner> {
+            $(
+                /// Creates a new encoder which will read uncompressed data from the given stream
+                /// and emit a compressed stream.
+                ///
+                $($constructor)*
+            )*
+
             /// Acquires a reference to the underlying reader that this encoder is wrapping.
-            pub fn get_ref(&self) -> &R {
+            pub fn get_ref(&self) -> &$inner {
                 self.inner.get_ref()
             }
 
@@ -22,7 +29,7 @@ macro_rules! encoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this encoder.
-            pub fn get_mut(&mut self) -> &mut R {
+            pub fn get_mut(&mut self) -> &mut $inner {
                 self.inner.get_mut()
             }
 
@@ -31,7 +38,7 @@ macro_rules! encoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this encoder.
-            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut R> {
+            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut $inner> {
                 self.project().inner.get_pin_mut()
             }
 
@@ -39,12 +46,12 @@ macro_rules! encoder {
             ///
             /// Note that this may discard internal state of this encoder, so care should be taken
             /// to avoid losing resources when this is called.
-            pub fn into_inner(self) -> R {
+            pub fn into_inner(self) -> $inner {
                 self.inner.into_inner()
             }
         }
 
-        impl<R: futures_io::AsyncBufRead> futures_io::AsyncRead for $name<R> {
+        impl<$inner: futures_io::AsyncBufRead> futures_io::AsyncRead for $name<$inner> {
             fn poll_read(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,

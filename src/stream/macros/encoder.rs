@@ -1,19 +1,26 @@
 macro_rules! encoder {
-    ($(#[$attr:meta])* $name:ident) => {
+    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
         $(#[$attr])*
         #[pin_project::pin_project]
         #[derive(Debug)]
         ///
         /// This structure implements a [`Stream`](futures_core::stream::Stream) interface and will read
         /// uncompressed data from an underlying stream and emit a stream of compressed data.
-        pub struct $name<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
+        pub struct $name<$inner: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
             #[pin]
-            inner: crate::stream::Encoder<S, crate::codec::$name>,
+            inner: crate::stream::Encoder<$inner, crate::codec::$name>,
         }
 
-        impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> $name<S> {
+        impl<$inner: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> $name<$inner> {
+            $(
+                /// Creates a new encoder which will read uncompressed data from the given stream
+                /// and emit a compressed stream.
+                ///
+                $($constructor)*
+            )*
+
             /// Acquires a reference to the underlying stream that this encoder is wrapping.
-            pub fn get_ref(&self) -> &S {
+            pub fn get_ref(&self) -> &$inner {
                 self.inner.get_ref()
             }
 
@@ -22,7 +29,7 @@ macro_rules! encoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the stream which
             /// may otherwise confuse this encoder.
-            pub fn get_mut(&mut self) -> &mut S {
+            pub fn get_mut(&mut self) -> &mut $inner {
                 self.inner.get_mut()
             }
 
@@ -31,7 +38,7 @@ macro_rules! encoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the stream which
             /// may otherwise confuse this encoder.
-            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut S> {
+            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut $inner> {
                 self.project().inner.get_pin_mut()
             }
 
@@ -39,13 +46,13 @@ macro_rules! encoder {
             ///
             /// Note that this may discard internal state of this encoder, so care should be taken
             /// to avoid losing resources when this is called.
-            pub fn into_inner(self) -> S {
+            pub fn into_inner(self) -> $inner {
                 self.inner.into_inner()
             }
         }
 
-        impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>>
-            futures_core::stream::Stream for $name<S>
+        impl<$inner: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>>
+            futures_core::stream::Stream for $name<$inner>
         {
             type Item = std::io::Result<bytes::Bytes>;
 

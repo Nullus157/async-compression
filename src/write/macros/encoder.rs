@@ -1,19 +1,26 @@
 macro_rules! encoder {
-    ($(#[$attr:meta])* $name:ident) => {
+    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
         $(#[$attr])*
         #[pin_project::pin_project]
         #[derive(Debug)]
         ///
         /// This structure implements an [`AsyncWrite`](futures_io::AsyncWrite) interface and will
         /// take in uncompressed data and write it compressed to an underlying stream.
-        pub struct $name<W: futures_io::AsyncWrite> {
+        pub struct $name<$inner: futures_io::AsyncWrite> {
             #[pin]
-            inner: crate::write::Encoder<W, crate::codec::$name>,
+            inner: crate::write::Encoder<$inner, crate::codec::$name>,
         }
 
-        impl<W: futures_io::AsyncWrite> $name<W> {
+        impl<$inner: futures_io::AsyncWrite> $name<$inner> {
+            $(
+                /// Creates a new encoder which will take in uncompressed data and write it
+                /// compressed to the given stream.
+                ///
+                $($constructor)*
+            )*
+
             /// Acquires a reference to the underlying writer that this encoder is wrapping.
-            pub fn get_ref(&self) -> &W {
+            pub fn get_ref(&self) -> &$inner {
                 self.inner.get_ref()
             }
 
@@ -22,7 +29,7 @@ macro_rules! encoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the writer which
             /// may otherwise confuse this encoder.
-            pub fn get_mut(&mut self) -> &mut W {
+            pub fn get_mut(&mut self) -> &mut $inner {
                 self.inner.get_mut()
             }
 
@@ -31,7 +38,7 @@ macro_rules! encoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the writer which
             /// may otherwise confuse this encoder.
-            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut W> {
+            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut $inner> {
                 self.project().inner.get_pin_mut()
             }
 
@@ -39,12 +46,12 @@ macro_rules! encoder {
             ///
             /// Note that this may discard internal state of this encoder, so care should be taken
             /// to avoid losing resources when this is called.
-            pub fn into_inner(self) -> W {
+            pub fn into_inner(self) -> $inner {
                 self.inner.into_inner()
             }
         }
 
-        impl<W: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<W> {
+        impl<$inner: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<$inner> {
             fn poll_write(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,

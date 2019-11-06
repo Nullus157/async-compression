@@ -15,8 +15,8 @@
 //!  Feature | Does
 //! ---------|------
 //!  `all`   | Activates all implementations and algorithms.
-//!  `all-implementations` | Activates all implementations, needs to be pared with a selection of algorithms
-//!  `all-algorithms` | Activates all algorithms, needs to be pared with a selection of implementations
+//!  `all-implementations` | Activates all implementations, needs to be paired with a selection of algorithms
+//!  `all-algorithms` | Activates all algorithms, needs to be paired with a selection of implementations
 //!
 
 //! ## IO implementation

@@ -65,18 +65,18 @@ mod prelude {
     pub use futures::{
         executor::{block_on, block_on_stream},
         io::{
-            AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt,
-            BufReader,
+            copy_buf, AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite,
+            AsyncWriteExt, BufReader, Cursor,
         },
+        pin_mut,
         stream::{self, Stream, TryStreamExt},
     };
     pub use futures_test::{
         io::{AsyncReadTestExt, AsyncWriteTestExt},
         stream::StreamTestExt,
     };
-    pub use pin_utils::pin_mut;
     pub use std::{
-        io::{self, Cursor, Read},
+        io::{self, Read},
         pin::Pin,
     };
 
@@ -91,7 +91,7 @@ mod prelude {
         // All current test cases are < 100kB
         let mut output = Cursor::new(vec![0; 102_400]);
         pin_mut!(read);
-        let len = block_on(BufReader::with_capacity(2, read).copy_buf_into(&mut output)).unwrap();
+        let len = block_on(copy_buf(BufReader::with_capacity(2, read), &mut output)).unwrap();
         let mut output = output.into_inner();
         output.truncate(len as usize);
         output

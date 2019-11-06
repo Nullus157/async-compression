@@ -33,14 +33,11 @@ additional terms or conditions.
 
 [1]: https://img.shields.io/crates/v/async-compression.svg?style=flat-square
 [2]: https://crates.io/crates/async-compression
-[3]: https://img.shields.io/travis/rustasync/async-compression/master.svg?style=flat-square
-[4]: https://travis-ci.org/rustasync/async-compression
+[3]: https://img.shields.io/travis/Nemo157/async-compression/master.svg?style=flat-square
+[4]: https://travis-ci.com/Nemo157/async-compression
 [5]: https://img.shields.io/crates/d/async-compression.svg?style=flat-square
 [6]: https://crates.io/crates/async-compression
 [7]: https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square
 [8]: https://docs.rs/async-compression
 
-[releases]: https://github.com/rustasync/async-compression/releases
-[contributing]: https://github.com/rustasync/async-compression/blob/master.github/CONTRIBUTING.md
-[good-first-issue]: https://github.com/rustasync/async-compression/labels/good%20first%20issue
-[help-wanted]: https://github.com/rustasync/async-compression/labels/help%20wanted
+[releases]: https://github.com/Nemo157/async-compression/releases

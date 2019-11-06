@@ -6,17 +6,21 @@
 //! This crate is divided up along two axes, which can each be individually selected via Cargo
 //! features.
 //!
-//! All features are default active, it's recommended you use this crate with `default-features =
-//! false` and enable just the features you need. (We're considering disabling this and shipping
-//! with no features active by default, please [leave a comment][#46] if you have an opinion either
-//! way).
+//! All features are disabled by default, you should enable just the ones you need from the lists
+//! below.
 //!
-//! [#46]: https://github.com/rustasync/async-compression/issues/46
+//! If you want to pull in everything there are three group features defined:
 //!
-//! ## IO type
+//!  Feature | Does
+//! ---------|------
+//!  `all`   | Activates all implementations and algorithms.
+//!  `all-implementations` | Activates all implementations, needs to be pared with a selection of algorithms
+//!  `all-algorithms` | Activates all algorithms, needs to be pared with a selection of implementations
 //!
-//! The first division is which underlying asynchronous IO type will be wrapped, these are
-//! available as two separate features that have corresponding top-level modules:
+//! ## IO implementation
+//!
+//! The first division is which underlying asynchronous IO trait will be wrapped, these are
+//! available as separate features that have corresponding top-level modules:
 //!
 //!  Feature | Type
 //! ---------|------
@@ -48,10 +52,10 @@
 )]
 //!
 //!
-//! ## Compression implementation
+//! ## Compression algorithm
 //!
-//! The second division is which compression scheme to use, there are currently a few available
-//! choices, these determine which types will be available inside the above modules:
+//! The second division is which compression schemes to support, there are currently a few
+//! available choices, these determine which types will be available inside the above modules:
 //!
 #![cfg_attr(feature = "brotli", doc = "* `brotli`")]
 #![cfg_attr(not(feature = "brotli"), doc = "* `brotli` (*inactive*)")]

@@ -9,6 +9,13 @@ asynchronous IO types.
 - [Crates.io][2]
 - [Releases][releases]
 
+## Development
+
+When developing you will need to enable appropriate features for the different
+test cases to run, the simplest is `cargo test --all-features`, but you can
+enable different subsets of features as appropriate for the code you are
+testing to avoid compiling all dependencies.
+
 ## License
 
 Licensed under either of

@@ -1,23 +1,30 @@
 //! Adaptors between compression crates and Rust's modern asynchronous IO types.
 //!
-//!
+
 //! # Feature Organization
 //!
 //! This crate is divided up along two axes, which can each be individually selected via Cargo
 //! features.
 //!
-//! All features are default active, it's recommended you use this crate with `default-features =
-//! false` and enable just the features you need. (We're considering disabling this and shipping
-//! with no features active by default, please [leave a comment][#46] if you have an opinion either
-//! way).
+//! All features are disabled by default, you should enable just the ones you need from the lists
+//! below.
 //!
-//! [#46]: https://github.com/rustasync/async-compression/issues/46
+//! If you want to pull in everything there are three group features defined:
 //!
-//! ## IO type
+
+//!  Feature | Does
+//! ---------|------
+//!  `all`   | Activates all implementations and algorithms.
+//!  `all-implementations` | Activates all implementations, needs to be pared with a selection of algorithms
+//!  `all-algorithms` | Activates all algorithms, needs to be pared with a selection of implementations
 //!
-//! The first division is which underlying asynchronous IO type will be wrapped, these are
-//! available as two separate features that have corresponding top-level modules:
+
+//! ## IO implementation
 //!
+//! The first division is which underlying asynchronous IO trait will be wrapped, these are
+//! available as separate features that have corresponding top-level modules:
+//!
+
 //!  Feature | Type
 //! ---------|------
 // TODO: Kill rustfmt on this section, `#![rustfmt::skip::attributes(cfg_attr)]` should do it, but
@@ -47,24 +54,63 @@
     doc = "`stream` (*inactive*) | `futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>`"
 )]
 //!
+
+//! ## Compression algorithm
 //!
-//! ## Compression implementation
+//! The second division is which compression schemes to support, there are currently a few
+//! available choices, these determine which types will be available inside the above modules:
 //!
-//! The second division is which compression scheme to use, there are currently a few available
-//! choices, these determine which types will be available inside the above modules:
-//!
-#![cfg_attr(feature = "brotli", doc = "* `brotli`")]
-#![cfg_attr(not(feature = "brotli"), doc = "* `brotli` (*inactive*)")]
-#![cfg_attr(feature = "bzip", doc = "* `bzip`")]
-#![cfg_attr(not(feature = "bzip"), doc = "* `bzip` (*inactive*)")]
-#![cfg_attr(feature = "deflate", doc = "* `deflate`")]
-#![cfg_attr(not(feature = "deflate"), doc = "* `deflate` (*inactive*)")]
-#![cfg_attr(feature = "gzip", doc = "* `gzip`")]
-#![cfg_attr(not(feature = "gzip"), doc = "* `gzip` (*inactive*)")]
-#![cfg_attr(feature = "zlib", doc = "* `zlib`")]
-#![cfg_attr(not(feature = "zlib"), doc = "* `zlib` (*inactive*)")]
-#![cfg_attr(feature = "zstd", doc = "* `zstd`")]
-#![cfg_attr(not(feature = "zstd"), doc = "* `zstd` (*inactive*)")]
+
+//!  Feature | Types
+//! ---------|------
+#![cfg_attr(
+    feature = "brotli",
+    doc = "`brotli` | [`BrotliEncoder`](?search=BrotliEncoder), [`BrotliDecoder`](?search=BrotliDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "brotli"),
+    doc = "`brotli` (*inactive*) | `BrotliEncoder`, `BrotliDecoder`"
+)]
+#![cfg_attr(
+    feature = "bzip",
+    doc = "`bzip` | [`BzEncoder`](?search=BzEncoder), [`BzDecoder`](?search=BzDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "bzip"),
+    doc = "`bzip` (*inactive*) | `BzEncoder`, `BzDecoder`"
+)]
+#![cfg_attr(
+    feature = "deflate",
+    doc = "`deflate` | [`DeflateEncoder`](?search=DeflateEncoder), [`DeflateDecoder`](?search=DeflateDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "deflate"),
+    doc = "`deflate` (*inactive*) | `DeflateEncoder`, `DeflateDecoder`"
+)]
+#![cfg_attr(
+    feature = "gzip",
+    doc = "`gzip` | [`GzipEncoder`](?search=GzipEncoder), [`GzipDecoder`](?search=GzipDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "gzip"),
+    doc = "`gzip` (*inactive*) | `GzipEncoder`, `GzipDecoder`"
+)]
+#![cfg_attr(
+    feature = "zlib",
+    doc = "`zlib` | [`ZlibEncoder`](?search=ZlibEncoder), [`ZlibDecoder`](?search=ZlibDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "zlib"),
+    doc = "`zlib` (*inactive*) | `ZlibEncoder`, `ZlibDecoder`"
+)]
+#![cfg_attr(
+    feature = "zstd",
+    doc = "`zstd` | [`ZstdEncoder`](?search=ZstdEncoder), [`ZstdDecoder`](?search=ZstdDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "zstd"),
+    doc = "`zstd` (*inactive*) | `ZstdEncoder`, `ZstdDecoder`"
+)]
 //!
 
 #![cfg_attr(docsrs, feature(doc_cfg))]

@@ -16,10 +16,18 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["bufread", "stream", "write", "brotli", "bzip", "deflate", "gzip", "zlib", "zstd"]
+# groups
+default = []
+all = ["all-implementations", "all-algorithms"]
+all-implementations = ["bufread", "write", "stream"]
+all-algorithms = ["brotli", "bzip", "deflate", "gzip", "zlib", "zstd"]
+
+# implementations
 bufread = ["futures-io"]
 write = ["futures-io"]
 stream = ["bytes"]
+
+# algorithms
 brotli = ["brotli2"]
 bzip = ["bzip2"]
 deflate = ["flate2"]
@@ -47,3 +55,31 @@ futures = "0.3.0"
 futures-test = "0.3.0"
 ntest = "0.3.3"
 timebomb = "0.1.2"
+
+[[test]]
+name = "brotli"
+required-features = ["all-implementations", "brotli"]
+
+[[test]]
+name = "bzip"
+required-features = ["all-implementations", "bzip"]
+
+[[test]]
+name = "deflate"
+required-features = ["all-implementations", "deflate"]
+
+[[test]]
+name = "gzip"
+required-features = ["all-implementations", "gzip"]
+
+[[test]]
+name = "zlib"
+required-features = ["all-implementations", "zlib"]
+
+[[test]]
+name = "zstd"
+required-features = ["all-implementations", "zstd"]
+
+[[test]]
+name = "proptest"
+required-features = ["all"]

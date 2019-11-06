@@ -190,7 +190,7 @@ pub mod brotli {
     }
 }
 
-pub mod bzip2 {
+pub mod bzip {
     pub mod sync {
         use crate::utils::prelude::*;
 

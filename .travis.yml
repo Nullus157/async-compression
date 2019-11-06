@@ -6,7 +6,7 @@ rust:
 - nightly
 
 script:
-- cargo test --all
+- cargo test --all-features
 
 matrix:
   include:
@@ -23,16 +23,17 @@ matrix:
     - cargo update
     - cargo audit
 
-  - name: cargo build --features
+  - name: cargo check --features
     script:
     # Need to remove dev-dependencies so that they don't affect feature resolution
     - cargo run --manifest-path ci/remove-dev-dependencies/Cargo.toml
     # A somewhat arbitrary selection of features to check
-    - cargo build --no-default-features
-    - cargo build --no-default-features --features brotli,deflate,gzip,zlib,zstd,stream
-    - cargo build --no-default-features --features brotli,deflate,gzip,zlib,zstd,bufread
-    - cargo build --no-default-features --features brotli,bufread,stream
-    - cargo build --no-default-features --features zstd,bufread,stream
+    - cargo check
+    - cargo check --features brotli,deflate,gzip,zlib,zstd,stream
+    - cargo check --features brotli,deflate,gzip,zlib,zstd,bufread
+    - cargo check --features brotli,bufread,stream
+    - cargo check --features zstd,bufread,stream
+    - cargo check --features all
 
   - name: docs.rs
     rust: nightly
@@ -44,13 +45,13 @@ matrix:
     install:
     - rustup component add rustfmt
     script:
-    - cargo fmt --all -- --check
+    - cargo fmt -- --check
 
   - name: cargo clippy
     install:
     - rustup component add clippy
     script:
-    - cargo clippy --all --all-targets -- -D warnings
+    - cargo clippy --all-targets --all-features -- -D warnings
 
 branches:
   only: [staging, trying, master]

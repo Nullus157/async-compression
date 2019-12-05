@@ -3,8 +3,8 @@ use std::io::Result;
 
 #[cfg(feature = "brotli")]
 mod brotli;
-#[cfg(feature = "bzip")]
-mod bzip;
+#[cfg(feature = "bzip2")]
+mod bzip2;
 #[cfg(feature = "deflate")]
 mod deflate;
 #[cfg(feature = "flate2")]
@@ -18,8 +18,8 @@ mod zstd;
 
 #[cfg(feature = "brotli")]
 pub(crate) use self::brotli::{BrotliDecoder, BrotliEncoder};
-#[cfg(feature = "bzip")]
-pub(crate) use self::bzip::{BzDecoder, BzEncoder};
+#[cfg(feature = "bzip2")]
+pub(crate) use self::bzip2::{BzDecoder, BzEncoder};
 #[cfg(feature = "deflate")]
 pub(crate) use self::deflate::{DeflateDecoder, DeflateEncoder};
 #[cfg(feature = "flate2")]

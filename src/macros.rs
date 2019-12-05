@@ -38,7 +38,7 @@ macro_rules! algos {
             }
         });
 
-        algos!(@algo bzip ["bzip"] BzDecoder BzEncoder<$inner> {
+        algos!(@algo bzip2 ["bzip2"] BzDecoder BzEncoder<$inner> {
             pub fn new(inner: $inner, level: bzip2::Compression) -> Self {
                 Self {
                     inner: crate::$mod::generic::Encoder::new(

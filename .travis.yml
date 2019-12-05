@@ -31,7 +31,7 @@ matrix:
     - cargo check
     - cargo check --features brotli,deflate,gzip,zlib,zstd,stream
     - cargo check --features brotli,deflate,gzip,zlib,zstd,futures::bufread
-    - cargo check --features brotli,futures::bufread,stream
+    - cargo check --features brotli,futures::write,stream
     - cargo check --features zstd,futures::bufread,stream
     - cargo check --features all
 

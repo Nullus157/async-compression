@@ -6,8 +6,8 @@ use std::io::{Error, ErrorKind, Result};
 
 use crate::{
     codec::Decode,
+    futures::write::{AsyncBufWrite, BufWriter},
     util::PartialBuffer,
-    write::{AsyncBufWrite, BufWriter},
 };
 use futures_core::ready;
 use futures_io::AsyncWrite;

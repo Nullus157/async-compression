@@ -8,7 +8,7 @@ macro_rules! encoder {
             /// read uncompressed data from an underlying stream and emit a stream of compressed data.
             pub struct $name<$inner: futures_io::AsyncBufRead> {
                 #[pin]
-                inner: crate::bufread::Encoder<$inner, crate::codec::$name>,
+                inner: crate::futures::bufread::Encoder<$inner, crate::codec::$name>,
             }
         }
 

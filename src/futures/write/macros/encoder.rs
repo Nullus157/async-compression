@@ -1,59 +1,58 @@
-macro_rules! decoder {
-    ($(#[$attr:meta])* $name:ident) => {
+macro_rules! encoder {
+    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
             #[derive(Debug)]
             ///
             /// This structure implements an [`AsyncWrite`](futures_io::AsyncWrite) interface and will
-            /// take in compressed data and write it uncompressed to an underlying stream.
-            pub struct $name<W: futures_io::AsyncWrite> {
+            /// take in uncompressed data and write it compressed to an underlying stream.
+            pub struct $name<$inner: futures_io::AsyncWrite> {
                 #[pin]
-                inner: crate::write::Decoder<W, crate::codec::$name>,
+                inner: crate::futures::write::Encoder<$inner, crate::codec::$name>,
             }
         }
 
-        impl<W: futures_io::AsyncWrite> $name<W> {
-            /// Creates a new decoder which will take in compressed data and write it uncompressedd
-            /// to the given stream.
-            pub fn new(read: W) -> $name<W> {
-                $name {
-                    inner: crate::write::Decoder::new(read, crate::codec::$name::new()),
-                }
-            }
+        impl<$inner: futures_io::AsyncWrite> $name<$inner> {
+            $(
+                /// Creates a new encoder which will take in uncompressed data and write it
+                /// compressed to the given stream.
+                ///
+                $($constructor)*
+            )*
 
-            /// Acquires a reference to the underlying reader that this decoder is wrapping.
-            pub fn get_ref(&self) -> &W {
+            /// Acquires a reference to the underlying writer that this encoder is wrapping.
+            pub fn get_ref(&self) -> &$inner {
                 self.inner.get_ref()
             }
 
-            /// Acquires a mutable reference to the underlying reader that this decoder is
+            /// Acquires a mutable reference to the underlying writer that this encoder is
             /// wrapping.
             ///
-            /// Note that care must be taken to avoid tampering with the state of the reader which
-            /// may otherwise confuse this decoder.
-            pub fn get_mut(&mut self) -> &mut W {
+            /// Note that care must be taken to avoid tampering with the state of the writer which
+            /// may otherwise confuse this encoder.
+            pub fn get_mut(&mut self) -> &mut $inner {
                 self.inner.get_mut()
             }
 
-            /// Acquires a pinned mutable reference to the underlying reader that this decoder is
+            /// Acquires a pinned mutable reference to the underlying writer that this encoder is
             /// wrapping.
             ///
-            /// Note that care must be taken to avoid tampering with the state of the reader which
-            /// may otherwise confuse this decoder.
-            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut W> {
+            /// Note that care must be taken to avoid tampering with the state of the writer which
+            /// may otherwise confuse this encoder.
+            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut $inner> {
                 self.project().inner.get_pin_mut()
             }
 
-            /// Consumes this decoder returning the underlying reader.
+            /// Consumes this encoder returning the underlying writer.
             ///
-            /// Note that this may discard internal state of this decoder, so care should be taken
+            /// Note that this may discard internal state of this encoder, so care should be taken
             /// to avoid losing resources when this is called.
-            pub fn into_inner(self) -> W {
+            pub fn into_inner(self) -> $inner {
                 self.inner.into_inner()
             }
         }
 
-        impl<W: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<W> {
+        impl<$inner: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<$inner> {
             fn poll_write(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,

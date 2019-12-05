@@ -5,7 +5,7 @@
 use super::AsyncBufWrite;
 use futures_core::ready;
 use futures_io::{AsyncSeek, AsyncWrite, SeekFrom};
-use pin_project::pin_project;
+use pin_project_lite::pin_project;
 use std::{
     cmp::min,
     fmt, io,
@@ -15,13 +15,14 @@ use std::{
 
 const DEFAULT_BUF_SIZE: usize = 8192;
 
-#[pin_project]
-pub struct BufWriter<W> {
-    #[pin]
-    inner: W,
-    buf: Box<[u8]>,
-    written: usize,
-    buffered: usize,
+pin_project! {
+    pub struct BufWriter<W> {
+        #[pin]
+        inner: W,
+        buf: Box<[u8]>,
+        written: usize,
+        buffered: usize,
+    }
 }
 
 impl<W: AsyncWrite> BufWriter<W> {

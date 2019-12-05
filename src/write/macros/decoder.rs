@@ -1,14 +1,15 @@
 macro_rules! decoder {
     ($(#[$attr:meta])* $name:ident) => {
-        $(#[$attr])*
-        #[pin_project::pin_project]
-        #[derive(Debug)]
-        ///
-        /// This structure implements an [`AsyncWrite`](futures_io::AsyncWrite) interface and will
-        /// take in compressed data and write it uncompressed to an underlying stream.
-        pub struct $name<W: futures_io::AsyncWrite> {
-            #[pin]
-            inner: crate::write::Decoder<W, crate::codec::$name>,
+        pin_project_lite::pin_project! {
+            $(#[$attr])*
+            #[derive(Debug)]
+            ///
+            /// This structure implements an [`AsyncWrite`](futures_io::AsyncWrite) interface and will
+            /// take in compressed data and write it uncompressed to an underlying stream.
+            pub struct $name<W: futures_io::AsyncWrite> {
+                #[pin]
+                inner: crate::write::Decoder<W, crate::codec::$name>,
+            }
         }
 
         impl<W: futures_io::AsyncWrite> $name<W> {

@@ -1,14 +1,15 @@
 macro_rules! encoder {
     ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
-        $(#[$attr])*
-        #[pin_project::pin_project]
-        #[derive(Debug)]
-        ///
-        /// This structure implements an [`AsyncRead`](futures_io::AsyncRead) interface and will
-        /// read uncompressed data from an underlying stream and emit a stream of compressed data.
-        pub struct $name<$inner: futures_io::AsyncBufRead> {
-            #[pin]
-            inner: crate::bufread::Encoder<$inner, crate::codec::$name>,
+        pin_project_lite::pin_project! {
+            $(#[$attr])*
+            #[derive(Debug)]
+            ///
+            /// This structure implements an [`AsyncRead`](futures_io::AsyncRead) interface and will
+            /// read uncompressed data from an underlying stream and emit a stream of compressed data.
+            pub struct $name<$inner: futures_io::AsyncBufRead> {
+                #[pin]
+                inner: crate::bufread::Encoder<$inner, crate::codec::$name>,
+            }
         }
 
         impl<$inner: futures_io::AsyncBufRead> $name<$inner> {

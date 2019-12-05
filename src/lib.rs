@@ -72,12 +72,12 @@
     doc = "`brotli` (*inactive*) | `BrotliEncoder`, `BrotliDecoder`"
 )]
 #![cfg_attr(
-    feature = "bzip",
-    doc = "`bzip` | [`BzEncoder`](?search=BzEncoder), [`BzDecoder`](?search=BzDecoder)"
+    feature = "bzip2",
+    doc = "`bzip2` | [`BzEncoder`](?search=BzEncoder), [`BzDecoder`](?search=BzDecoder)"
 )]
 #![cfg_attr(
-    not(feature = "bzip"),
-    doc = "`bzip` (*inactive*) | `BzEncoder`, `BzDecoder`"
+    not(feature = "bzip2"),
+    doc = "`bzip2` (*inactive*) | `BzEncoder`, `BzDecoder`"
 )]
 #![cfg_attr(
     feature = "deflate",
@@ -153,8 +153,8 @@ pub mod brotli2 {
 }
 
 /// Types to configure [`bzip2`](::bzip2) based encoders.
-#[cfg(feature = "bzip")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bzip")))]
+#[cfg(feature = "bzip2")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bzip2")))]
 pub mod bzip2 {
     pub use bzip2::Compression;
 }

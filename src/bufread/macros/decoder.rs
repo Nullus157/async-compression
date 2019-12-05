@@ -1,14 +1,15 @@
 macro_rules! decoder {
     ($(#[$attr:meta])* $name:ident) => {
-        $(#[$attr])*
-        #[pin_project::pin_project]
-        #[derive(Debug)]
-        ///
-        /// This structure implements an [`AsyncRead`](futures_io::AsyncRead) interface and will
-        /// read compressed data from an underlying stream and emit a stream of uncompressed data.
-        pub struct $name<R: futures_io::AsyncBufRead> {
-            #[pin]
-            inner: crate::bufread::Decoder<R, crate::codec::$name>,
+        pin_project_lite::pin_project! {
+            $(#[$attr])*
+            #[derive(Debug)]
+            ///
+            /// This structure implements an [`AsyncRead`](futures_io::AsyncRead) interface and will
+            /// read compressed data from an underlying stream and emit a stream of uncompressed data.
+            pub struct $name<R: futures_io::AsyncBufRead> {
+                #[pin]
+                inner: crate::bufread::Decoder<R, crate::codec::$name>,
+            }
         }
 
         impl<R: futures_io::AsyncBufRead> $name<R> {

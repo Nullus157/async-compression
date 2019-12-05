@@ -8,7 +8,7 @@ use std::{
 use crate::{codec::Decode, util::PartialBuffer};
 use bytes::{Bytes, BytesMut};
 use futures_core::{ready, stream::Stream};
-use pin_project::pin_project;
+use pin_project_lite::pin_project;
 
 const OUTPUT_BUFFER_SIZE: usize = 8_000;
 
@@ -21,15 +21,16 @@ enum State {
     Invalid,
 }
 
-#[pin_project]
-#[derive(Debug)]
-pub struct Decoder<S: Stream<Item = Result<Bytes>>, D: Decode> {
-    #[pin]
-    stream: S,
-    decoder: D,
-    state: State,
-    input: Bytes,
-    output: BytesMut,
+pin_project! {
+    #[derive(Debug)]
+    pub struct Decoder<S: Stream<Item = Result<Bytes>>, D: Decode> {
+        #[pin]
+        stream: S,
+        decoder: D,
+        state: State,
+        input: Bytes,
+        output: BytesMut,
+    }
 }
 
 impl<S: Stream<Item = Result<Bytes>>, D: Decode> Decoder<S, D> {

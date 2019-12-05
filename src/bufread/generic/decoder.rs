@@ -7,7 +7,7 @@ use std::io::Result;
 use crate::{codec::Decode, util::PartialBuffer};
 use futures_core::ready;
 use futures_io::{AsyncBufRead, AsyncRead};
-use pin_project::pin_project;
+use pin_project_lite::pin_project;
 
 #[derive(Debug)]
 enum State {
@@ -16,13 +16,14 @@ enum State {
     Done,
 }
 
-#[pin_project]
-#[derive(Debug)]
-pub struct Decoder<R: AsyncBufRead, D: Decode> {
-    #[pin]
-    reader: R,
-    decoder: D,
-    state: State,
+pin_project! {
+    #[derive(Debug)]
+    pub struct Decoder<R: AsyncBufRead, D: Decode> {
+        #[pin]
+        reader: R,
+        decoder: D,
+        state: State,
+    }
 }
 
 impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {

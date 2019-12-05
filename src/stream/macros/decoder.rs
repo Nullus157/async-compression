@@ -1,14 +1,15 @@
 macro_rules! decoder {
     ($(#[$attr:meta])* $name:ident) => {
-        $(#[$attr])*
-        #[pin_project::pin_project]
-        #[derive(Debug)]
-        ///
-        /// This structure implements a [`Stream`](futures_core::stream::Stream) interface and will read
-        /// compressed data from an underlying stream and emit a stream of uncompressed data.
-        pub struct $name<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
-            #[pin]
-            inner: crate::stream::generic::Decoder<S, crate::codec::$name>,
+        pin_project_lite::pin_project! {
+            $(#[$attr])*
+            #[derive(Debug)]
+            ///
+            /// This structure implements a [`Stream`](futures_core::stream::Stream) interface and will read
+            /// compressed data from an underlying stream and emit a stream of uncompressed data.
+            pub struct $name<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
+                #[pin]
+                inner: crate::stream::generic::Decoder<S, crate::codec::$name>,
+            }
         }
 
         impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> $name<S> {

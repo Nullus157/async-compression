@@ -1,14 +1,15 @@
 macro_rules! encoder {
     ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
-        $(#[$attr])*
-        #[pin_project::pin_project]
-        #[derive(Debug)]
-        ///
-        /// This structure implements a [`Stream`](futures_core::stream::Stream) interface and will read
-        /// uncompressed data from an underlying stream and emit a stream of compressed data.
-        pub struct $name<$inner: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
-            #[pin]
-            inner: crate::stream::Encoder<$inner, crate::codec::$name>,
+        pin_project_lite::pin_project! {
+            $(#[$attr])*
+            #[derive(Debug)]
+            ///
+            /// This structure implements a [`Stream`](futures_core::stream::Stream) interface and will read
+            /// uncompressed data from an underlying stream and emit a stream of compressed data.
+            pub struct $name<$inner: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
+                #[pin]
+                inner: crate::stream::Encoder<$inner, crate::codec::$name>,
+            }
         }
 
         impl<$inner: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> $name<$inner> {

@@ -11,7 +11,7 @@ use crate::{
 };
 use futures_core::ready;
 use futures_io::AsyncWrite;
-use pin_project::pin_project;
+use pin_project_lite::pin_project;
 
 #[derive(Debug)]
 enum State {
@@ -20,13 +20,14 @@ enum State {
     Done,
 }
 
-#[pin_project]
-#[derive(Debug)]
-pub struct Decoder<W: AsyncWrite, D: Decode> {
-    #[pin]
-    writer: BufWriter<W>,
-    decoder: D,
-    state: State,
+pin_project! {
+    #[derive(Debug)]
+    pub struct Decoder<W: AsyncWrite, D: Decode> {
+        #[pin]
+        writer: BufWriter<W>,
+        decoder: D,
+        state: State,
+    }
 }
 
 impl<W: AsyncWrite, D: Decode> Decoder<W, D> {

@@ -16,7 +16,7 @@ matrix:
     cache: cargo
     rust: nightly
     install:
-    - cargo install -Z install-upgrade cargo-audit
+    - cargo install cargo-audit
     script:
     - cargo generate-lockfile -Z minimal-versions
     - cargo audit

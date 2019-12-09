@@ -244,7 +244,7 @@ pub mod bzip2 {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{bzip2::Compression, write::BzEncoder};
+                use async_compression::{bzip2::Compression, futures::write::BzEncoder};
                 async_write_to_vec(
                     input,
                     |input| Box::pin(BzEncoder::new(input, Compression::Fastest)),
@@ -312,7 +312,7 @@ pub mod deflate {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{flate2::Compression, write::DeflateEncoder};
+                use async_compression::{flate2::Compression, futures::write::DeflateEncoder};
                 async_write_to_vec(
                     input,
                     |input| Box::pin(DeflateEncoder::new(input, Compression::fast())),
@@ -380,7 +380,7 @@ pub mod zlib {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{flate2::Compression, write::ZlibEncoder};
+                use async_compression::{flate2::Compression, futures::write::ZlibEncoder};
                 async_write_to_vec(
                     input,
                     |input| Box::pin(ZlibEncoder::new(input, Compression::fast())),
@@ -448,7 +448,7 @@ pub mod gzip {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{flate2::Compression, write::GzipEncoder};
+                use async_compression::{flate2::Compression, futures::write::GzipEncoder};
                 async_write_to_vec(
                     input,
                     |input| Box::pin(GzipEncoder::new(input, Compression::fast())),

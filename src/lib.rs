@@ -131,22 +131,6 @@ pub mod futures;
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
 
-#[cfg(feature = "bufread")]
-#[doc(hidden)]
-#[deprecated(
-    since = "0.1.1",
-    note = "Please switch to the `futures-bufread` feature and `async_compression::futures::bufread` module instead"
-)]
-pub use crate::futures::bufread;
-
-#[cfg(feature = "write")]
-#[doc(hidden)]
-#[deprecated(
-    since = "0.1.1",
-    note = "Please switch to the `futures-write` feature and `async_compression::futures::write` module instead"
-)]
-pub use crate::futures::write;
-
 /// Types to configure [`flate2`](::flate2) based encoders.
 #[cfg(feature = "flate2")]
 #[cfg_attr(

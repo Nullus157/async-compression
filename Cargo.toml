@@ -19,14 +19,14 @@ rustdoc-args = ["--cfg", "docsrs"]
 # groups
 default = []
 all = ["all-implementations", "all-algorithms"]
-all-implementations = ["futures::bufread", "futures::write", "stream"]
+all-implementations = ["futures-bufread", "futures-write", "stream"]
 all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "zlib", "zstd"]
 
 # implementations
-bufread = ["futures::bufread"]
-"futures::bufread" = ["futures-io"]
-write = ["futures::write"]
-"futures::write" = ["futures-io"]
+bufread = ["futures-bufread"]
+"futures-bufread" = ["futures-io"]
+write = ["futures-write"]
+"futures-write" = ["futures-io"]
 stream = ["bytes"]
 
 # algorithms

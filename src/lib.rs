@@ -30,20 +30,20 @@
 // TODO: Kill rustfmt on this section, `#![rustfmt::skip::attributes(cfg_attr)]` should do it, but
 // that's unstable
 #![cfg_attr(
-    feature = "futures::bufread",
-    doc = "[`futures::bufread`](crate::futures::bufread) | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead)"
+    feature = "futures-bufread",
+    doc = "[`futures-bufread`](crate::futures::bufread) | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead)"
 )]
 #![cfg_attr(
-    not(feature = "futures::bufread"),
-    doc = "`futures::bufread` (*inactive*) | `futures::io::AsyncBufRead`"
+    not(feature = "futures-bufread"),
+    doc = "`futures-bufread` (*inactive*) | `futures::io::AsyncBufRead`"
 )]
 #![cfg_attr(
-    feature = "futures::write",
-    doc = "[`futures::write`](crate::futures::write) | [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
+    feature = "futures-write",
+    doc = "[`futures-write`](crate::futures::write) | [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
 )]
 #![cfg_attr(
-    not(feature = "futures::write"),
-    doc = "`futures::write` (*inactive*) | `futures::io::AsyncWrite`"
+    not(feature = "futures-write"),
+    doc = "`futures-write` (*inactive*) | `futures::io::AsyncWrite`"
 )]
 #![cfg_attr(
     feature = "stream",
@@ -125,7 +125,7 @@
 mod macros;
 mod codec;
 
-#[cfg(any(feature = "futures::bufread", feature = "futures::write"))]
+#[cfg(any(feature = "futures-bufread", feature = "futures-write"))]
 pub mod futures;
 #[cfg(feature = "stream")]
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
@@ -135,7 +135,7 @@ pub mod stream;
 #[doc(hidden)]
 #[deprecated(
     since = "0.1.1",
-    note = "Please switch to the `futures::bufread` feature and `async_compression::futures::bufread` module instead"
+    note = "Please switch to the `futures-bufread` feature and `async_compression::futures::bufread` module instead"
 )]
 pub use crate::futures::bufread;
 
@@ -143,7 +143,7 @@ pub use crate::futures::bufread;
 #[doc(hidden)]
 #[deprecated(
     since = "0.1.1",
-    note = "Please switch to the `futures::write` feature and `async_compression::futures::write` module instead"
+    note = "Please switch to the `futures-write` feature and `async_compression::futures::write` module instead"
 )]
 pub use crate::futures::write;
 

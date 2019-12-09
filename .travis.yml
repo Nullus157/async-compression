@@ -30,9 +30,9 @@ matrix:
     # A somewhat arbitrary selection of features to check
     - cargo check
     - cargo check --features brotli,deflate,gzip,zlib,zstd,stream
-    - cargo check --features brotli,deflate,gzip,zlib,zstd,bufread
-    - cargo check --features brotli,bufread,stream
-    - cargo check --features zstd,bufread,stream
+    - cargo check --features brotli,deflate,gzip,zlib,zstd,futures::bufread
+    - cargo check --features brotli,futures::write,stream
+    - cargo check --features zstd,futures::bufread,stream
     - cargo check --features all
 
   - name: docs.rs

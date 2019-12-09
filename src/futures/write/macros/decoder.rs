@@ -4,25 +4,25 @@ macro_rules! decoder {
             $(#[$attr])*
             #[derive(Debug)]
             ///
-            /// This structure implements an [`AsyncRead`](futures_io::AsyncRead) interface and will
-            /// read compressed data from an underlying stream and emit a stream of uncompressed data.
-            pub struct $name<R: futures_io::AsyncBufRead> {
+            /// This structure implements an [`AsyncWrite`](futures_io::AsyncWrite) interface and will
+            /// take in compressed data and write it uncompressed to an underlying stream.
+            pub struct $name<W: futures_io::AsyncWrite> {
                 #[pin]
-                inner: crate::bufread::Decoder<R, crate::codec::$name>,
+                inner: crate::futures::write::Decoder<W, crate::codec::$name>,
             }
         }
 
-        impl<R: futures_io::AsyncBufRead> $name<R> {
-            /// Creates a new decoder which will read compressed data from the given stream and
-            /// emit a uncompressed stream.
-            pub fn new(read: R) -> $name<R> {
+        impl<W: futures_io::AsyncWrite> $name<W> {
+            /// Creates a new decoder which will take in compressed data and write it uncompressedd
+            /// to the given stream.
+            pub fn new(read: W) -> $name<W> {
                 $name {
-                    inner: crate::bufread::Decoder::new(read, crate::codec::$name::new()),
+                    inner: crate::futures::write::Decoder::new(read, crate::codec::$name::new()),
                 }
             }
 
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
-            pub fn get_ref(&self) -> &R {
+            pub fn get_ref(&self) -> &W {
                 self.inner.get_ref()
             }
 
@@ -31,7 +31,7 @@ macro_rules! decoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this decoder.
-            pub fn get_mut(&mut self) -> &mut R {
+            pub fn get_mut(&mut self) -> &mut W {
                 self.inner.get_mut()
             }
 
@@ -40,7 +40,7 @@ macro_rules! decoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this decoder.
-            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut R> {
+            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut W> {
                 self.project().inner.get_pin_mut()
             }
 
@@ -48,18 +48,32 @@ macro_rules! decoder {
             ///
             /// Note that this may discard internal state of this decoder, so care should be taken
             /// to avoid losing resources when this is called.
-            pub fn into_inner(self) -> R {
+            pub fn into_inner(self) -> W {
                 self.inner.into_inner()
             }
         }
 
-        impl<R: futures_io::AsyncBufRead> futures_io::AsyncRead for $name<R> {
-            fn poll_read(
+        impl<W: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<W> {
+            fn poll_write(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,
-                buf: &mut [u8],
+                buf: &[u8],
             ) -> std::task::Poll<std::io::Result<usize>> {
-                self.project().inner.poll_read(cx, buf)
+                self.project().inner.poll_write(cx, buf)
+            }
+
+            fn poll_flush(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.project().inner.poll_flush(cx)
+            }
+
+            fn poll_close(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.project().inner.poll_close(cx)
             }
         }
 
@@ -67,10 +81,10 @@ macro_rules! decoder {
             fn _assert() {
                 use crate::util::{_assert_send, _assert_sync};
                 use core::pin::Pin;
-                use futures_io::AsyncBufRead;
+                use futures_io::AsyncWrite;
 
-                _assert_send::<$name<Pin<Box<dyn AsyncBufRead + Send>>>>();
-                _assert_sync::<$name<Pin<Box<dyn AsyncBufRead + Sync>>>>();
+                _assert_send::<$name<Pin<Box<dyn AsyncWrite + Send>>>>();
+                _assert_sync::<$name<Pin<Box<dyn AsyncWrite + Sync>>>>();
             }
         };
     }

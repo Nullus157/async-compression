@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{codec::Encode, util::PartialBuffer};
-use bytes::{Bytes, BytesMut};
+use bytes::{Buf, Bytes, BytesMut};
 use futures_core::{ready, stream::Stream};
 use pin_project_lite::pin_project;
 
@@ -28,7 +28,7 @@ pin_project! {
         stream: S,
         encoder: E,
         state: State,
-        input: Bytes,
+        input: BytesMut,
         output: BytesMut,
     }
 }
@@ -39,7 +39,7 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Encoder<S, E> {
             stream,
             encoder,
             state: State::Reading,
-            input: Bytes::new(),
+            input: BytesMut::new(),
             output: BytesMut::new(),
         }
     }
@@ -74,11 +74,7 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
                     *this.state = State::Reading;
                     *this.state = match ready!(this.stream.as_mut().poll_next(cx)) {
                         Some(chunk) => {
-                            if this.input.is_empty() {
-                                *this.input = chunk?;
-                            } else {
-                                this.input.extend_from_slice(&chunk?);
-                            }
+                            this.input.extend_from_slice(&chunk?);
                             State::Writing
                         }
                         None => State::Flushing,

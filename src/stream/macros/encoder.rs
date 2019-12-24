@@ -6,7 +6,7 @@ macro_rules! encoder {
             ///
             /// This structure implements a [`Stream`](futures_core::stream::Stream) interface and will read
             /// uncompressed data from an underlying stream and emit a stream of compressed data.
-            pub struct $name<$inner: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> {
+            pub struct $name<$inner> {
                 #[pin]
                 inner: crate::stream::Encoder<$inner, crate::codec::$name>,
             }

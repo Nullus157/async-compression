@@ -18,7 +18,7 @@ enum State {
 
 pin_project! {
     #[derive(Debug)]
-    pub struct Decoder<R: AsyncBufRead, D: Decode> {
+    pub struct Decoder<R, D: Decode> {
         #[pin]
         reader: R,
         decoder: D,

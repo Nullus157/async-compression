@@ -23,7 +23,7 @@ enum State {
 
 pin_project! {
     #[derive(Debug)]
-    pub struct Encoder<S: Stream<Item = Result<Bytes>>, E: Encode> {
+    pub struct Encoder<S, E: Encode> {
         #[pin]
         stream: S,
         encoder: E,

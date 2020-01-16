@@ -6,7 +6,7 @@ macro_rules! decoder {
             ///
             /// This structure implements an [`AsyncWrite`](futures_io::AsyncWrite) interface and will
             /// take in compressed data and write it uncompressed to an underlying stream.
-            pub struct $name<W: futures_io::AsyncWrite> {
+            pub struct $name<W> {
                 #[pin]
                 inner: crate::futures::write::Decoder<W, crate::codec::$name>,
             }

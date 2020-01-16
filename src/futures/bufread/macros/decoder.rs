@@ -6,7 +6,7 @@ macro_rules! decoder {
             ///
             /// This structure implements an [`AsyncRead`](futures_io::AsyncRead) interface and will
             /// read compressed data from an underlying stream and emit a stream of uncompressed data.
-            pub struct $name<R: futures_io::AsyncBufRead> {
+            pub struct $name<R> {
                 #[pin]
                 inner: crate::futures::bufread::Decoder<R, crate::codec::$name>,
             }

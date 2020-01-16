@@ -22,7 +22,7 @@ enum State {
 
 pin_project! {
     #[derive(Debug)]
-    pub struct Encoder<W: AsyncWrite, E: Encode> {
+    pub struct Encoder<W, E: Encode> {
         #[pin]
         writer: BufWriter<W>,
         encoder: E,

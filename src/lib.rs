@@ -144,8 +144,8 @@ pub mod flate2 {
 /// Types to configure [`brotli2`](::brotli2) based encoders.
 #[cfg(feature = "brotli")]
 #[cfg_attr(docsrs, doc(cfg(feature = "brotli")))]
-pub mod brotli2 {
-    pub use brotli2::CompressParams;
+pub mod brotli {
+    pub use brotli::enc::backward_references::BrotliEncoderParams;
 }
 
 /// Types to configure [`bzip2`](::bzip2) based encoders.

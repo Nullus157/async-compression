@@ -141,7 +141,7 @@ pub mod flate2 {
     pub use flate2::Compression;
 }
 
-/// Types to configure [`brotli2`](::brotli2) based encoders.
+/// Types to configure [`brotli`](::brotli) based encoders.
 #[cfg(feature = "brotli")]
 #[cfg_attr(docsrs, doc(cfg(feature = "brotli")))]
 pub mod brotli {

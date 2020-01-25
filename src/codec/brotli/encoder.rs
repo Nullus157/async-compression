@@ -7,8 +7,8 @@ use std::{
 use brotli::enc::{
     backward_references::BrotliEncoderParams,
     encode::{
-        BrotliEncoderCompressStream, BrotliEncoderCreateInstance, BrotliEncoderOperation,
-        BrotliEncoderStateStruct,
+        BrotliEncoderCompressStream, BrotliEncoderCreateInstance, BrotliEncoderHasMoreOutput,
+        BrotliEncoderIsFinished, BrotliEncoderOperation, BrotliEncoderStateStruct,
     },
     StandardAlloc,
 };
@@ -29,14 +29,14 @@ impl BrotliEncoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut PartialBuffer<&mut [u8]>,
         op: BrotliEncoderOperation,
-    ) -> Result<bool> {
+    ) -> Result<()> {
         let in_buf = input.unwritten();
         let mut out_buf = output.unwritten_mut();
 
         let mut input_len = 0;
         let mut output_len = 0;
 
-        let status = if BrotliEncoderCompressStream(
+        if BrotliEncoderCompressStream(
             &mut self.state,
             op,
             &mut in_buf.len(),
@@ -50,14 +50,12 @@ impl BrotliEncoder {
         ) <= 0
         {
             return Err(Error::new(ErrorKind::Other, "brotli error"));
-        } else {
-            self.state.available_out_ == 0
-        };
+        }
 
         input.advance(input_len);
         output.advance(output_len);
 
-        Ok(status)
+        Ok(())
     }
 }
 
@@ -72,23 +70,26 @@ impl Encode for BrotliEncoder {
             output,
             BrotliEncoderOperation::BROTLI_OPERATION_PROCESS,
         )
-        .map(drop)
     }
 
     fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
-        Ok(self.encode(
+        self.encode(
             &mut PartialBuffer::new(&[][..]),
             output,
             BrotliEncoderOperation::BROTLI_OPERATION_FLUSH,
-        )?)
+        )?;
+
+        Ok(BrotliEncoderHasMoreOutput(&self.state) == 0)
     }
 
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
-        Ok(self.encode(
+        self.encode(
             &mut PartialBuffer::new(&[][..]),
             output,
             BrotliEncoderOperation::BROTLI_OPERATION_FINISH,
-        )?)
+        )?;
+
+        Ok(BrotliEncoderIsFinished(&self.state) != 0)
     }
 }
 

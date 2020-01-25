@@ -89,7 +89,7 @@ impl Encode for BrotliEncoder {
             BrotliEncoderOperation::BROTLI_OPERATION_FINISH,
         )?;
 
-        Ok(BrotliEncoderIsFinished(&self.state) != 0)
+        Ok(BrotliEncoderIsFinished(&self.state) == 1)
     }
 }
 

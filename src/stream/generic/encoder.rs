@@ -26,7 +26,7 @@ pin_project! {
     pub struct Encoder<S, E: Encode> {
         #[pin]
         stream: S,
-        encoder: E,
+        pub(crate) encoder: E,
         state: State,
         input: BytesMut,
         output: BytesMut,

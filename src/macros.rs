@@ -21,20 +21,20 @@ macro_rules! algos {
 
     ($($mod:ident)::+<$inner:ident>) => {
         algos!(@algo brotli ["brotli"] BrotliDecoder BrotliEncoder<$inner> {
-            /// The `level` argument here is typically 0-11.
-            pub fn new(reader: $inner, level: u32) -> Self {
-                let mut params = brotli::enc::backward_references::BrotliEncoderParams::default();
-                params.quality = level as _;
-                Self::from_params(reader, params)
-            }
-        } {
-            pub fn from_params(inner: $inner, params: brotli::enc::backward_references::BrotliEncoderParams) -> Self {
+            pub fn new(reader: $inner) -> Self {
+                let params = brotli::enc::backward_references::BrotliEncoderParams::default();
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
+                        reader,
                         crate::codec::BrotliEncoder::new(params),
                     ),
                 }
+            }
+        } {
+            /// The `level` argument here is typically 0-11.
+            pub fn quality(mut self, level: u8) -> Self {
+                self.inner.encoder.state.params.quality = level.into();
+                self
             }
         });
 

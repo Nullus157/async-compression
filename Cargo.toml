@@ -6,7 +6,7 @@ edition = "2018"
 license = "MIT OR Apache-2.0"
 keywords = ["compression", "gzip", "zstd", "brotli", "async"]
 categories = ["compression", "asynchronous"]
-repository = "https://github.com/rustasync/async-compression"
+repository = "https://github.com/Nemo157/async-compression"
 description = """
 Adaptors between compression crates and Rust's modern asynchronous IO types.
 """

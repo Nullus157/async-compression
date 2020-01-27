@@ -1,43 +1,61 @@
 use crate::{codec::Encode, util::PartialBuffer};
-use std::{fmt, io::Result};
+use std::{
+    fmt,
+    io::{Error, ErrorKind, Result},
+};
 
-use brotli2::{
-    raw::{CoStatus, Compress, CompressOp},
-    CompressParams,
+use brotli::enc::{
+    backward_references::BrotliEncoderParams,
+    encode::{
+        BrotliEncoderCompressStream, BrotliEncoderCreateInstance, BrotliEncoderHasMoreOutput,
+        BrotliEncoderIsFinished, BrotliEncoderOperation, BrotliEncoderStateStruct,
+    },
+    StandardAlloc,
 };
 
 pub struct BrotliEncoder {
-    compress: Compress,
+    state: BrotliEncoderStateStruct<StandardAlloc>,
 }
 
 impl BrotliEncoder {
-    pub(crate) fn new(params: &CompressParams) -> Self {
-        let mut compress = Compress::new();
-        compress.set_params(params);
-        Self { compress }
+    pub(crate) fn new(params: BrotliEncoderParams) -> Self {
+        let mut state = BrotliEncoderCreateInstance(StandardAlloc::default());
+        state.params = params;
+        Self { state }
     }
 
     fn encode(
         &mut self,
         input: &mut PartialBuffer<&[u8]>,
         output: &mut PartialBuffer<&mut [u8]>,
-        op: CompressOp,
-    ) -> Result<CoStatus> {
-        let mut in_buf = input.unwritten();
+        op: BrotliEncoderOperation,
+    ) -> Result<()> {
+        let in_buf = input.unwritten();
         let mut out_buf = output.unwritten_mut();
 
-        let original_input_len = in_buf.len();
-        let original_output_len = out_buf.len();
+        let mut input_len = 0;
+        let mut output_len = 0;
 
-        let status = self.compress.compress(op, &mut in_buf, &mut out_buf)?;
-
-        let input_len = original_input_len - in_buf.len();
-        let output_len = original_output_len - out_buf.len();
+        if BrotliEncoderCompressStream(
+            &mut self.state,
+            op,
+            &mut in_buf.len(),
+            in_buf,
+            &mut input_len,
+            &mut out_buf.len(),
+            &mut out_buf,
+            &mut output_len,
+            &mut None,
+            &mut |_, _, _, _| (),
+        ) <= 0
+        {
+            return Err(Error::new(ErrorKind::Other, "brotli error"));
+        }
 
         input.advance(input_len);
         output.advance(output_len);
 
-        Ok(status)
+        Ok(())
     }
 }
 
@@ -47,21 +65,31 @@ impl Encode for BrotliEncoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut PartialBuffer<&mut [u8]>,
     ) -> Result<()> {
-        self.encode(input, output, CompressOp::Process).map(drop)
+        self.encode(
+            input,
+            output,
+            BrotliEncoderOperation::BROTLI_OPERATION_PROCESS,
+        )
     }
 
     fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
-        match self.encode(&mut PartialBuffer::new(&[][..]), output, CompressOp::Flush)? {
-            CoStatus::Unfinished => Ok(false),
-            CoStatus::Finished => Ok(true),
-        }
+        self.encode(
+            &mut PartialBuffer::new(&[][..]),
+            output,
+            BrotliEncoderOperation::BROTLI_OPERATION_FLUSH,
+        )?;
+
+        Ok(BrotliEncoderHasMoreOutput(&self.state) == 0)
     }
 
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
-        match self.encode(&mut PartialBuffer::new(&[][..]), output, CompressOp::Finish)? {
-            CoStatus::Unfinished => Ok(false),
-            CoStatus::Finished => Ok(true),
-        }
+        self.encode(
+            &mut PartialBuffer::new(&[][..]),
+            output,
+            BrotliEncoderOperation::BROTLI_OPERATION_FINISH,
+        )?;
+
+        Ok(BrotliEncoderIsFinished(&self.state) == 1)
     }
 }
 

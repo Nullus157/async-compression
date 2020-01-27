@@ -133,13 +133,15 @@ pub mod brotli {
         use crate::utils::prelude::*;
 
         pub fn compress(bytes: &[u8]) -> Vec<u8> {
-            use brotli2::bufread::BrotliEncoder;
-            read_to_vec(BrotliEncoder::new(bytes, 1))
+            use brotli::{enc::backward_references::BrotliEncoderParams, CompressorReader};
+            let mut params = BrotliEncoderParams::default();
+            params.quality = 1;
+            read_to_vec(CompressorReader::with_params(bytes, 0, &params))
         }
 
         pub fn decompress(bytes: &[u8]) -> Vec<u8> {
-            use brotli2::bufread::BrotliDecoder;
-            read_to_vec(BrotliDecoder::new(bytes))
+            use brotli::Decompressor;
+            read_to_vec(Decompressor::new(bytes, 0))
         }
     }
 

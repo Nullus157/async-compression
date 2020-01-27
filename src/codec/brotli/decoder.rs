@@ -4,16 +4,20 @@ use std::{
     io::{Error, ErrorKind, Result},
 };
 
-use brotli2::raw::{DeStatus, Decompress};
+use brotli::{enc::StandardAlloc, BrotliDecompressStream, BrotliResult, BrotliState};
 
 pub struct BrotliDecoder {
-    decompress: Decompress,
+    state: BrotliState<StandardAlloc, StandardAlloc, StandardAlloc>,
 }
 
 impl BrotliDecoder {
     pub(crate) fn new() -> Self {
         Self {
-            decompress: Decompress::new(),
+            state: BrotliState::new(
+                StandardAlloc::default(),
+                StandardAlloc::default(),
+                StandardAlloc::default(),
+            ),
         }
     }
 
@@ -21,17 +25,28 @@ impl BrotliDecoder {
         &mut self,
         input: &mut PartialBuffer<&[u8]>,
         output: &mut PartialBuffer<&mut [u8]>,
-    ) -> Result<DeStatus> {
-        let mut in_buf = input.unwritten();
+    ) -> Result<BrotliResult> {
+        let in_buf = input.unwritten();
         let mut out_buf = output.unwritten_mut();
 
-        let original_input_len = in_buf.len();
-        let original_output_len = out_buf.len();
+        let mut input_len = 0;
+        let mut output_len = 0;
 
-        let status = self.decompress.decompress(&mut in_buf, &mut out_buf)?;
-
-        let input_len = original_input_len - in_buf.len();
-        let output_len = original_output_len - out_buf.len();
+        let status = match BrotliDecompressStream(
+            &mut in_buf.len(),
+            &mut input_len,
+            &in_buf,
+            &mut out_buf.len(),
+            &mut output_len,
+            &mut out_buf,
+            &mut 0,
+            &mut self.state,
+        ) {
+            BrotliResult::ResultFailure => {
+                return Err(Error::new(ErrorKind::Other, "brotli error"))
+            }
+            status => status,
+        };
 
         input.advance(input_len);
         output.advance(output_len);
@@ -47,26 +62,29 @@ impl Decode for BrotliDecoder {
         output: &mut PartialBuffer<&mut [u8]>,
     ) -> Result<bool> {
         match self.decode(input, output)? {
-            DeStatus::Finished => Ok(true),
-            DeStatus::NeedOutput | DeStatus::NeedInput => Ok(false),
+            BrotliResult::ResultSuccess => Ok(true),
+            BrotliResult::NeedsMoreOutput | BrotliResult::NeedsMoreInput => Ok(false),
+            BrotliResult::ResultFailure => unreachable!(),
         }
     }
 
     fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
-            DeStatus::Finished | DeStatus::NeedInput => Ok(true),
-            DeStatus::NeedOutput => Ok(false),
+            BrotliResult::ResultSuccess | BrotliResult::NeedsMoreInput => Ok(true),
+            BrotliResult::NeedsMoreOutput => Ok(false),
+            BrotliResult::ResultFailure => unreachable!(),
         }
     }
 
     fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
         match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
-            DeStatus::Finished => Ok(true),
-            DeStatus::NeedOutput => Ok(false),
-            DeStatus::NeedInput => Err(Error::new(
+            BrotliResult::ResultSuccess => Ok(true),
+            BrotliResult::NeedsMoreOutput => Ok(false),
+            BrotliResult::NeedsMoreInput => Err(Error::new(
                 ErrorKind::UnexpectedEof,
                 "reached unexpected EOF",
             )),
+            BrotliResult::ResultFailure => unreachable!(),
         }
     }
 }

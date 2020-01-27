@@ -28,14 +28,13 @@ futures-write = ["futures-io"]
 stream = ["bytes"]
 
 # algorithms
-brotli = ["brotli2"]
 deflate = ["flate2"]
 gzip = ["flate2"]
 zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 
 [dependencies]
-brotli2 = { version = "0.3.2", optional = true }
+brotli = { version = "3.3.0", optional = true }
 bytes = { version = "0.5.0", optional = true }
 bzip2 = { version = "0.3.3" , optional = true }
 flate2 = { version = "1.0.11", optional = true }

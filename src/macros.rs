@@ -32,9 +32,10 @@ macro_rules! algos {
             }
         } {
             /// The `level` argument here is typically 0-11.
-            pub fn quality(mut self, level: u8) -> Self {
-                self.inner.encoder.state.params.quality = level.into();
-                self
+            pub fn with_quality(reader: $inner, level: u8) -> Self {
+                let mut encoder = Self::new(reader);
+                encoder.inner.encoder.state.params.quality = level.into();
+                encoder
             }
         });
 

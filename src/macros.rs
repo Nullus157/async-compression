@@ -32,7 +32,7 @@ macro_rules! algos {
             }
         } {
             /// The `level` argument here is typically 0-11.
-            pub fn with_quality(reader: $inner, level: crate::Compression) -> Self {
+            pub fn with_quality(inner: $inner, level: crate::Compression) -> Self {
                 let mut params = brotli::enc::backward_references::BrotliEncoderParams::default();
                 match level {
                     crate::Compression::Fastest => params.quality = 0,
@@ -41,7 +41,7 @@ macro_rules! algos {
                 }
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
-                        reader,
+                        inner,
                         crate::codec::BrotliEncoder::new(params),
                     ),
                 }
@@ -53,7 +53,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::BzEncoder::new(bzip2::Compression::Default, 0),
+                        crate::codec::BzEncoder::new(crate::Compression::Default.into(), 0),
                     ),
                 }
             }
@@ -73,7 +73,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::DeflateEncoder::new(flate2::Compression::default()),
+                        crate::codec::DeflateEncoder::new(crate::Compression::Default.into()),
                     ),
                 }
             }
@@ -93,7 +93,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::GzipEncoder::new(flate2::Compression::default()),
+                        crate::codec::GzipEncoder::new(crate::Compression::Default.into()),
                     ),
                 }
             }
@@ -113,7 +113,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZlibEncoder::new(flate2::Compression::default()),
+                        crate::codec::ZlibEncoder::new(crate::Compression::Default.into()),
                     ),
                 }
             }

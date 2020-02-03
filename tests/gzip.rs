@@ -3,7 +3,6 @@ use std::iter::FromIterator;
 use bytes::Bytes;
 use proptest::{prelude::any, proptest};
 
-
 #[macro_use]
 mod utils;
 
@@ -161,7 +160,6 @@ fn gzip_bufread_decompress_concatenated() {
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
 
-
 proptest! {
   #[test]
   fn gzip_stream_decompress_concatenated(
@@ -173,20 +171,21 @@ proptest! {
   }
 }
 
-fn proptest_gzip_stream_decompress_concatenated(data: Vec<u8>, iterations: usize, chunk_size: usize) {
-    use futures::stream::{iter, StreamExt};
+fn proptest_gzip_stream_decompress_concatenated(
+    data: Vec<u8>,
+    iterations: usize,
+    chunk_size: usize,
+) {
     use async_compression::stream::GzipDecoder;
+    use futures::stream::{iter, StreamExt};
 
     let payload: Vec<u8> = (0..iterations).map(|_| data.clone()).flatten().collect();
 
-    let byte_stream = iter(payload.clone())
-        .chunks(chunk_size)
-        .map(|bytes| {
-            let compressed = compress_with_header(&bytes);
-            let res: std::io::Result<Bytes> = Ok(Bytes::from(compressed));
-            res
-        });
-
+    let byte_stream = iter(payload.clone()).chunks(chunk_size).map(|bytes| {
+        let compressed = compress_with_header(&bytes);
+        let res: std::io::Result<Bytes> = Ok(Bytes::from(compressed));
+        res
+    });
 
     let output = utils::gzip::stream::decompress(byte_stream);
 

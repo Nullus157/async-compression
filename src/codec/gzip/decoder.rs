@@ -85,13 +85,11 @@ impl GzipDecoder {
                 State::Header(mut parser) => {
                     if input.unwritten().is_empty() {
                         State::Done
+                    } else if let Some(header) = parser.input(input)? {
+                        self.header = header;
+                        State::Decoding
                     } else {
-                        if let Some(header) = parser.input(input)? {
-                            self.header = header;
-                            State::Decoding
-                        } else {
-                            State::Header(parser)
-                        }
+                        State::Header(parser)
                     }
                 }
 

@@ -14,7 +14,7 @@ use brotli::enc::{
 };
 
 pub struct BrotliEncoder {
-    pub(crate) state: BrotliEncoderStateStruct<StandardAlloc>,
+    state: BrotliEncoderStateStruct<StandardAlloc>,
 }
 
 impl BrotliEncoder {

@@ -32,52 +32,97 @@ macro_rules! algos {
             }
         } {
             /// The `level` argument here is typically 0-11.
-            pub fn with_quality(reader: $inner, level: u8) -> Self {
-                let mut encoder = Self::new(reader);
-                encoder.inner.encoder.state.params.quality = level.into();
-                encoder
+            pub fn with_quality(reader: $inner, level: crate::Compression) -> Self {
+                let mut params = brotli::enc::backward_references::BrotliEncoderParams::default();
+                match level {
+                    crate::Compression::Fastest => params.quality = 0,
+                    crate::Compression::Best => params.quality = 11,
+                    crate::Compression::Default => (),
+                }
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        reader,
+                        crate::codec::BrotliEncoder::new(params),
+                    ),
+                }
             }
         });
 
         algos!(@algo bzip2 ["bzip2"] BzDecoder BzEncoder<$inner> {
-            pub fn new(inner: $inner, level: bzip2::Compression) -> Self {
+            pub fn new(inner: $inner) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::BzEncoder::new(level, 30),
+                        crate::codec::BzEncoder::new(bzip2::Compression::Default, 0),
+                    ),
+                }
+            }
+        } {
+            pub fn with_quality(inner: $inner, level: crate::Compression) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::BzEncoder::new(level.into(), 0),
                     ),
                 }
             }
         });
 
         algos!(@algo deflate ["deflate"] DeflateDecoder DeflateEncoder<$inner> {
-            pub fn new(inner: $inner, level: flate2::Compression) -> Self {
+            pub fn new(inner: $inner) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::DeflateEncoder::new(level),
+                        crate::codec::DeflateEncoder::new(flate2::Compression::default()),
+                    ),
+                }
+            }
+        } {
+            pub fn with_quality(inner: $inner, level: crate::Compression) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::DeflateEncoder::new(level.into()),
                     ),
                 }
             }
         });
 
         algos!(@algo gzip ["gzip"] GzipDecoder GzipEncoder<$inner> {
-            pub fn new(inner: $inner, level: flate2::Compression) -> Self {
+            pub fn new(inner: $inner) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::GzipEncoder::new(level),
+                        crate::codec::GzipEncoder::new(flate2::Compression::default()),
+                    ),
+                }
+            }
+        } {
+            pub fn with_quality(inner: $inner, level: crate::Compression) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::GzipEncoder::new(level.into()),
                     ),
                 }
             }
         });
 
         algos!(@algo zlib ["zlib"] ZlibDecoder ZlibEncoder<$inner> {
-            pub fn new(inner: $inner, level: flate2::Compression) -> Self {
+            pub fn new(inner: $inner) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZlibEncoder::new(level),
+                        crate::codec::ZlibEncoder::new(flate2::Compression::default()),
+                    ),
+                }
+            }
+        } {
+            pub fn with_quality(inner: $inner, level: crate::Compression) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::ZlibEncoder::new(level.into()),
                     ),
                 }
             }
@@ -85,7 +130,21 @@ macro_rules! algos {
 
         algos!(@algo zstd ["zstd"] ZstdDecoder ZstdEncoder<$inner> {
             /// The `level` argument here can range from 1-21. A level of `0` will use zstd's default, which is `3`.
-            pub fn new(inner: $inner, level: i32) -> Self {
+            pub fn new(inner: $inner) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::ZstdEncoder::new(0),
+                    ),
+                }
+            }
+        } {
+            pub fn with_quality(inner: $inner, level: crate::Compression) -> Self {
+                let level = match level {
+                    crate::Compression::Fastest => 1,
+                    crate::Compression::Best => 21,
+                    crate::Compression::Default => 0,
+                };
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,

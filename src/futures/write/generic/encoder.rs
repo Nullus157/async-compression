@@ -25,7 +25,7 @@ pin_project! {
     pub struct Encoder<W, E: Encode> {
         #[pin]
         writer: BufWriter<W>,
-        pub(crate) encoder: E,
+        encoder: E,
         state: State,
     }
 }

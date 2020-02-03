@@ -21,7 +21,7 @@ pin_project! {
     pub struct Encoder<R, E: Encode> {
         #[pin]
         reader: R,
-        pub(crate) encoder: E,
+        encoder: E,
         state: State,
     }
 }

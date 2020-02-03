@@ -131,21 +131,38 @@ pub mod futures;
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
 
-/// Types to configure [`flate2`](::flate2) based encoders.
-#[cfg(feature = "flate2")]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "deflate", feature = "zlib", feature = "gzip")))
-)]
-pub mod flate2 {
-    pub use flate2::Compression;
-}
-
-/// Types to configure [`bzip2`](::bzip2) based encoders.
-#[cfg(feature = "bzip2")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bzip2")))]
-pub mod bzip2 {
-    pub use bzip2::Compression;
-}
 mod unshared;
 mod util;
+
+/// Level of compression data should be compressed with.
+#[derive(Clone, Copy, Debug)]
+pub enum Compression {
+    /// Fastest quality of compression, usually produces bigger size.
+    Fastest,
+    /// Best quality of compression, usually produces the smallest size.
+    Best,
+    /// Default quality of compression defined by the selected compression algorithm.
+    Default,
+}
+
+#[cfg(feature = "bzip2")]
+impl From<Compression> for bzip2::Compression {
+    fn from(compress: Compression) -> Self {
+        match compress {
+            Compression::Fastest => Self::Fastest,
+            Compression::Best => Self::Best,
+            Compression::Default => Self::Default,
+        }
+    }
+}
+
+#[cfg(feature = "flate2")]
+impl From<Compression> for flate2::Compression {
+    fn from(compress: Compression) -> Self {
+        match compress {
+            Compression::Fastest => Self::fast(),
+            Compression::Best => Self::best(),
+            Compression::Default => Self::default(),
+        }
+    }
+}

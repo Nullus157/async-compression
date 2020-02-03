@@ -36,6 +36,12 @@ impl GzipDecoder {
         }
     }
 
+    fn reset(&mut self) {
+        self.inner = crate::codec::FlateDecoder::new(false);
+        self.crc = Crc::new();
+        self.header = Header::default();
+    }
+
     fn check_footer(&mut self, input: &[u8]) -> Result<()> {
         if input.len() < 8 {
             return Err(Error::new(
@@ -77,11 +83,15 @@ impl GzipDecoder {
         loop {
             self.state = match std::mem::replace(&mut self.state, State::Invalid) {
                 State::Header(mut parser) => {
-                    if let Some(header) = parser.input(input)? {
-                        self.header = header;
-                        State::Decoding
+                    if input.unwritten().is_empty() {
+                        State::Done
                     } else {
-                        State::Header(parser)
+                        if let Some(header) = parser.input(input)? {
+                            self.header = header;
+                            State::Decoding
+                        } else {
+                            State::Header(parser)
+                        }
                     }
                 }
 
@@ -101,7 +111,8 @@ impl GzipDecoder {
 
                     if footer.unwritten().is_empty() {
                         self.check_footer(footer.written())?;
-                        State::Done
+                        self.reset();
+                        State::Header(header::Parser::default())
                     } else {
                         State::Footer(footer.take())
                     }

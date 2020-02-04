@@ -131,28 +131,59 @@ pub mod futures;
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
 
-/// Types to configure [`flate2`](::flate2) based encoders.
-#[cfg(feature = "flate2")]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "deflate", feature = "zlib", feature = "gzip")))
-)]
-pub mod flate2 {
-    pub use flate2::Compression;
-}
-
-/// Types to configure [`brotli`](::brotli) based encoders.
-#[cfg(feature = "brotli")]
-#[cfg_attr(docsrs, doc(cfg(feature = "brotli")))]
-pub mod brotli {
-    pub use brotli::enc::backward_references::BrotliEncoderParams;
-}
-
-/// Types to configure [`bzip2`](::bzip2) based encoders.
-#[cfg(feature = "bzip2")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bzip2")))]
-pub mod bzip2 {
-    pub use bzip2::Compression;
-}
 mod unshared;
 mod util;
+
+#[cfg(feature = "brotli")]
+use brotli::enc::backward_references::BrotliEncoderParams;
+
+/// Level of compression data should be compressed with.
+#[derive(Clone, Copy, Debug)]
+pub enum Level {
+    /// Fastest quality of compression, usually produces bigger size.
+    Fastest,
+    /// Best quality of compression, usually produces the smallest size.
+    Best,
+    /// Default quality of compression defined by the selected compression algorithm.
+    Default,
+}
+
+impl Level {
+    #[cfg(feature = "brotli")]
+    fn into_brotli(self, mut params: BrotliEncoderParams) -> BrotliEncoderParams {
+        match self {
+            Self::Fastest => params.quality = 0,
+            Self::Best => params.quality = 11,
+            Self::Default => (),
+        }
+
+        params
+    }
+
+    #[cfg(feature = "bzip2")]
+    fn into_bzip2(self) -> bzip2::Compression {
+        match self {
+            Self::Fastest => bzip2::Compression::Fastest,
+            Self::Best => bzip2::Compression::Best,
+            Self::Default => bzip2::Compression::Default,
+        }
+    }
+
+    #[cfg(feature = "flate2")]
+    fn into_flate2(self) -> flate2::Compression {
+        match self {
+            Self::Fastest => flate2::Compression::fast(),
+            Self::Best => flate2::Compression::best(),
+            Self::Default => flate2::Compression::default(),
+        }
+    }
+
+    #[cfg(feature = "zstd")]
+    fn into_zstd(self) -> i32 {
+        match self {
+            Self::Fastest => 1,
+            Self::Best => 21,
+            Self::Default => 0,
+        }
+    }
+}

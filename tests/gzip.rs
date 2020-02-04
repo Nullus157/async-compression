@@ -167,23 +167,17 @@ proptest! {
     iterations in 1..100usize,
     chunk_size in 1..1024usize,
   ) {
-    proptest_gzip_stream_decompress_concatenated(data.clone(), iterations, chunk_size)
-  }
-}
-
-fn proptest_gzip_stream_decompress_concatenated(
-    data: Vec<u8>,
-    iterations: usize,
-    chunk_size: usize,
-) {
     use futures::stream::{iter, StreamExt};
 
-    let compressed_data =  compress_with_header(&data);
+    let compressed_data = compress_with_header(&data);
 
-    let payload: Vec<u8> = (0..iterations).map(|_| compressed_data.clone()).flatten().collect();
+    let payload: Vec<u8> = (0..iterations)
+        .map(|_| compressed_data.clone())
+        .flatten()
+        .collect();
     let expected: Vec<u8> = (0..iterations).map(|_| data.clone()).flatten().collect();
 
-    let byte_stream = iter(payload.clone()).chunks(chunk_size).map(|compressed| {
+    let byte_stream = iter(payload).chunks(chunk_size).map(|compressed| {
         let res: std::io::Result<Bytes> = Ok(Bytes::from(compressed));
         res
     });
@@ -191,6 +185,7 @@ fn proptest_gzip_stream_decompress_concatenated(
     let output = utils::gzip::stream::decompress(byte_stream);
 
     assert_eq!(output, expected);
+  }
 }
 
 #[test]

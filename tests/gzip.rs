@@ -176,7 +176,6 @@ fn proptest_gzip_stream_decompress_concatenated(
     iterations: usize,
     chunk_size: usize,
 ) {
-    use async_compression::stream::GzipDecoder;
     use futures::stream::{iter, StreamExt};
 
     let payload: Vec<u8> = (0..iterations).map(|_| data.clone()).flatten().collect();

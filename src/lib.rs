@@ -134,9 +134,12 @@ pub mod stream;
 mod unshared;
 mod util;
 
+#[cfg(feature = "brotli")]
+use brotli::enc::backward_references::BrotliEncoderParams;
+
 /// Level of compression data should be compressed with.
 #[derive(Clone, Copy, Debug)]
-pub enum Compression {
+pub enum Level {
     /// Fastest quality of compression, usually produces bigger size.
     Fastest,
     /// Best quality of compression, usually produces the smallest size.
@@ -145,24 +148,42 @@ pub enum Compression {
     Default,
 }
 
-#[cfg(feature = "bzip2")]
-impl From<Compression> for bzip2::Compression {
-    fn from(compress: Compression) -> Self {
-        match compress {
-            Compression::Fastest => Self::Fastest,
-            Compression::Best => Self::Best,
-            Compression::Default => Self::Default,
+impl Level {
+    #[cfg(feature = "brotli")]
+    fn into_brotli(self, mut params: BrotliEncoderParams) -> BrotliEncoderParams {
+        match self {
+            Self::Fastest => params.quality = 0,
+            Self::Best => params.quality = 11,
+            Self::Default => (),
+        }
+
+        params
+    }
+
+    #[cfg(feature = "bzip2")]
+    fn into_bzip2(self) -> bzip2::Compression {
+        match self {
+            Self::Fastest => bzip2::Compression::Fastest,
+            Self::Best => bzip2::Compression::Best,
+            Self::Default => bzip2::Compression::Default,
         }
     }
-}
 
-#[cfg(feature = "flate2")]
-impl From<Compression> for flate2::Compression {
-    fn from(compress: Compression) -> Self {
-        match compress {
-            Compression::Fastest => Self::fast(),
-            Compression::Best => Self::best(),
-            Compression::Default => Self::default(),
+    #[cfg(feature = "flate2")]
+    fn into_flate2(self) -> flate2::Compression {
+        match self {
+            Self::Fastest => flate2::Compression::fast(),
+            Self::Best => flate2::Compression::best(),
+            Self::Default => flate2::Compression::default(),
+        }
+    }
+
+    #[cfg(feature = "zstd")]
+    fn into_zstd(self) -> i32 {
+        match self {
+            Self::Fastest => 1,
+            Self::Best => 21,
+            Self::Default => 0,
         }
     }
 }

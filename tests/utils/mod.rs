@@ -149,9 +149,9 @@ pub mod brotli {
         use crate::utils::prelude::*;
 
         pub fn compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-            use async_compression::{stream::BrotliEncoder, Compression};
+            use async_compression::{stream::BrotliEncoder, Level};
             pin_mut!(input);
-            stream_to_vec(BrotliEncoder::with_quality(input, Compression::Fastest))
+            stream_to_vec(BrotliEncoder::with_quality(input, Level::Fastest))
         }
 
         pub fn decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
@@ -166,9 +166,9 @@ pub mod brotli {
             use crate::utils::prelude::*;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::{futures::bufread::BrotliEncoder, Compression};
+                use async_compression::{futures::bufread::BrotliEncoder, Level};
                 pin_mut!(input);
-                async_read_to_vec(BrotliEncoder::with_quality(input, Compression::Fastest))
+                async_read_to_vec(BrotliEncoder::with_quality(input, Level::Fastest))
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
@@ -182,10 +182,10 @@ pub mod brotli {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{futures::write::BrotliEncoder, Compression};
+                use async_compression::{futures::write::BrotliEncoder, Level};
                 async_write_to_vec(
                     input,
-                    |input| Box::pin(BrotliEncoder::with_quality(input, Compression::Fastest)),
+                    |input| Box::pin(BrotliEncoder::with_quality(input, Level::Fastest)),
                     limit,
                 )
             }
@@ -217,9 +217,9 @@ pub mod bzip2 {
         use crate::utils::prelude::*;
 
         pub fn compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-            use async_compression::{stream::BzEncoder, Compression};
+            use async_compression::{stream::BzEncoder, Level};
             pin_mut!(input);
-            stream_to_vec(BzEncoder::with_quality(input, Compression::Fastest))
+            stream_to_vec(BzEncoder::with_quality(input, Level::Fastest))
         }
 
         pub fn decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
@@ -234,9 +234,9 @@ pub mod bzip2 {
             use crate::utils::prelude::*;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::{futures::bufread::BzEncoder, Compression};
+                use async_compression::{futures::bufread::BzEncoder, Level};
                 pin_mut!(input);
-                async_read_to_vec(BzEncoder::with_quality(input, Compression::Fastest))
+                async_read_to_vec(BzEncoder::with_quality(input, Level::Fastest))
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
@@ -250,10 +250,10 @@ pub mod bzip2 {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{futures::write::BzEncoder, Compression};
+                use async_compression::{futures::write::BzEncoder, Level};
                 async_write_to_vec(
                     input,
-                    |input| Box::pin(BzEncoder::with_quality(input, Compression::Fastest)),
+                    |input| Box::pin(BzEncoder::with_quality(input, Level::Fastest)),
                     limit,
                 )
             }
@@ -285,9 +285,9 @@ pub mod deflate {
         use crate::utils::prelude::*;
 
         pub fn compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-            use async_compression::{stream::DeflateEncoder, Compression};
+            use async_compression::{stream::DeflateEncoder, Level};
             pin_mut!(input);
-            stream_to_vec(DeflateEncoder::with_quality(input, Compression::Fastest))
+            stream_to_vec(DeflateEncoder::with_quality(input, Level::Fastest))
         }
 
         pub fn decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
@@ -302,9 +302,9 @@ pub mod deflate {
             use crate::utils::prelude::*;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::{futures::bufread::DeflateEncoder, Compression};
+                use async_compression::{futures::bufread::DeflateEncoder, Level};
                 pin_mut!(input);
-                async_read_to_vec(DeflateEncoder::with_quality(input, Compression::Fastest))
+                async_read_to_vec(DeflateEncoder::with_quality(input, Level::Fastest))
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
@@ -318,10 +318,10 @@ pub mod deflate {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{futures::write::DeflateEncoder, Compression};
+                use async_compression::{futures::write::DeflateEncoder, Level};
                 async_write_to_vec(
                     input,
-                    |input| Box::pin(DeflateEncoder::with_quality(input, Compression::Fastest)),
+                    |input| Box::pin(DeflateEncoder::with_quality(input, Level::Fastest)),
                     limit,
                 )
             }
@@ -353,9 +353,9 @@ pub mod zlib {
         use crate::utils::prelude::*;
 
         pub fn compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-            use async_compression::{stream::ZlibEncoder, Compression};
+            use async_compression::{stream::ZlibEncoder, Level};
             pin_mut!(input);
-            stream_to_vec(ZlibEncoder::with_quality(input, Compression::Fastest))
+            stream_to_vec(ZlibEncoder::with_quality(input, Level::Fastest))
         }
 
         pub fn decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
@@ -370,9 +370,9 @@ pub mod zlib {
             use crate::utils::prelude::*;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::{futures::bufread::ZlibEncoder, Compression};
+                use async_compression::{futures::bufread::ZlibEncoder, Level};
                 pin_mut!(input);
-                async_read_to_vec(ZlibEncoder::with_quality(input, Compression::Fastest))
+                async_read_to_vec(ZlibEncoder::with_quality(input, Level::Fastest))
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
@@ -386,10 +386,10 @@ pub mod zlib {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{futures::write::ZlibEncoder, Compression};
+                use async_compression::{futures::write::ZlibEncoder, Level};
                 async_write_to_vec(
                     input,
-                    |input| Box::pin(ZlibEncoder::with_quality(input, Compression::Fastest)),
+                    |input| Box::pin(ZlibEncoder::with_quality(input, Level::Fastest)),
                     limit,
                 )
             }
@@ -421,9 +421,9 @@ pub mod gzip {
         use crate::utils::prelude::*;
 
         pub fn compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-            use async_compression::{stream::GzipEncoder, Compression};
+            use async_compression::{stream::GzipEncoder, Level};
             pin_mut!(input);
-            stream_to_vec(GzipEncoder::with_quality(input, Compression::Fastest))
+            stream_to_vec(GzipEncoder::with_quality(input, Level::Fastest))
         }
 
         pub fn decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
@@ -438,9 +438,9 @@ pub mod gzip {
             use crate::utils::prelude::*;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::{futures::bufread::GzipEncoder, Compression};
+                use async_compression::{futures::bufread::GzipEncoder, Level};
                 pin_mut!(input);
-                async_read_to_vec(GzipEncoder::with_quality(input, Compression::Fastest))
+                async_read_to_vec(GzipEncoder::with_quality(input, Level::Fastest))
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
@@ -454,10 +454,10 @@ pub mod gzip {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{futures::write::GzipEncoder, Compression};
+                use async_compression::{futures::write::GzipEncoder, Level};
                 async_write_to_vec(
                     input,
-                    |input| Box::pin(GzipEncoder::with_quality(input, Compression::Fastest)),
+                    |input| Box::pin(GzipEncoder::with_quality(input, Level::Fastest)),
                     limit,
                 )
             }
@@ -490,9 +490,9 @@ pub mod zstd {
         use crate::utils::prelude::*;
 
         pub fn compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
-            use async_compression::{stream::ZstdEncoder, Compression};
+            use async_compression::{stream::ZstdEncoder, Level};
             pin_mut!(input);
-            stream_to_vec(ZstdEncoder::with_quality(input, Compression::Fastest))
+            stream_to_vec(ZstdEncoder::with_quality(input, Level::Fastest))
         }
 
         pub fn decompress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
@@ -507,9 +507,9 @@ pub mod zstd {
             use crate::utils::prelude::*;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::{futures::bufread::ZstdEncoder, Compression};
+                use async_compression::{futures::bufread::ZstdEncoder, Level};
                 pin_mut!(input);
-                async_read_to_vec(ZstdEncoder::with_quality(input, Compression::Fastest))
+                async_read_to_vec(ZstdEncoder::with_quality(input, Level::Fastest))
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
@@ -523,10 +523,10 @@ pub mod zstd {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{futures::write::ZstdEncoder, Compression};
+                use async_compression::{futures::write::ZstdEncoder, Level};
                 async_write_to_vec(
                     input,
-                    |input| Box::pin(ZstdEncoder::with_quality(input, Compression::Fastest)),
+                    |input| Box::pin(ZstdEncoder::with_quality(input, Level::Fastest)),
                     limit,
                 )
             }

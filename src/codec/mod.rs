@@ -62,6 +62,9 @@ pub trait Encode {
 }
 
 pub trait Decode {
+    /// Reinitializes this decoder ready to decode a new member/frame of data.
+    fn reinit(&mut self) -> Result<()>;
+
     /// Returns whether the end of the stream has been read
     fn decode(
         &mut self,

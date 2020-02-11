@@ -56,6 +56,15 @@ impl BrotliDecoder {
 }
 
 impl Decode for BrotliDecoder {
+    fn reinit(&mut self) -> Result<()> {
+        self.state = BrotliState::new(
+            StandardAlloc::default(),
+            StandardAlloc::default(),
+            StandardAlloc::default(),
+        );
+        Ok(())
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

@@ -21,6 +21,13 @@ macro_rules! decoder {
                 }
             }
 
+            /// Configure multi-member/frame decoding, if enabled this will reset the decoder state
+            /// when reaching the end of a compressed member/frame and expect either EOF or another
+            /// compressed member/frame to follow it in the stream.
+            pub fn multiple_members(&mut self, enabled: bool) {
+                self.inner.multiple_members(enabled);
+            }
+
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
             pub fn get_ref(&self) -> &R {
                 self.inner.get_ref()

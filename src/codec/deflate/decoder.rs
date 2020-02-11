@@ -15,6 +15,11 @@ impl DeflateDecoder {
 }
 
 impl crate::codec::Decode for DeflateDecoder {
+    fn reinit(&mut self) -> Result<()> {
+        self.inner.reinit()?;
+        Ok(())
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

@@ -17,6 +17,11 @@ impl ZstdDecoder {
 }
 
 impl Decode for ZstdDecoder {
+    fn reinit(&mut self) -> Result<()> {
+        self.decoder.get_mut().reinit()?;
+        Ok(())
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

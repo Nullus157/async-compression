@@ -17,8 +17,8 @@ impl FlateDecoder {
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
         flush: FlushDecompress,
     ) -> Result<Status> {
         let prior_in = self.decompress.total_in();
@@ -38,8 +38,8 @@ impl FlateDecoder {
 impl Decode for FlateDecoder {
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         match self.decode(input, output, FlushDecompress::None)? {
             Status::Ok => Ok(false),
@@ -48,7 +48,10 @@ impl Decode for FlateDecoder {
         }
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         self.decode(
             &mut PartialBuffer::new(&[][..]),
             output,
@@ -70,7 +73,10 @@ impl Decode for FlateDecoder {
         Ok(!output.unwritten().is_empty())
     }
 
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         match self.decode(
             &mut PartialBuffer::new(&[][..]),
             output,

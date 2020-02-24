@@ -15,7 +15,6 @@ enum State {
     Decoding,
     Footer(PartialBuffer<Vec<u8>>),
     Done,
-    Invalid,
 }
 
 #[derive(Debug)]
@@ -24,6 +23,34 @@ pub struct GzipDecoder {
     crc: Crc,
     state: State,
     header: Header,
+}
+
+fn check_footer(crc: &Crc, input: &[u8]) -> Result<()> {
+    if input.len() < 8 {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "Invalid gzip footer length",
+        ));
+    }
+
+    let crc_sum = crc.sum().to_le_bytes();
+    let bytes_read = crc.amount().to_le_bytes();
+
+    if crc_sum != input[0..4] {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "CRC computed does not match",
+        ));
+    }
+
+    if bytes_read != input[4..8] {
+        return Err(Error::new(
+            ErrorKind::InvalidData,
+            "amount of bytes read does not match",
+        ));
+    }
+
+    Ok(())
 }
 
 impl GzipDecoder {
@@ -36,52 +63,18 @@ impl GzipDecoder {
         }
     }
 
-    fn check_footer(&mut self, input: &[u8]) -> Result<()> {
-        if input.len() < 8 {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Invalid gzip footer length",
-            ));
-        }
-
-        let crc = self.crc.sum().to_le_bytes();
-        let bytes_read = self.crc.amount().to_le_bytes();
-
-        if crc != input[0..4] {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "CRC computed does not match",
-            ));
-        }
-
-        if bytes_read != input[4..8] {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "amount of bytes read does not match",
-            ));
-        }
-
-        Ok(())
-    }
-
-    fn process(
+    fn process<I: AsRef<[u8]>, O: AsRef<[u8]> + AsMut<[u8]>>(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
-        inner: impl Fn(
-            &mut Self,
-            &mut PartialBuffer<&[u8]>,
-            &mut PartialBuffer<&mut [u8]>,
-        ) -> Result<bool>,
+        input: &mut PartialBuffer<I>,
+        output: &mut PartialBuffer<O>,
+        inner: impl Fn(&mut Self, &mut PartialBuffer<I>, &mut PartialBuffer<O>) -> Result<bool>,
     ) -> Result<bool> {
         loop {
-            self.state = match std::mem::replace(&mut self.state, State::Invalid) {
-                State::Header(mut parser) => {
+            match &mut self.state {
+                State::Header(parser) => {
                     if let Some(header) = parser.input(input)? {
                         self.header = header;
-                        State::Decoding
-                    } else {
-                        State::Header(parser)
+                        self.state = State::Decoding;
                     }
                 }
 
@@ -90,25 +83,20 @@ impl GzipDecoder {
                     let done = inner(self, input, output)?;
                     self.crc.update(&output.written()[prior..]);
                     if done {
-                        State::Footer(vec![0; 8].into())
-                    } else {
-                        State::Decoding
+                        self.state = State::Footer(vec![0; 8].into())
                     }
                 }
 
-                State::Footer(mut footer) => {
+                State::Footer(footer) => {
                     footer.copy_unwritten_from(input);
 
                     if footer.unwritten().is_empty() {
-                        self.check_footer(footer.written())?;
-                        State::Done
-                    } else {
-                        State::Footer(footer.take())
+                        check_footer(&self.crc, footer.written())?;
+                        self.state = State::Done
                     }
                 }
 
-                State::Done => State::Done,
-                State::Invalid => panic!("Reached invalid state"),
+                State::Done => {}
             };
 
             if let State::Done = self.state {
@@ -125,15 +113,18 @@ impl GzipDecoder {
 impl Decode for GzipDecoder {
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         self.process(input, output, |this, input, output| {
             this.inner.decode(input, output)
         })
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         loop {
             match self.state {
                 State::Header(_) | State::Footer(_) | State::Done => return Ok(true),
@@ -146,7 +137,6 @@ impl Decode for GzipDecoder {
                         return Ok(true);
                     }
                 }
-                State::Invalid => panic!("Reached invalid state"),
             };
 
             if output.unwritten().is_empty() {
@@ -155,11 +145,18 @@ impl Decode for GzipDecoder {
         }
     }
 
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
-        self.process(
-            &mut PartialBuffer::new(&[][..]),
-            output,
-            |this, _, output| this.inner.finish(output),
-        )
+    fn finish(
+        &mut self,
+        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
+        // Because of the footer we have to have already flushed all the data out before we get here
+        if let State::Done = self.state {
+            Ok(true)
+        } else {
+            Err(Error::new(
+                ErrorKind::UnexpectedEof,
+                "unexpected end of file",
+            ))
+        }
     }
 }

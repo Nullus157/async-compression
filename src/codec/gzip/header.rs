@@ -59,7 +59,10 @@ impl Header {
 }
 
 impl Parser {
-    pub(super) fn input(&mut self, input: &mut PartialBuffer<&[u8]>) -> Result<Option<Header>> {
+    pub(super) fn input(
+        &mut self,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+    ) -> Result<Option<Header>> {
         loop {
             match &mut self.state {
                 State::Fixed(data) => {
@@ -136,14 +139,14 @@ impl Parser {
                 State::Crc(data) => {
                     if !self.header.flags.crc {
                         self.state = State::Done;
-                        return Ok(Some(std::mem::replace(&mut self.header, Header::default())));
+                        return Ok(Some(std::mem::take(&mut self.header)));
                     }
 
                     data.copy_unwritten_from(input);
 
                     if data.unwritten().is_empty() {
                         self.state = State::Done;
-                        return Ok(Some(std::mem::replace(&mut self.header, Header::default())));
+                        return Ok(Some(std::mem::take(&mut self.header)));
                     } else {
                         return Ok(None);
                     }

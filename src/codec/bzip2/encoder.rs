@@ -48,8 +48,8 @@ impl BzEncoder {
 
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
         action: Action,
     ) -> Result<Status> {
         let prior_in = self.compress.total_in();
@@ -70,8 +70,8 @@ impl BzEncoder {
 impl Encode for BzEncoder {
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<()> {
         match self.encode(input, output, Action::Run)? {
             // Decompression went fine, nothing much to report.
@@ -95,7 +95,10 @@ impl Encode for BzEncoder {
         }
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         match self.encode(&mut PartialBuffer::new(&[][..]), output, Action::Flush)? {
             // Decompression went fine, nothing much to report.
             Status::Ok => unreachable!(),
@@ -118,7 +121,10 @@ impl Encode for BzEncoder {
         }
     }
 
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         match self.encode(&mut PartialBuffer::new(&[][..]), output, Action::Finish)? {
             // Decompression went fine, nothing much to report.
             Status::Ok => Ok(false),

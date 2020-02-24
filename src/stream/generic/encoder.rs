@@ -1,6 +1,5 @@
 use std::{
     io::Result,
-    mem,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -18,7 +17,6 @@ enum State {
     Writing,
     Flushing,
     Done,
-    Invalid,
 }
 
 pin_project! {
@@ -28,7 +26,7 @@ pin_project! {
         stream: S,
         encoder: E,
         state: State,
-        input: BytesMut,
+        input: Bytes,
         output: BytesMut,
     }
 }
@@ -39,7 +37,7 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Encoder<S, E> {
             stream,
             encoder,
             state: State::Reading,
-            input: BytesMut::new(),
+            input: Bytes::new(),
             output: BytesMut::new(),
         }
     }
@@ -65,62 +63,70 @@ impl<S: Stream<Item = Result<Bytes>>, E: Encode> Stream for Encoder<S, E> {
     type Item = Result<Bytes>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
-        let mut this = self.project();
+        let this = self.project();
 
-        #[allow(clippy::never_loop)] // https://github.com/rust-lang/rust-clippy/issues/4058
-        loop {
-            break match mem::replace(this.state, State::Invalid) {
+        let (mut stream, input, state, encoder) =
+            (this.stream, this.input, this.state, this.encoder);
+
+        let mut output = PartialBuffer::new(this.output);
+
+        let result = (|| loop {
+            let output_capacity = output.written().len() + OUTPUT_BUFFER_SIZE;
+            output.get_mut().resize(output_capacity, 0);
+
+            *state = match *state {
                 State::Reading => {
-                    *this.state = State::Reading;
-                    *this.state = match ready!(this.stream.as_mut().poll_next(cx)) {
-                        Some(chunk) => {
-                            this.input.extend_from_slice(&chunk?);
-                            State::Writing
-                        }
-                        None => State::Flushing,
-                    };
-                    continue;
+                    if let Some(chunk) = ready!(stream.as_mut().poll_next(cx)) {
+                        *input = chunk?;
+                        State::Writing
+                    } else {
+                        State::Flushing
+                    }
                 }
 
                 State::Writing => {
-                    if this.input.is_empty() {
-                        *this.state = State::Reading;
-                        continue;
+                    if input.is_empty() {
+                        State::Reading
+                    } else {
+                        let mut input = PartialBuffer::new(&mut *input);
+
+                        encoder.encode(&mut input, &mut output)?;
+
+                        let input_len = input.written().len();
+                        input.into_inner().advance(input_len);
+
+                        State::Writing
                     }
-
-                    *this.state = State::Writing;
-
-                    this.output.resize(OUTPUT_BUFFER_SIZE, 0);
-
-                    let mut input = PartialBuffer::new(this.input.as_ref());
-                    let mut output = PartialBuffer::new(this.output.as_mut());
-
-                    this.encoder.encode(&mut input, &mut output)?;
-
-                    let input_len = input.written().len();
-                    this.input.advance(input_len);
-
-                    let output_len = output.written().len();
-                    Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
                 }
 
                 State::Flushing => {
-                    this.output.resize(OUTPUT_BUFFER_SIZE, 0);
-
-                    let mut output = PartialBuffer::new(this.output.as_mut());
-
-                    let done = this.encoder.finish(&mut output)?;
-
-                    *this.state = if done { State::Done } else { State::Flushing };
-
-                    let output_len = output.written().len();
-                    Poll::Ready(Some(Ok(this.output.split_to(output_len).freeze())))
+                    if encoder.finish(&mut output)? {
+                        State::Done
+                    } else {
+                        State::Flushing
+                    }
                 }
 
-                State::Done => Poll::Ready(None),
-
-                State::Invalid => panic!("Encoder reached invalid state"),
+                State::Done => {
+                    return Poll::Ready(None);
+                }
             };
+        })();
+
+        match result {
+            Poll::Ready(Some(Ok(_))) => unreachable!(),
+            Poll::Ready(Some(Err(_))) => {
+                *state = State::Done;
+                result
+            }
+            Poll::Ready(None) | Poll::Pending => {
+                if output.written().is_empty() {
+                    result
+                } else {
+                    let output_len = output.written().len();
+                    Poll::Ready(Some(Ok(output.into_inner().split_to(output_len).freeze())))
+                }
+            }
         }
     }
 }

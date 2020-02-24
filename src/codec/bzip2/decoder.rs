@@ -28,8 +28,8 @@ impl BzDecoder {
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<Status> {
         let prior_in = self.decompress.total_in();
         let prior_out = self.decompress.total_out();
@@ -49,8 +49,8 @@ impl BzDecoder {
 impl Decode for BzDecoder {
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         match self.decode(input, output)? {
             // Decompression went fine, nothing much to report.
@@ -74,7 +74,10 @@ impl Decode for BzDecoder {
         }
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         self.decode(&mut PartialBuffer::new(&[][..]), output)?;
 
         loop {
@@ -88,7 +91,10 @@ impl Decode for BzDecoder {
         Ok(!output.unwritten().is_empty())
     }
 
-    fn finish(&mut self, _output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn finish(
+        &mut self,
+        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         Ok(true)
     }
 }

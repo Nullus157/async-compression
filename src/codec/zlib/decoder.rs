@@ -17,17 +17,23 @@ impl ZlibDecoder {
 impl crate::codec::Decode for ZlibDecoder {
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         self.inner.decode(input, output)
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         self.inner.flush(output)
     }
 
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         self.inner.finish(output)
     }
 }

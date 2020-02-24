@@ -24,6 +24,10 @@ impl<B: AsRef<[u8]>> PartialBuffer<B> {
         self.index += amount;
     }
 
+    pub(crate) fn get_mut(&mut self) -> &mut B {
+        &mut self.buffer
+    }
+
     pub(crate) fn into_inner(self) -> B {
         self.buffer
     }

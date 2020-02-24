@@ -9,7 +9,6 @@ enum State {
     Encoding,
     Footer(PartialBuffer<Vec<u8>>),
     Done,
-    Invalid,
 }
 
 #[derive(Debug)]
@@ -53,18 +52,16 @@ impl GzipEncoder {
 impl Encode for GzipEncoder {
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<()> {
         loop {
-            self.state = match std::mem::replace(&mut self.state, State::Invalid) {
-                State::Header(mut header) => {
-                    output.copy_unwritten_from(&mut header);
+            match &mut self.state {
+                State::Header(header) => {
+                    output.copy_unwritten_from(&mut *header);
 
                     if header.unwritten().is_empty() {
-                        State::Encoding
-                    } else {
-                        State::Header(header)
+                        self.state = State::Encoding;
                     }
                 }
 
@@ -72,12 +69,9 @@ impl Encode for GzipEncoder {
                     let prior_written = input.written().len();
                     self.inner.encode(input, output)?;
                     self.crc.update(&input.written()[prior_written..]);
-                    State::Encoding
                 }
 
                 State::Footer(_) | State::Done => panic!("encode after complete"),
-
-                State::Invalid => panic!("Reached invalid state"),
             };
 
             if input.unwritten().is_empty() || output.unwritten().is_empty() {
@@ -86,36 +80,36 @@ impl Encode for GzipEncoder {
         }
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         loop {
-            let (done, state) = match std::mem::replace(&mut self.state, State::Invalid) {
-                State::Header(mut header) => {
-                    output.copy_unwritten_from(&mut header);
+            let done = match &mut self.state {
+                State::Header(header) => {
+                    output.copy_unwritten_from(&mut *header);
 
                     if header.unwritten().is_empty() {
-                        (false, State::Encoding)
-                    } else {
-                        (false, State::Header(header))
+                        self.state = State::Encoding;
                     }
+                    false
                 }
 
-                State::Encoding => (self.inner.flush(output)?, State::Encoding),
+                State::Encoding => self.inner.flush(output)?,
 
-                State::Footer(mut footer) => {
-                    output.copy_unwritten_from(&mut footer);
+                State::Footer(footer) => {
+                    output.copy_unwritten_from(&mut *footer);
 
                     if footer.unwritten().is_empty() {
-                        (true, State::Done)
+                        self.state = State::Done;
+                        true
                     } else {
-                        (false, State::Footer(footer))
+                        false
                     }
                 }
 
-                State::Done => (true, State::Done),
-                State::Invalid => panic!("Reached invalid state"),
+                State::Done => true,
             };
-
-            self.state = state;
 
             if done {
                 return Ok(true);
@@ -127,39 +121,35 @@ impl Encode for GzipEncoder {
         }
     }
 
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         loop {
-            self.state = match std::mem::replace(&mut self.state, State::Invalid) {
-                State::Header(mut header) => {
-                    output.copy_unwritten_from(&mut header);
+            match &mut self.state {
+                State::Header(header) => {
+                    output.copy_unwritten_from(&mut *header);
 
                     if header.unwritten().is_empty() {
-                        State::Encoding
-                    } else {
-                        State::Header(header)
+                        self.state = State::Encoding;
                     }
                 }
 
                 State::Encoding => {
                     if self.inner.finish(output)? {
-                        State::Footer(self.footer().into())
-                    } else {
-                        State::Encoding
+                        self.state = State::Footer(self.footer().into());
                     }
                 }
 
-                State::Footer(mut footer) => {
-                    output.copy_unwritten_from(&mut footer);
+                State::Footer(footer) => {
+                    output.copy_unwritten_from(&mut *footer);
 
                     if footer.unwritten().is_empty() {
-                        State::Done
-                    } else {
-                        State::Footer(footer)
+                        self.state = State::Done;
                     }
                 }
 
-                State::Done => State::Done,
-                State::Invalid => panic!("Reached invalid state"),
+                State::Done => {}
             };
 
             if let State::Done = self.state {

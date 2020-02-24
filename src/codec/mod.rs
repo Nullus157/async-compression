@@ -34,28 +34,36 @@ pub(crate) use self::zstd::{ZstdDecoder, ZstdEncoder};
 pub trait Encode {
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<()>;
 
     /// Returns whether the internal buffers are flushed
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
+    fn flush(&mut self, output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>)
+        -> Result<bool>;
 
     /// Returns whether the internal buffers are flushed and the end of the stream is written
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool>;
 }
 
 pub trait Decode {
     /// Returns whether the end of the stream has been read
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool>;
 
     /// Returns whether the internal buffers are flushed
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
+    fn flush(&mut self, output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>)
+        -> Result<bool>;
 
     /// Returns whether the internal buffers are flushed
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool>;
 }

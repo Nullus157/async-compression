@@ -23,8 +23,8 @@ impl BrotliDecoder {
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<BrotliResult> {
         let in_buf = input.unwritten();
         let mut out_buf = output.unwritten_mut();
@@ -58,8 +58,8 @@ impl BrotliDecoder {
 impl Decode for BrotliDecoder {
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         match self.decode(input, output)? {
             BrotliResult::ResultSuccess => Ok(true),
@@ -68,7 +68,10 @@ impl Decode for BrotliDecoder {
         }
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
             BrotliResult::ResultSuccess | BrotliResult::NeedsMoreInput => Ok(true),
             BrotliResult::NeedsMoreOutput => Ok(false),
@@ -76,7 +79,10 @@ impl Decode for BrotliDecoder {
         }
     }
 
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
             BrotliResult::ResultSuccess => Ok(true),
             BrotliResult::NeedsMoreOutput => Ok(false),

@@ -19,8 +19,8 @@ impl FlateEncoder {
 
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
         flush: FlushCompress,
     ) -> Result<Status> {
         let prior_in = self.compress.total_in();
@@ -40,8 +40,8 @@ impl FlateEncoder {
 impl Encode for FlateEncoder {
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<()> {
         self.flushed = false;
         match self.encode(input, output, FlushCompress::None)? {
@@ -51,7 +51,10 @@ impl Encode for FlateEncoder {
         }
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         // We need to keep track of whether we've already flushed otherwise we'll just keep writing
         // out sync blocks continuously and probably never complete flushing.
         if self.flushed {
@@ -80,7 +83,10 @@ impl Encode for FlateEncoder {
         Ok(!output.unwritten().is_empty())
     }
 
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         self.flushed = false;
         match self.encode(
             &mut PartialBuffer::new(&[][..]),

@@ -26,8 +26,8 @@ impl BrotliEncoder {
 
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
         op: BrotliEncoderOperation,
     ) -> Result<()> {
         let in_buf = input.unwritten();
@@ -62,8 +62,8 @@ impl BrotliEncoder {
 impl Encode for BrotliEncoder {
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<()> {
         self.encode(
             input,
@@ -72,7 +72,10 @@ impl Encode for BrotliEncoder {
         )
     }
 
-    fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn flush(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         self.encode(
             &mut PartialBuffer::new(&[][..]),
             output,
@@ -82,7 +85,10 @@ impl Encode for BrotliEncoder {
         Ok(BrotliEncoderHasMoreOutput(&self.state) == 0)
     }
 
-    fn finish(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
         self.encode(
             &mut PartialBuffer::new(&[][..]),
             output,

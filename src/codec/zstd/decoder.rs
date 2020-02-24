@@ -28,7 +28,7 @@ impl Decode for ZstdDecoder {
             .run_on_buffers(input.unwritten(), output.unwritten_mut())?;
         input.advance(status.bytes_read);
         output.advance(status.bytes_written);
-        Ok(false)
+        Ok(status.remaining == 0)
     }
 
     fn flush(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool> {

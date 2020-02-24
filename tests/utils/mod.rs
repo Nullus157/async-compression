@@ -60,7 +60,7 @@ impl From<Vec<Vec<u8>>> for InputStream {
     }
 }
 
-mod prelude {
+pub mod prelude {
     pub use bytes::Bytes;
     pub use futures::{
         executor::{block_on, block_on_stream},
@@ -760,6 +760,23 @@ macro_rules! test_cases {
                                 utils::$variant::futures::bufread::decompress(stream.reader());
 
                             assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn trailer() {
+                            let mut compressed =
+                                utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                            compressed.extend_from_slice(&[7, 8, 9, 10]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let mut reader = stream.reader();
+                            let output = utils::$variant::futures::bufread::decompress(&mut reader);
+                            let trailer = utils::prelude::async_read_to_vec(reader);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                            assert_eq!(trailer, &[7, 8, 9, 10][..]);
                         }
 
                         #[test]

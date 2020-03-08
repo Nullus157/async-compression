@@ -111,6 +111,14 @@
     not(feature = "zstd"),
     doc = "`zstd` (*inactive*) | `ZstdEncoder`, `ZstdDecoder`"
 )]
+#![cfg_attr(
+    feature = "lzma",
+    doc = "`lzma` | [`LzmaEncoder`](?search=LzmaEncoder), [`LzmaDecoder`](?search=LzmaDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "lzma"),
+    doc = "`lzma` (*inactive*) | `LzmaEncoder`, `LzmaDecoder`"
+)]
 //!
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -184,6 +192,15 @@ impl Level {
             Self::Fastest => 1,
             Self::Best => 21,
             Self::Default => 0,
+        }
+    }
+
+    #[cfg(feature = "lzma")]
+    fn into_lzma(self) -> u32 {
+        match self {
+            Self::Fastest => 0,
+            Self::Best => 9,
+            Self::Default => 5,
         }
     }
 }

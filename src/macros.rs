@@ -90,5 +90,16 @@ macro_rules! algos {
                 }
             }
         });
+
+        algos!(@algo lzma ["lzma"] LzmaDecoder LzmaEncoder<$inner> {
+            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::LzmaEncoder::new(level.into_lzma()),
+                    ),
+                }
+            }
+        });
     }
 }

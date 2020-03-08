@@ -20,7 +20,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = []
 all = ["all-implementations", "all-algorithms"]
 all-implementations = ["futures-bufread", "futures-write", "stream"]
-all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "zlib", "zstd"]
+all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "zlib", "zstd", "lzma"]
 
 # implementations
 futures-bufread = ["futures-io"]
@@ -32,8 +32,10 @@ deflate = ["flate2"]
 gzip = ["flate2"]
 zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
+lzma = ["xz2"]
 
 [dependencies]
+xz2 = { version = "0.1.6", optional = true }
 brotli = { version = "3.3.0", optional = true }
 bytes = { version = "0.5.0", optional = true }
 bzip2 = { version = "0.3.3" , optional = true }

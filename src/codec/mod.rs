@@ -11,6 +11,8 @@ mod deflate;
 mod flate;
 #[cfg(feature = "gzip")]
 mod gzip;
+#[cfg(feature = "lzma")]
+mod lzma;
 #[cfg(feature = "zlib")]
 mod zlib;
 #[cfg(feature = "zstd")]
@@ -26,6 +28,8 @@ pub(crate) use self::deflate::{DeflateDecoder, DeflateEncoder};
 pub(crate) use self::flate::{FlateDecoder, FlateEncoder};
 #[cfg(feature = "gzip")]
 pub(crate) use self::gzip::{GzipDecoder, GzipEncoder};
+#[cfg(feature = "lzma")]
+pub(crate) use self::lzma::{LzmaDecoder, LzmaEncoder};
 #[cfg(feature = "zlib")]
 pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
 #[cfg(feature = "zstd")]

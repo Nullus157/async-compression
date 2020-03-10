@@ -203,7 +203,7 @@ impl Level {
         }
     }
 
-    #[cfg(any(feature = "lzma", feature = "xz"))]
+    #[cfg(feature = "xz2")]
     fn into_xz2(self) -> u32 {
         match self {
             Self::Fastest => 0,

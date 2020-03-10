@@ -76,4 +76,4 @@ macro_rules! tests {
     }
 }
 
-tests!(brotli, bzip2, deflate, gzip, zlib, zstd, xz);
+tests!(brotli, bzip2, deflate, gzip, lzma, xz, zlib, zstd);

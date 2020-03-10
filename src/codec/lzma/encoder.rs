@@ -26,9 +26,10 @@ impl Encode for LzmaEncoder {
 
     fn flush(
         &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        self.inner.flush(output)
+        // Flush on LZMA 1 is not supported
+        Ok(true)
     }
 
     fn finish(

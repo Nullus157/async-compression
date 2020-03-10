@@ -5,19 +5,19 @@ use std::io::Result;
 use xz2::stream::{Action, Check, Status, Stream};
 
 #[derive(Debug)]
-pub struct LzmaEncoder {
+pub struct XzEncoder {
     inner: crate::codec::Xz2Encoder,
 }
 
-impl LzmaEncoder {
+impl XzEncoder {
     pub fn new(level: u32) -> Self {
         Self {
-            inner: crate::codec::Xz2Encoder::new(crate::codec::Xz2FileFormat::Lzma, level),
+            inner: crate::codec::Xz2Encoder::new(crate::codec::Xz2FileFormat::Xz, level),
         }
     }
 }
 
-impl Encode for LzmaEncoder {
+impl Encode for XzEncoder {
     fn encode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

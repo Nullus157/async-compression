@@ -1,4 +1,4 @@
 #[macro_use]
 mod utils;
 
-test_cases!(lzma);
+test_cases!(xz);

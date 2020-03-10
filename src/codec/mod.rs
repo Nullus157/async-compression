@@ -13,6 +13,10 @@ mod flate;
 mod gzip;
 #[cfg(feature = "lzma")]
 mod lzma;
+#[cfg(feature = "xz")]
+mod xz;
+#[cfg(any(feature = "xz", feature = "lzma"))]
+mod xz2;
 #[cfg(feature = "zlib")]
 mod zlib;
 #[cfg(feature = "zstd")]
@@ -30,6 +34,10 @@ pub(crate) use self::flate::{FlateDecoder, FlateEncoder};
 pub(crate) use self::gzip::{GzipDecoder, GzipEncoder};
 #[cfg(feature = "lzma")]
 pub(crate) use self::lzma::{LzmaDecoder, LzmaEncoder};
+#[cfg(feature = "xz")]
+pub(crate) use self::xz::{XzDecoder, XzEncoder};
+#[cfg(any(feature = "xz", feature = "lzma"))]
+pub(crate) use self::xz2::{Xz2Decoder, Xz2Encoder, Xz2FileFormat};
 #[cfg(feature = "zlib")]
 pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
 #[cfg(feature = "zstd")]

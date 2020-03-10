@@ -96,6 +96,22 @@
     doc = "`gzip` (*inactive*) | `GzipEncoder`, `GzipDecoder`"
 )]
 #![cfg_attr(
+    feature = "lzma",
+    doc = "`lzma` | [`LzmaEncoder`](?search=LzmaEncoder), [`LzmaDecoder`](?search=LzmaDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "lzma"),
+    doc = "`lzma` (*inactive*) | `LzmaEncoder`, `LzmaDecoder`"
+)]
+#![cfg_attr(
+    feature = "xz",
+    doc = "`xz` | [`XzEncoder`](?search=XzEncoder), [`XzDecoder`](?search=XzDecoder)"
+)]
+#![cfg_attr(
+    not(feature = "xz"),
+    doc = "`xz` (*inactive*) | `XzEncoder`, `XzDecoder`"
+)]
+#![cfg_attr(
     feature = "zlib",
     doc = "`zlib` | [`ZlibEncoder`](?search=ZlibEncoder), [`ZlibDecoder`](?search=ZlibDecoder)"
 )]
@@ -110,14 +126,6 @@
 #![cfg_attr(
     not(feature = "zstd"),
     doc = "`zstd` (*inactive*) | `ZstdEncoder`, `ZstdDecoder`"
-)]
-#![cfg_attr(
-    feature = "lzma",
-    doc = "`lzma` | [`LzmaEncoder`](?search=LzmaEncoder), [`LzmaDecoder`](?search=LzmaDecoder)"
-)]
-#![cfg_attr(
-    not(feature = "lzma"),
-    doc = "`lzma` (*inactive*) | `LzmaEncoder`, `LzmaDecoder`"
 )]
 //!
 
@@ -195,8 +203,8 @@ impl Level {
         }
     }
 
-    #[cfg(feature = "lzma")]
-    fn into_lzma(self) -> u32 {
+    #[cfg(any(feature = "lzma", feature = "xz"))]
+    fn into_xz2(self) -> u32 {
         match self {
             Self::Fastest => 0,
             Self::Best => 9,

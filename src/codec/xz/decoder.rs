@@ -1,29 +1,28 @@
-use crate::{codec::Encode, util::PartialBuffer};
+use crate::{codec::Decode, util::PartialBuffer};
 
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::io::Result;
-use xz2::stream::{Action, Check, Status, Stream};
 
 #[derive(Debug)]
-pub struct LzmaEncoder {
-    inner: crate::codec::Xz2Encoder,
+pub struct XzDecoder {
+    inner: crate::codec::Xz2Decoder,
 }
 
-impl LzmaEncoder {
-    pub fn new(level: u32) -> Self {
+impl XzDecoder {
+    pub fn new() -> Self {
         Self {
-            inner: crate::codec::Xz2Encoder::new(crate::codec::Xz2FileFormat::Lzma, level),
+            inner: crate::codec::Xz2Decoder::new(),
         }
     }
 }
 
-impl Encode for LzmaEncoder {
-    fn encode(
+impl Decode for XzDecoder {
+    fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<()> {
-        self.inner.encode(input, output)
+    ) -> Result<bool> {
+        self.inner.decode(input, output)
     }
 
     fn flush(

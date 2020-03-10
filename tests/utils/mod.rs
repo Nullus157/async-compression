@@ -552,7 +552,7 @@ pub mod zstd {
     }
 }
 
-pub mod lzma {
+pub mod xz {
     pub mod sync {
         use crate::utils::prelude::*;
 
@@ -571,7 +571,7 @@ pub mod lzma {
 
     pub mod stream {
         use crate::utils::prelude::*;
-        pub use async_compression::stream::{LzmaDecoder as Decoder, LzmaEncoder as Encoder};
+        pub use async_compression::stream::{XzDecoder as Decoder, XzEncoder as Encoder};
 
         pub fn compress(input: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
             pin_mut!(input);
@@ -592,15 +592,15 @@ pub mod lzma {
             use crate::utils::prelude::*;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::{futures::bufread::LzmaEncoder, Level};
+                use async_compression::{futures::bufread::XzEncoder, Level};
                 pin_mut!(input);
-                async_read_to_vec(LzmaEncoder::with_quality(input, Level::Fastest))
+                async_read_to_vec(XzEncoder::with_quality(input, Level::Fastest))
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::LzmaDecoder;
+                use async_compression::futures::bufread::XzDecoder;
                 pin_mut!(input);
-                async_read_to_vec(LzmaDecoder::new(input))
+                async_read_to_vec(XzDecoder::new(input))
             }
         }
 
@@ -608,17 +608,17 @@ pub mod lzma {
             use crate::utils::prelude::*;
 
             pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::{futures::write::LzmaEncoder, Level};
+                use async_compression::{futures::write::XzEncoder, Level};
                 async_write_to_vec(
                     input,
-                    |input| Box::pin(LzmaEncoder::with_quality(input, Level::Fastest)),
+                    |input| Box::pin(XzEncoder::with_quality(input, Level::Fastest)),
                     limit,
                 )
             }
 
             pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                use async_compression::futures::write::LzmaDecoder;
-                async_write_to_vec(input, |input| Box::pin(LzmaDecoder::new(input)), limit)
+                use async_compression::futures::write::XzDecoder;
+                async_write_to_vec(input, |input| Box::pin(XzDecoder::new(input)), limit)
             }
         }
     }

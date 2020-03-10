@@ -2,22 +2,16 @@ use crate::{codec::Decode, util::PartialBuffer};
 
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::io::Result;
-use xz2::stream::{Action, Status, Stream};
 
+#[derive(Debug)]
 pub struct LzmaDecoder {
-    stream: Stream,
-}
-
-impl Debug for LzmaDecoder {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "LzmaDecoder")
-    }
+    inner: crate::codec::Xz2Decoder,
 }
 
 impl LzmaDecoder {
     pub fn new() -> Self {
         Self {
-            stream: Stream::new_stream_decoder(u64::max_value(), 0).unwrap(),
+            inner: crate::codec::Xz2Decoder::new(),
         }
     }
 }
@@ -28,55 +22,20 @@ impl Decode for LzmaDecoder {
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        let previous_in = self.stream.total_in() as usize;
-        let previous_out = self.stream.total_out() as usize;
-
-        let status = self
-            .stream
-            .process(input.unwritten(), output.unwritten_mut(), Action::Run)?;
-
-        input.advance(self.stream.total_in() as usize - previous_in);
-        output.advance(self.stream.total_out() as usize - previous_out);
-
-        match status {
-            Status::Ok => Ok(false),
-            Status::StreamEnd => Ok(true),
-            Status::GetCheck => panic!("Unexpected lzma integrity check"),
-            Status::MemNeeded => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "More memory needed",
-            )),
-        }
+        self.inner.decode(input, output)
     }
 
     fn flush(
         &mut self,
-        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        // While decoding flush is a noop
-        Ok(true)
+        self.inner.flush(output)
     }
 
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        let previous_out = self.stream.total_out() as usize;
-
-        let status = self
-            .stream
-            .process(&[], output.unwritten_mut(), Action::Finish)?;
-
-        output.advance(self.stream.total_out() as usize - previous_out);
-
-        match status {
-            Status::Ok => Ok(false),
-            Status::StreamEnd => Ok(true),
-            Status::GetCheck => panic!("Unexpected lzma integrity check"),
-            Status::MemNeeded => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "More memory needed",
-            )),
-        }
+        self.inner.finish(output)
     }
 }

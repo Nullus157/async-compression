@@ -1,8 +1,6 @@
 use crate::{codec::Encode, util::PartialBuffer};
 
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::io::Result;
-use xz2::stream::{Action, Check, Status, Stream};
 
 #[derive(Debug)]
 pub struct XzEncoder {

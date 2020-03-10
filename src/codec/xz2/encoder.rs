@@ -6,7 +6,6 @@ use std::io::Result;
 use xz2::stream::{Action, Check, LzmaOptions, Status, Stream};
 
 pub struct Xz2Encoder {
-    format: Xz2FileFormat,
     stream: Stream,
 }
 
@@ -25,7 +24,7 @@ impl Xz2Encoder {
             }
         };
 
-        Self { format, stream }
+        Self { stream }
     }
 }
 

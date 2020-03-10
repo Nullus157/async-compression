@@ -1,6 +1,5 @@
 use crate::{codec::Decode, util::PartialBuffer};
 
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::io::Result;
 
 #[derive(Debug)]

@@ -1,0 +1,25 @@
+name: docs
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  docsrs:
+    name: cargo doc --cfg docsrs
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: '--cfg=docsrs -Dwarnings'
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: nightly
+    - uses: actions-rs/cargo@v1
+      with:
+        command: doc
+        toolchain: nightly
+        args: --all-features --no-deps
+
+on:
+  push:
+    branches: [staging, trying]

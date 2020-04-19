@@ -1,0 +1,28 @@
+name: coverage
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  codecov:
+    name: codecov
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - uses: actions-rs/tarpaulin@v0.1
+      with:
+        args:
+          --locked
+          --all-features
+          --
+          --skip 'proptest::'
+    - uses: codecov/codecov-action@v1
+
+on:
+  pull_request:
+    branches: [master]
+  schedule:
+  - cron: '0 0 * * 5'

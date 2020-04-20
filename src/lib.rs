@@ -163,8 +163,8 @@ pub enum Level {
     /// Default quality of compression defined by the selected compression algorithm.
     Default,
     /// Precise quality based on the underlying compression algorithms'
-    /// qualities. The interpretation of this depends on the algorithm choosen.
-    /// For bzip2, this is treated as default.
+    /// qualities. The interpretation of this depends on the algorithm chosen
+    /// and the specific implementation backing it.
     Precise(u32),
 }
 

@@ -165,6 +165,9 @@ pub enum Level {
     /// Precise quality based on the underlying compression algorithms'
     /// qualities. The interpretation of this depends on the algorithm chosen
     /// and the specific implementation backing it.
+    /// Qualities are implicitly clamped to the algorithm's maximum.
+    ///
+    /// For bzip2, this is treated as default.
     Precise(u32),
 }
 
@@ -174,7 +177,7 @@ impl Level {
         match self {
             Self::Fastest => params.quality = 0,
             Self::Best => params.quality = 11,
-            Self::Precise(quality) => params.quality = quality as i32,
+            Self::Precise(quality) => params.quality = std::cmp::min(quality, 11) as i32,
             Self::Default => (),
         }
 
@@ -206,7 +209,7 @@ impl Level {
         match self {
             Self::Fastest => 1,
             Self::Best => 21,
-            Self::Precise(quality) => quality as i32,
+            Self::Precise(quality) => std::cmp::min(quality, 21) as i32,
             Self::Default => 0,
         }
     }
@@ -216,7 +219,7 @@ impl Level {
         match self {
             Self::Fastest => 0,
             Self::Best => 9,
-            Self::Precise(quality) => quality,
+            Self::Precise(quality) => std::cmp::min(quality, 9),
             Self::Default => 5,
         }
     }

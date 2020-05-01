@@ -590,6 +590,7 @@ pub mod xz {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::XzDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::XzEncoder, Level};
@@ -598,9 +599,8 @@ pub mod xz {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::XzDecoder;
                 pin_mut!(input);
-                async_read_to_vec(XzDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -670,6 +670,7 @@ pub mod lzma {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::LzmaDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::LzmaEncoder, Level};
@@ -678,9 +679,8 @@ pub mod lzma {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::LzmaDecoder;
                 pin_mut!(input);
-                async_read_to_vec(LzmaDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 

@@ -23,6 +23,11 @@ impl Xz2Decoder {
 }
 
 impl Decode for Xz2Decoder {
+    fn reinit(&mut self) -> Result<()> {
+        *self = Self::new();
+        Ok(())
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

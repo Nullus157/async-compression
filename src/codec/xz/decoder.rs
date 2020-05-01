@@ -16,6 +16,10 @@ impl XzDecoder {
 }
 
 impl Decode for XzDecoder {
+    fn reinit(&mut self) -> Result<()> {
+        self.inner.reinit()
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

@@ -111,6 +111,14 @@ impl GzipDecoder {
 }
 
 impl Decode for GzipDecoder {
+    fn reinit(&mut self) -> Result<()> {
+        self.inner.reinit()?;
+        self.crc = Crc::new();
+        self.state = State::Header(header::Parser::default());
+        self.header = Header::default();
+        Ok(())
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

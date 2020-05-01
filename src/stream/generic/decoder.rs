@@ -16,6 +16,7 @@ enum State {
     Reading,
     Writing,
     Flushing,
+    Next,
     Done,
 }
 
@@ -28,6 +29,7 @@ pin_project! {
         state: State,
         input: Bytes,
         output: BytesMut,
+        multiple_members: bool,
     }
 }
 
@@ -39,6 +41,7 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Decoder<S, D> {
             state: State::Reading,
             input: Bytes::new(),
             output: BytesMut::new(),
+            multiple_members: false,
         }
     }
 
@@ -57,15 +60,25 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Decoder<S, D> {
     pub fn into_inner(self) -> S {
         self.stream
     }
+
+    pub fn multiple_members(&mut self, enabled: bool) {
+        self.multiple_members = enabled;
+    }
 }
 
 impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
     type Item = Result<Bytes>;
+
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes>>> {
         let this = self.project();
 
-        let (mut stream, input, state, decoder) =
-            (this.stream, this.input, this.state, this.decoder);
+        let (mut stream, input, state, decoder, multiple_members) = (
+            this.stream,
+            this.input,
+            this.state,
+            this.decoder,
+            *this.multiple_members,
+        );
 
         let mut output = PartialBuffer::new(this.output);
 
@@ -104,9 +117,27 @@ impl<S: Stream<Item = Result<Bytes>>, D: Decode> Stream for Decoder<S, D> {
 
                 State::Flushing => {
                     if decoder.finish(&mut output)? {
-                        State::Done
+                        if multiple_members {
+                            State::Next
+                        } else {
+                            State::Done
+                        }
                     } else {
                         State::Flushing
+                    }
+                }
+
+                State::Next => {
+                    if input.is_empty() {
+                        if let Some(chunk) = ready!(stream.as_mut().poll_next(cx)) {
+                            *input = chunk?;
+                            State::Next
+                        } else {
+                            State::Done
+                        }
+                    } else {
+                        decoder.reinit()?;
+                        State::Writing
                     }
                 }
 

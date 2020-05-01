@@ -5,12 +5,14 @@ use flate2::{Decompress, FlushDecompress, Status};
 
 #[derive(Debug)]
 pub struct FlateDecoder {
+    zlib_header: bool,
     decompress: Decompress,
 }
 
 impl FlateDecoder {
     pub(crate) fn new(zlib_header: bool) -> Self {
         Self {
+            zlib_header,
             decompress: Decompress::new(zlib_header),
         }
     }
@@ -36,6 +38,11 @@ impl FlateDecoder {
 }
 
 impl Decode for FlateDecoder {
+    fn reinit(&mut self) -> Result<()> {
+        self.decompress.reset(self.zlib_header);
+        Ok(())
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

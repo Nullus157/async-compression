@@ -167,6 +167,7 @@ pub mod brotli {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::BrotliDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::BrotliEncoder, Level};
@@ -175,9 +176,8 @@ pub mod brotli {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::BrotliDecoder;
                 pin_mut!(input);
-                async_read_to_vec(BrotliDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -237,6 +237,7 @@ pub mod bzip2 {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::BzDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::BzEncoder, Level};
@@ -245,9 +246,8 @@ pub mod bzip2 {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::BzDecoder;
                 pin_mut!(input);
-                async_read_to_vec(BzDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -307,6 +307,7 @@ pub mod deflate {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::DeflateDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::DeflateEncoder, Level};
@@ -315,9 +316,8 @@ pub mod deflate {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::DeflateDecoder;
                 pin_mut!(input);
-                async_read_to_vec(DeflateDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -377,6 +377,7 @@ pub mod zlib {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::ZlibDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::ZlibEncoder, Level};
@@ -385,9 +386,8 @@ pub mod zlib {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::ZlibDecoder;
                 pin_mut!(input);
-                async_read_to_vec(ZlibDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -447,6 +447,7 @@ pub mod gzip {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::GzipDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::GzipEncoder, Level};
@@ -455,9 +456,8 @@ pub mod gzip {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::GzipDecoder;
                 pin_mut!(input);
-                async_read_to_vec(GzipDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -518,6 +518,7 @@ pub mod zstd {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::ZstdDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::ZstdEncoder, Level};
@@ -526,9 +527,8 @@ pub mod zstd {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::ZstdDecoder;
                 pin_mut!(input);
-                async_read_to_vec(ZstdDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -590,6 +590,7 @@ pub mod xz {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::XzDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::XzEncoder, Level};
@@ -598,9 +599,8 @@ pub mod xz {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::XzDecoder;
                 pin_mut!(input);
-                async_read_to_vec(XzDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -670,6 +670,7 @@ pub mod lzma {
     pub mod futures {
         pub mod bufread {
             use crate::utils::prelude::*;
+            pub use async_compression::futures::bufread::LzmaDecoder as Decoder;
 
             pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                 use async_compression::{futures::bufread::LzmaEncoder, Level};
@@ -678,9 +679,8 @@ pub mod lzma {
             }
 
             pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                use async_compression::futures::bufread::LzmaDecoder;
                 pin_mut!(input);
-                async_read_to_vec(LzmaDecoder::new(input))
+                async_read_to_vec(Decoder::new(input))
             }
         }
 
@@ -828,6 +828,63 @@ macro_rules! test_cases {
                         let output = utils::$variant::stream::decompress(stream.stream());
 
                         assert_eq!(output, input);
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
+                    fn trailer() {
+                        // Currently there is no way to get any partially consumed stream item from
+                        // the decoder, for now we just guarantee that if the compressed frame
+                        // exactly matches an item boundary we will not read the next item from the
+                        // stream.
+                        let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                        let stream = utils::InputStream::from(vec![compressed, vec![7, 8, 9, 10]]);
+
+                        let mut stream = stream.stream();
+                        let output = utils::$variant::stream::decompress(&mut stream);
+                        let trailer = utils::prelude::stream_to_vec(stream);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        assert_eq!(trailer, &[7, 8, 9, 10][..]);
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
+                    fn multiple_members() {
+                        let compressed = [
+                            utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]),
+                            utils::$variant::sync::compress(&[6, 5, 4, 3, 2, 1]),
+                        ]
+                        .join(&[][..]);
+
+                        let stream = utils::InputStream::from(vec![compressed]);
+
+                        let mut decoder = utils::$variant::stream::Decoder::new(stream.stream());
+                        decoder.multiple_members(true);
+                        let output = utils::prelude::stream_to_vec(decoder);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1][..]);
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
+                    fn multiple_members_chunked() {
+                        let compressed = [
+                            utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]),
+                            utils::$variant::sync::compress(&[6, 5, 4, 3, 2, 1]),
+                        ]
+                        .join(&[][..]);
+
+                        let stream = utils::InputStream::from(
+                            compressed.chunks(1).map(Vec::from).collect::<Vec<_>>(),
+                        );
+
+                        let mut decoder = utils::$variant::stream::Decoder::new(stream.stream());
+                        decoder.multiple_members(true);
+                        let output = utils::prelude::stream_to_vec(decoder);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1][..]);
                     }
 
                     #[test]
@@ -1012,6 +1069,25 @@ macro_rules! test_cases {
                                 utils::$variant::futures::bufread::decompress(stream.reader());
 
                             assert_eq!(output, input);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn multiple_members() {
+                            let compressed = [
+                                utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]),
+                                utils::$variant::sync::compress(&[6, 5, 4, 3, 2, 1]),
+                            ]
+                            .join(&[][..]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+
+                            let mut decoder =
+                                utils::$variant::futures::bufread::Decoder::new(stream.reader());
+                            decoder.multiple_members(true);
+                            let output = utils::prelude::async_read_to_vec(decoder);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1][..]);
                         }
                     }
                 }

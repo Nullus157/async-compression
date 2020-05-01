@@ -15,6 +15,11 @@ impl ZlibDecoder {
 }
 
 impl crate::codec::Decode for ZlibDecoder {
+    fn reinit(&mut self) -> Result<()> {
+        self.inner.reinit()?;
+        Ok(())
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

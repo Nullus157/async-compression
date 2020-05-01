@@ -47,6 +47,11 @@ impl BzDecoder {
 }
 
 impl Decode for BzDecoder {
+    fn reinit(&mut self) -> Result<()> {
+        self.decompress = Decompress::new(false);
+        Ok(())
+    }
+
     fn decode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

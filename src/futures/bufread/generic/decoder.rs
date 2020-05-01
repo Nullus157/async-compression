@@ -14,6 +14,7 @@ enum State {
     Decoding,
     Flushing,
     Done,
+    Next,
 }
 
 pin_project! {
@@ -23,6 +24,7 @@ pin_project! {
         reader: R,
         decoder: D,
         state: State,
+        multiple_members: bool,
     }
 }
 
@@ -32,6 +34,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
             reader,
             decoder,
             state: State::Decoding,
+            multiple_members: false,
         }
     }
 
@@ -49,6 +52,10 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
 
     pub fn into_inner(self) -> R {
         self.reader
+    }
+
+    pub fn multiple_members(&mut self, enabled: bool) {
+        self.multiple_members = enabled;
     }
 
     fn do_poll_read(
@@ -79,13 +86,27 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
 
                 State::Flushing => {
                     if this.decoder.finish(output)? {
-                        State::Done
+                        if *this.multiple_members {
+                            this.decoder.reinit()?;
+                            State::Next
+                        } else {
+                            State::Done
+                        }
                     } else {
                         State::Flushing
                     }
                 }
 
                 State::Done => State::Done,
+
+                State::Next => {
+                    let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
+                    if input.is_empty() {
+                        State::Done
+                    } else {
+                        State::Decoding
+                    }
+                }
             };
 
             if let State::Done = *this.state {

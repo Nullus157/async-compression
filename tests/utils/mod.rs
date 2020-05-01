@@ -832,6 +832,25 @@ macro_rules! test_cases {
 
                     #[test]
                     #[ntest::timeout(1000)]
+                    fn trailer() {
+                        // Currently there is no way to get any partially consumed stream item from
+                        // the decoder, for now we just guarantee that if the compressed frame
+                        // exactly matches an item boundary we will not read the next item from the
+                        // stream.
+                        let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                        let stream = utils::InputStream::from(vec![compressed, vec![7, 8, 9, 10]]);
+
+                        let mut stream = stream.stream();
+                        let output = utils::$variant::stream::decompress(&mut stream);
+                        let trailer = utils::prelude::stream_to_vec(stream);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        assert_eq!(trailer, &[7, 8, 9, 10][..]);
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
                     fn multiple_members() {
                         let compressed = [
                             utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]),

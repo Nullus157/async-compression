@@ -199,7 +199,7 @@ impl Level {
         match self {
             Self::Fastest => flate2::Compression::fast(),
             Self::Best => flate2::Compression::best(),
-            Self::Precise(quality) => flate2::Compression::new(quality as u32),
+            Self::Precise(quality) => flate2::Compression::new(std::cmp::min(quality, 10) as u32),
             Self::Default => flate2::Compression::default(),
         }
     }

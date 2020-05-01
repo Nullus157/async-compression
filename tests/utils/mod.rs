@@ -832,6 +832,44 @@ macro_rules! test_cases {
 
                     #[test]
                     #[ntest::timeout(1000)]
+                    fn multiple_members() {
+                        let compressed = [
+                            utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]),
+                            utils::$variant::sync::compress(&[6, 5, 4, 3, 2, 1]),
+                        ]
+                        .join(&[][..]);
+
+                        let stream = utils::InputStream::from(vec![compressed]);
+
+                        let mut decoder = utils::$variant::stream::Decoder::new(stream.stream());
+                        decoder.multiple_members(true);
+                        let output = utils::prelude::stream_to_vec(decoder);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1][..]);
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
+                    fn multiple_members_chunked() {
+                        let compressed = [
+                            utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]),
+                            utils::$variant::sync::compress(&[6, 5, 4, 3, 2, 1]),
+                        ]
+                        .join(&[][..]);
+
+                        let stream = utils::InputStream::from(
+                            compressed.chunks(1).map(Vec::from).collect::<Vec<_>>(),
+                        );
+
+                        let mut decoder = utils::$variant::stream::Decoder::new(stream.stream());
+                        decoder.multiple_members(true);
+                        let output = utils::prelude::stream_to_vec(decoder);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1][..]);
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
                     fn error() {
                         let err = std::io::Error::new(std::io::ErrorKind::Other, "failure");
                         let input = futures::stream::iter(vec![Err(err)]);

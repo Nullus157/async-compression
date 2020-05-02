@@ -154,6 +154,7 @@ mod util;
 use brotli::enc::backward_references::BrotliEncoderParams;
 
 /// Level of compression data should be compressed with.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug)]
 pub enum Level {
     /// Fastest quality of compression, usually produces bigger size.

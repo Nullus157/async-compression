@@ -1,5 +1,7 @@
 #![allow(dead_code, unused_macros)] // Different tests use a different subset of functions
 
+mod track_closed;
+
 use bytes::Bytes;
 use futures::{
     io::AsyncBufRead,
@@ -61,6 +63,7 @@ impl From<Vec<Vec<u8>>> for InputStream {
 }
 
 pub mod prelude {
+    use super::track_closed::TrackClosedExt as _;
     pub use async_compression::Level;
     pub use bytes::Bytes;
     pub use futures::{
@@ -109,13 +112,17 @@ pub mod prelude {
         {
             let mut test_writer = (&mut output)
                 .limited_write(limit)
-                .interleave_pending_write();
-            let mut writer = create_writer(&mut test_writer);
-            for chunk in input {
-                block_on(writer.write_all(chunk)).unwrap();
-                block_on(writer.flush()).unwrap();
+                .interleave_pending_write()
+                .track_closed();
+            {
+                let mut writer = create_writer(&mut test_writer);
+                for chunk in input {
+                    block_on(writer.write_all(chunk)).unwrap();
+                    block_on(writer.flush()).unwrap();
+                }
+                block_on(writer.close()).unwrap();
             }
-            block_on(writer.close()).unwrap();
+            assert!(test_writer.is_closed());
         }
         output
     }

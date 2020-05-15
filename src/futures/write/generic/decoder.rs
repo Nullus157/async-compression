@@ -151,7 +151,7 @@ impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
         ready!(self.as_mut().do_poll_flush(cx))?;
-        ready!(self.project().writer.as_mut().poll_close(cx))?;
+        ready!(self.project().writer.as_mut().poll_flush(cx))?;
         Poll::Ready(Ok(()))
     }
 

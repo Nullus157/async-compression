@@ -6,7 +6,7 @@ use std::io::Result;
 
 use crate::{codec::Encode, util::PartialBuffer};
 use futures_core::ready;
-use futures_io::{AsyncBufRead, AsyncRead};
+use futures_io::{AsyncBufRead, AsyncRead, ReadBuf};
 use pin_project_lite::pin_project;
 
 #[derive(Debug)]
@@ -54,7 +54,7 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
     fn do_poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        output: &mut PartialBuffer<&mut [u8]>,
+        output: &mut ReadBuf<'_>,
     ) -> Poll<Result<()>> {
         let mut this = self.project();
 
@@ -87,7 +87,7 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
             if let State::Done = *this.state {
                 return Poll::Ready(Ok(()));
             }
-            if output.unwritten().is_empty() {
+            if output.remaining() == 0 {
                 return Poll::Ready(Ok(()));
             }
         }
@@ -100,14 +100,24 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<Result<usize>> {
-        if buf.is_empty() {
-            return Poll::Ready(Ok(0));
+        let mut buf = ReadBuf::new(buf);
+        ready!(self.poll_read_buf(cx, &mut buf))?;
+        Poll::Ready(Ok(buf.filled().len()))
+    }
+
+    fn poll_read_buf(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<Result<()>> {
+        if buf.remaining() == 0 {
+            return Poll::Ready(Ok(()));
         }
 
-        let mut output = PartialBuffer::new(buf);
-        match self.do_poll_read(cx, &mut output)? {
-            Poll::Pending if output.written().is_empty() => Poll::Pending,
-            _ => Poll::Ready(Ok(output.written().len())),
+        let prior = buf.filled().len();
+        match self.do_poll_read(cx, buf)? {
+            Poll::Pending if buf.filled().len() == prior => Poll::Pending,
+            _ => Poll::Ready(Ok(())),
         }
     }
 }

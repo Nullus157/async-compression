@@ -90,6 +90,7 @@ pub mod prelude {
         output
     }
 
+    #[cfg(feature = "futures-bufread")]
     pub fn async_read_to_vec(read: impl AsyncRead) -> Vec<u8> {
         // TODO: https://github.com/rust-lang-nursery/futures-rs/issues/1510
         // All current test cases are < 100kB
@@ -101,6 +102,7 @@ pub mod prelude {
         output
     }
 
+    #[cfg(feature = "futures-write")]
     pub fn async_write_to_vec(
         input: &[Vec<u8>],
         create_writer: impl for<'a> FnOnce(
@@ -127,6 +129,7 @@ pub mod prelude {
         output
     }
 
+    #[cfg(feature = "stream")]
     pub fn stream_to_vec(stream: impl Stream<Item = io::Result<Bytes>>) -> Vec<u8> {
         pin_mut!(stream);
         block_on_stream(stream)
@@ -136,6 +139,7 @@ pub mod prelude {
     }
 }
 
+#[cfg(feature = "brotli")]
 pub mod brotli {
     pub mod sync {
         use crate::utils::prelude::*;
@@ -153,6 +157,7 @@ pub mod brotli {
         }
     }
 
+    #[cfg(feature = "stream")]
     pub mod stream {
         use crate::utils::prelude::*;
         pub use async_compression::stream::{BrotliDecoder as Decoder, BrotliEncoder as Encoder};
@@ -169,6 +174,7 @@ pub mod brotli {
     }
 
     pub mod futures {
+        #[cfg(feature = "futures-bufread")]
         pub mod bufread {
             use crate::utils::prelude::*;
             pub use async_compression::futures::bufread::{
@@ -186,6 +192,7 @@ pub mod brotli {
             }
         }
 
+        #[cfg(feature = "futures-write")]
         pub mod write {
             use crate::utils::prelude::*;
             pub use async_compression::futures::write::{
@@ -207,6 +214,7 @@ pub mod brotli {
     }
 }
 
+#[cfg(feature = "bzip2")]
 pub mod bzip2 {
     pub mod sync {
         use crate::utils::prelude::*;
@@ -276,6 +284,7 @@ pub mod bzip2 {
     }
 }
 
+#[cfg(feature = "deflate")]
 pub mod deflate {
     pub mod sync {
         use crate::utils::prelude::*;
@@ -345,6 +354,7 @@ pub mod deflate {
     }
 }
 
+#[cfg(feature = "zlib")]
 pub mod zlib {
     pub mod sync {
         use crate::utils::prelude::*;
@@ -414,6 +424,7 @@ pub mod zlib {
     }
 }
 
+#[cfg(feature = "gzip")]
 pub mod gzip {
     pub mod sync {
         use crate::utils::prelude::*;
@@ -483,6 +494,7 @@ pub mod gzip {
     }
 }
 
+#[cfg(feature = "zstd")]
 pub mod zstd {
     pub mod sync {
         use crate::utils::prelude::*;
@@ -553,6 +565,7 @@ pub mod zstd {
     }
 }
 
+#[cfg(feature = "xz")]
 pub mod xz {
     pub mod sync {
         use crate::utils::prelude::*;
@@ -624,6 +637,7 @@ pub mod xz {
     }
 }
 
+#[cfg(feature = "lzma")]
 pub mod lzma {
     pub mod sync {
         use crate::utils::prelude::*;
@@ -706,6 +720,7 @@ pub mod lzma {
 macro_rules! test_cases {
     ($variant:ident) => {
         mod $variant {
+            #[cfg(feature = "stream")]
             mod stream {
                 mod compress {
                     use crate::utils::{self, prelude::*};
@@ -940,6 +955,7 @@ macro_rules! test_cases {
             }
 
             mod futures {
+                #[cfg(feature = "futures-bufread")]
                 mod bufread {
                     mod compress {
                         use crate::utils::{self, prelude::*};
@@ -1145,6 +1161,7 @@ macro_rules! test_cases {
                     }
                 }
 
+                #[cfg(feature = "futures-write")]
                 mod write {
                     mod compress {
                         use crate::utils::{self, prelude::*};

@@ -1,5 +1,6 @@
 use crate::util::PartialBuffer;
 use std::io::Result;
+use futures_io::ReadBuf;
 
 #[cfg(feature = "brotli")]
 mod brotli;
@@ -47,17 +48,17 @@ pub trait Encode {
     fn encode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut ReadBuf<'_>,
     ) -> Result<()>;
 
     /// Returns whether the internal buffers are flushed
-    fn flush(&mut self, output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>)
+    fn flush(&mut self, output: &mut ReadBuf<'_>)
         -> Result<bool>;
 
     /// Returns whether the internal buffers are flushed and the end of the stream is written
     fn finish(
         &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut ReadBuf<'_>,
     ) -> Result<bool>;
 }
 

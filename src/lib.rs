@@ -137,6 +137,8 @@
     missing_debug_implementations
 )]
 
+#![feature(maybe_uninit_slice_assume_init)]
+
 #[macro_use]
 mod macros;
 mod codec;

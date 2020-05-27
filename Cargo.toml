@@ -56,10 +56,11 @@ futures = "0.3.0"
 futures-test = "0.3.0"
 ntest = "0.3.3"
 timebomb = "0.1.2"
+bytes = "0.5.0"
 
 [[test]]
 name = "brotli"
-required-features = ["all-implementations", "brotli"]
+required-features = ["brotli"]
 
 [[test]]
 name = "bzip2"
@@ -82,5 +83,16 @@ name = "zstd"
 required-features = ["all-implementations", "zstd"]
 
 [[test]]
+name = "lzma"
+required-features = ["all-implementations", "lzma"]
+
+[[test]]
+name = "xz"
+required-features = ["all-implementations", "xz"]
+
+[[test]]
 name = "proptest"
 required-features = ["all"]
+
+[patch.crates-io]
+futures-io = { git = "https://github.com/Nemo157/futures-rs", branch = "read-buf-rfc-2930"  }

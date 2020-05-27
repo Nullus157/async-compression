@@ -2,7 +2,9 @@ use crate::{codec::Encode, util::PartialBuffer};
 use std::{
     fmt,
     io::{Error, ErrorKind, Result},
+    mem::MaybeUninit,
 };
+use futures_io::ReadBuf;
 
 use brotli::enc::{
     backward_references::BrotliEncoderParams,
@@ -27,11 +29,12 @@ impl BrotliEncoder {
     fn encode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut ReadBuf<'_>,
         op: BrotliEncoderOperation,
     ) -> Result<()> {
         let in_buf = input.unwritten();
-        let mut out_buf = output.unwritten_mut();
+        // Safety: Presumably brotli does not read from this and it's all good
+        let mut out_buf = unsafe { MaybeUninit::slice_get_mut(output.unfilled_mut()) };
 
         let mut input_len = 0;
         let mut output_len = 0;
@@ -53,7 +56,7 @@ impl BrotliEncoder {
         }
 
         input.advance(input_len);
-        output.advance(output_len);
+        output.add_filled(output_len);
 
         Ok(())
     }
@@ -63,7 +66,7 @@ impl Encode for BrotliEncoder {
     fn encode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut ReadBuf<'_>,
     ) -> Result<()> {
         self.encode(
             input,
@@ -74,7 +77,7 @@ impl Encode for BrotliEncoder {
 
     fn flush(
         &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut ReadBuf<'_>,
     ) -> Result<bool> {
         self.encode(
             &mut PartialBuffer::new(&[][..]),
@@ -87,7 +90,7 @@ impl Encode for BrotliEncoder {
 
     fn finish(
         &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut ReadBuf<'_>,
     ) -> Result<bool> {
         self.encode(
             &mut PartialBuffer::new(&[][..]),

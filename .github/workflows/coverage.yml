@@ -22,6 +22,8 @@ jobs:
     - uses: codecov/codecov-action@v1
 
 on:
+  push:
+    branches: [master]
   pull_request:
     branches: [master]
   schedule:

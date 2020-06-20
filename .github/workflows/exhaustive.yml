@@ -30,6 +30,8 @@ jobs:
   features:
     name: cargo hack check --feature-powerset
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Dwarnings
     steps:
     - uses: actions/checkout@v2
     - uses: hecrj/setup-rust-action@v1

@@ -136,6 +136,7 @@
     missing_copy_implementations,
     missing_debug_implementations
 )]
+#![cfg_attr(not(all), allow(unused))]
 
 #[macro_use]
 mod macros;

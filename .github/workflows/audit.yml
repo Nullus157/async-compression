@@ -1,0 +1,20 @@
+name: audit
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/audit-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  push:
+    branches: [staging, trying]
+  pull_request:
+    branches: [master]

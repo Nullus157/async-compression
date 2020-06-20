@@ -1,0 +1,51 @@
+name: exhaustive
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: cargo test
+    strategy:
+      matrix:
+        platform:
+        - { toolchain: stable, target: i686-pc-windows-msvc, os: windows-latest }
+        - { toolchain: stable, target: i686-unknown-linux-gnu, os: ubuntu-latest }
+        - { toolchain: stable, target: x86_64-apple-darwin, os: macos-latest }
+        - { toolchain: stable, target: x86_64-pc-windows-msvc, os: windows-latest }
+        - { toolchain: stable, target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
+    runs-on: ${{ matrix.platform.os }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: ${{ matrix.platform.toolchain }}
+        targets: ${{ matrix.platform.target }}
+    - uses: actions-rs/cargo@v1
+      with:
+        toolchain: ${{ matrix.platform.toolchain }}
+        command: test
+        args: --all --locked --all-features
+
+  features:
+    name: cargo hack check --feature-powerset
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+    - uses: actions-rs/cargo@v1
+      with:
+        command: install
+        args: cargo-hack
+    - uses: actions-rs/cargo@v1
+      with:
+        command: hack
+        args: check
+          --workspace
+          --feature-powerset
+          --no-dev-deps
+          --skip 'all,all-algorithms,all-implementations'
+
+on:
+  push:
+    branches: [staging, trying]

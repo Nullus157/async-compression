@@ -1,0 +1,35 @@
+name: lint
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  fmt:
+    name: cargo fmt --check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with: { components: rustfmt }
+    - uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all -- --check
+
+  clippy:
+    name: cargo clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with: { components: clippy }
+    - uses: actions-rs/cargo@v1
+      with:
+        command: clippy
+        args: --all --all-targets --all-features --locked -- -D warnings
+
+on:
+  push:
+    branches: [staging, trying]
+  pull_request:
+    branches: [master]

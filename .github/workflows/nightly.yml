@@ -1,0 +1,53 @@
+name: nightly
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: cargo +nightly test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: nightly
+    - uses: actions-rs/cargo@v1
+      with:
+        toolchain: nightly
+        command: test
+        args: --all --locked --all-features
+
+  fmt:
+    name: cargo +nightly fmt --check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: nightly
+        components: rustfmt
+    - uses: actions-rs/cargo@v1
+      with:
+        toolchain: nightly
+        command: fmt
+        args: --all -- --check
+
+  clippy:
+    name: cargo +nightly clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: nightly
+        components: clippy
+    - uses: actions-rs/cargo@v1
+      with:
+        toolchain: nightly
+        command: clippy
+        args: --all --all-targets --all-features --locked -- -D warnings
+
+on:
+  schedule:
+  - cron: '0 2 * * *'

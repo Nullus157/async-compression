@@ -1,0 +1,22 @@
+name: base
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+    - uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --workspace --locked --all-features
+
+on:
+  push:
+    branches: [staging, trying]
+  pull_request:
+    branches: [master]

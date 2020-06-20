@@ -145,4 +145,6 @@ macro_rules! tests {
     }
 }
 
-tests!(brotli, bzip2, deflate, gzip, lzma, xz, zlib, zstd);
+mod proptest {
+    tests!(brotli, bzip2, deflate, gzip, lzma, xz, zlib, zstd);
+}

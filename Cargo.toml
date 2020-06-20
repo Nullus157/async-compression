@@ -59,28 +59,32 @@ timebomb = "0.1.2"
 
 [[test]]
 name = "brotli"
-required-features = ["all-implementations", "brotli"]
+required-features = ["brotli"]
 
 [[test]]
 name = "bzip2"
-required-features = ["all-implementations", "bzip2"]
+required-features = ["bzip2"]
 
 [[test]]
 name = "deflate"
-required-features = ["all-implementations", "deflate"]
+required-features = ["deflate"]
 
 [[test]]
 name = "gzip"
-required-features = ["all-implementations", "gzip"]
+required-features = ["gzip"]
+
+[[test]]
+name = "lzma"
+required-features = ["lzma"]
+
+[[test]]
+name = "xz"
+required-features = ["xz"]
 
 [[test]]
 name = "zlib"
-required-features = ["all-implementations", "zlib"]
+required-features = ["zlib"]
 
 [[test]]
 name = "zstd"
-required-features = ["all-implementations", "zstd"]
-
-[[test]]
-name = "proptest"
-required-features = ["all"]
+required-features = ["zstd"]

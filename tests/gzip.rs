@@ -1,3 +1,4 @@
+#[allow(unused)]
 use std::iter::FromIterator;
 
 #[macro_use]
@@ -7,6 +8,7 @@ test_cases!(gzip);
 
 /// Splits the input bytes into the first 10 bytes, the rest and the last 8 bytes, taking apart the
 /// 3 parts of compressed gzip data.
+#[allow(unused)]
 fn split(mut input: Vec<u8>) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
     assert!(input.len() >= 18);
 
@@ -19,6 +21,7 @@ fn split(mut input: Vec<u8>) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "stream")]
 fn gzip_stream_decompress_single_chunk() {
     let compressed = utils::gzip::sync::compress(&[1, 2, 3, 4, 5, 6]);
 
@@ -31,6 +34,7 @@ fn gzip_stream_decompress_single_chunk() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "stream")]
 fn gzip_stream_decompress_segmented() {
     let (header, body, footer) = split(utils::gzip::sync::compress(&[1, 2, 3, 4, 5, 6]));
 
@@ -43,6 +47,7 @@ fn gzip_stream_decompress_segmented() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "stream")]
 fn gzip_stream_decompress_split() {
     let (header, body, footer) = split(utils::gzip::sync::compress(&[1, 2, 3, 4, 5, 6]));
 
@@ -63,6 +68,7 @@ fn gzip_stream_decompress_split() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "stream")]
 fn gzip_stream_decompress_split_mixed() {
     let (header, body, footer) = split(utils::gzip::sync::compress(&[1, 2, 3, 4, 5, 6]));
 
@@ -89,6 +95,7 @@ fn gzip_stream_decompress_split_mixed() {
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
 
+#[allow(unused)]
 fn compress_with_header(data: &[u8]) -> Vec<u8> {
     use flate2::{Compression, GzBuilder};
     use std::io::Write;
@@ -108,6 +115,7 @@ fn compress_with_header(data: &[u8]) -> Vec<u8> {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "stream")]
 fn gzip_stream_decompress_with_extra_header() {
     let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
 
@@ -119,6 +127,7 @@ fn gzip_stream_decompress_with_extra_header() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "stream")]
 fn gzip_stream_chunks_decompress_with_extra_header() {
     let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
 
@@ -130,6 +139,7 @@ fn gzip_stream_chunks_decompress_with_extra_header() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "bufread")]
 fn gzip_bufread_decompress_with_extra_header() {
     let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
 
@@ -141,6 +151,7 @@ fn gzip_bufread_decompress_with_extra_header() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "futures-bufread")]
 fn gzip_bufread_chunks_decompress_with_extra_header() {
     let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
 

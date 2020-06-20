@@ -27,7 +27,7 @@ jobs:
         command: test
         args: --all --locked --all-features
 
-  features:
+  check-features:
     name: cargo hack check --feature-powerset
     runs-on: ubuntu-latest
     env:
@@ -46,6 +46,27 @@ jobs:
           --workspace
           --feature-powerset
           --no-dev-deps
+          --skip 'all,all-algorithms,all-implementations'
+
+  check-test-features:
+    name: cargo hack check --all-targets --feature-powerset
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Dwarnings
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+    - uses: actions-rs/cargo@v1
+      with:
+        command: install
+        args: cargo-hack
+    - uses: actions-rs/cargo@v1
+      with:
+        command: hack
+        args: check
+          --workspace
+          --feature-powerset
+          --all-targets
           --skip 'all,all-algorithms,all-implementations'
 
 on:

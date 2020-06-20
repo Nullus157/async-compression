@@ -1,3 +1,4 @@
+#[allow(unused)]
 use futures::{executor::block_on, io::AsyncReadExt, stream::StreamExt};
 
 #[macro_use]
@@ -7,6 +8,7 @@ test_cases!(xz);
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "stream")]
 fn stream_multiple_members_with_padding() {
     let compressed = [
         utils::xz::sync::compress(&[1, 2, 3, 4, 5, 6]),
@@ -27,6 +29,7 @@ fn stream_multiple_members_with_padding() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "stream")]
 fn stream_multiple_members_with_invalid_padding() {
     let compressed = [
         utils::xz::sync::compress(&[1, 2, 3, 4, 5, 6]),
@@ -47,6 +50,7 @@ fn stream_multiple_members_with_invalid_padding() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "futures-bufread")]
 fn bufread_multiple_members_with_padding() {
     let compressed = [
         utils::xz::sync::compress(&[1, 2, 3, 4, 5, 6]),
@@ -67,6 +71,7 @@ fn bufread_multiple_members_with_padding() {
 
 #[test]
 #[ntest::timeout(1000)]
+#[cfg(feature = "futures-bufread")]
 fn bufread_multiple_members_with_invalid_padding() {
     let compressed = [
         utils::xz::sync::compress(&[1, 2, 3, 4, 5, 6]),

@@ -8,6 +8,7 @@ use ::proptest::{
 
 mod utils;
 
+#[allow(dead_code)]
 fn any_level() -> impl Strategy<Value = Level> {
     prop_oneof![
         Just(Level::Fastest),
@@ -18,9 +19,11 @@ fn any_level() -> impl Strategy<Value = Level> {
 }
 
 macro_rules! tests {
-    ($($name:ident),*) => {
+    ($($name:ident($feat:literal)),* $(,)?) => {
         $(
+            #[cfg(feature = $feat)]
             mod $name {
+                #[cfg(feature = "stream")]
                 mod stream {
                     use crate::utils;
                     use proptest::{prelude::{any, ProptestConfig}, proptest};
@@ -63,6 +66,7 @@ macro_rules! tests {
                 }
 
                 mod futures {
+                    #[cfg(feature = "futures-bufread")]
                     mod bufread {
                         use crate::utils;
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
@@ -104,6 +108,7 @@ macro_rules! tests {
                         }
                     }
 
+                    #[cfg(feature = "futures-write")]
                     mod write {
                         use crate::utils;
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
@@ -146,5 +151,14 @@ macro_rules! tests {
 }
 
 mod proptest {
-    tests!(brotli, bzip2, deflate, gzip, lzma, xz, zlib, zstd);
+    tests! {
+        brotli("brotli"),
+        bzip2("bzip2"),
+        deflate("deflate"),
+        gzip("gzip"),
+        lzma("lzma"),
+        xz("xz"),
+        zlib("zlib"),
+        zstd("zstd"),
+    }
 }

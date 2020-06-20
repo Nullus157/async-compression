@@ -14,7 +14,8 @@ asynchronous IO types.
 When developing you will need to enable appropriate features for the different
 test cases to run, the simplest is `cargo test --all-features`, but you can
 enable different subsets of features as appropriate for the code you are
-testing to avoid compiling all dependencies.
+testing to avoid compiling all dependencies, e.g. `cargo test --features
+gzip,stream`.
 
 ## License
 

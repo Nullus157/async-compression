@@ -53,6 +53,22 @@
     not(feature = "stream"),
     doc = "`stream` (*inactive*) | `futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>`"
 )]
+#![cfg_attr(
+    feature = "tokio-02-bufread",
+    doc = "[`tokio-02-bufread`](crate::tokio_02::bufread) | [`tokio::io::AsyncBufRead`](::tokio_02::io::AsyncBufRead)"
+)]
+#![cfg_attr(
+    not(feature = "tokio-02-bufread"),
+    doc = "`tokio-02-bufread` (*inactive*) | `tokio::io::AsyncBufRead`"
+)]
+#![cfg_attr(
+    feature = "tokio-02-write",
+    doc = "[`tokio-02-write`](crate::tokio_02::write) | [`tokio::io::AsyncWrite`](::tokio_02::io::AsyncWrite)"
+)]
+#![cfg_attr(
+    not(feature = "tokio-02-write"),
+    doc = "`tokio-02-write` (*inactive*) | `tokio::io::AsyncWrite`"
+)]
 //!
 
 //! ## Compression algorithm
@@ -147,6 +163,8 @@ pub mod futures;
 #[cfg(feature = "stream")]
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
+#[cfg(any(feature = "tokio-02-bufread", feature = "tokio-02-write"))]
+pub mod tokio_02;
 
 mod unshared;
 mod util;

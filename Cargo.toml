@@ -26,6 +26,8 @@ all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "z
 futures-bufread = ["futures-io"]
 futures-write = ["futures-io"]
 stream = ["bytes"]
+tokio-02-bufread = ["tokio_02"]
+tokio-02-write = ["tokio_02"]
 
 # algorithms
 deflate = ["flate2"]
@@ -44,9 +46,10 @@ flate2 = { version = "1.0.11", optional = true }
 futures-core = { version = "0.3.0", default-features = false }
 futures-io = { version = "0.3.0", default-features = false, features = ["std"], optional = true }
 pin-project-lite = "0.1.1"
-libzstd = { version = "0.5.0", optional = true, package = "zstd", default-features = false }
+libzstd = { package = "zstd", version = "0.5.0", optional = true, default-features = false }
 zstd-safe = { version = "2.0.0", optional = true, default-features = false }
 memchr = "2.2.1"
+tokio_02 = { package = "tokio", version = "0.2.21", optional = true, default-features = false }
 
 [dev-dependencies]
 proptest = "0.9.4"
@@ -56,6 +59,8 @@ futures = "0.3.0"
 futures-test = "0.3.0"
 ntest = "0.3.3"
 timebomb = "0.1.2"
+bytes = "0.5.0"
+tokio_02 = { package = "tokio", version = "0.2.21", default-features = false, features = ["io-util", "stream"] }
 
 [[test]]
 name = "brotli"

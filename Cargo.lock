@@ -40,6 +40,7 @@ dependencies = [
  "proptest-derive",
  "rand 0.7.3",
  "timebomb",
+ "tokio",
  "xz2",
  "zstd",
  "zstd-safe",
@@ -1047,6 +1048,18 @@ checksum = "7f0886f4b637067027d8c9a038a9249d95648689d1a91009d9abb895625f883a"
 dependencies = [
  "pulse",
  "time 0.2.16",
+]
+
+[[package]]
+name = "tokio"
+version = "0.2.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d099fa27b9702bed751524694adbe393e18b36b204da91eb1cbbbbb4a5ee2d58"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "memchr",
+ "pin-project-lite",
 ]
 
 [[package]]

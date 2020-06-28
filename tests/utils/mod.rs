@@ -2,6 +2,7 @@
 
 #[cfg(any(feature = "tokio-02-bufread", feature = "tokio-02-write"))]
 mod tokio_02_ext;
+#[cfg(any(feature = "futures-write", feature = "tokio-02-write"))]
 mod track_closed;
 
 use proptest_derive::Arbitrary;
@@ -94,7 +95,6 @@ impl From<Vec<Vec<u8>>> for InputStream {
 }
 
 pub mod prelude {
-    pub use super::track_closed::TrackClosed;
     pub use async_compression::Level;
     #[cfg(feature = "stream")]
     pub use bytes::Bytes;
@@ -143,6 +143,7 @@ pub mod prelude {
         ) -> Pin<Box<dyn AsyncWrite + 'a>>,
         limit: usize,
     ) -> Vec<u8> {
+        use crate::utils::track_closed::TrackClosed;
         use futures::io::AsyncWriteExt as _;
         use futures_test::io::AsyncWriteTestExt as _;
 
@@ -198,6 +199,7 @@ pub mod prelude {
         limit: usize,
     ) -> Vec<u8> {
         use crate::utils::tokio_02_ext::AsyncWriteTestExt;
+        use crate::utils::track_closed::TrackClosed;
         use tokio_02::io::AsyncWriteExt as _;
 
         let mut output = std::io::Cursor::new(Vec::new());

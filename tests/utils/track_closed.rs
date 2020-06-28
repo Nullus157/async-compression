@@ -2,7 +2,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::{IoSlice, Result};
+use std::io::Result;
 
 pub struct TrackClosed<W> {
     inner: W,
@@ -48,7 +48,7 @@ impl<W: futures_io::AsyncWrite + Unpin> futures_io::AsyncWrite for TrackClosed<W
     fn poll_write_vectored(
         mut self: Pin<&mut Self>,
         cx: &mut Context,
-        bufs: &[IoSlice],
+        bufs: &[std::io::IoSlice],
     ) -> Poll<Result<usize>> {
         assert!(!self.closed);
         Pin::new(&mut self.inner).poll_write_vectored(cx, bufs)

@@ -22,7 +22,7 @@ impl<W> TrackClosed<W> {
     }
 }
 
-#[cfg(feature = "futures-write")]
+#[cfg(feature = "futures-io")]
 impl<W: futures_io::AsyncWrite + Unpin> futures_io::AsyncWrite for TrackClosed<W> {
     fn poll_write(mut self: Pin<&mut Self>, cx: &mut Context, buf: &[u8]) -> Poll<Result<usize>> {
         assert!(!self.closed);
@@ -55,7 +55,7 @@ impl<W: futures_io::AsyncWrite + Unpin> futures_io::AsyncWrite for TrackClosed<W
     }
 }
 
-#[cfg(feature = "tokio-02-write")]
+#[cfg(feature = "tokio-02")]
 impl<W: tokio_02::io::AsyncWrite + Unpin> tokio_02::io::AsyncWrite for TrackClosed<W> {
     fn poll_write(mut self: Pin<&mut Self>, cx: &mut Context, buf: &[u8]) -> Poll<Result<usize>> {
         assert!(!self.closed);

@@ -46,7 +46,7 @@ jobs:
           --workspace
           --feature-powerset
           --no-dev-deps
-          --skip 'all,all-algorithms,all-implementations'
+          --skip 'all,all-algorithms,all-implementations,futures-bufread,futures-write'
 
   check-test-features:
     name: cargo hack check --all-targets --feature-powerset
@@ -67,7 +67,7 @@ jobs:
           --workspace
           --feature-powerset
           --all-targets
-          --skip 'all,all-algorithms,all-implementations'
+          --skip 'all,all-algorithms,all-implementations,futures-bufread,futures-write'
 
 on:
   push:

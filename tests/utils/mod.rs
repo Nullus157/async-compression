@@ -1,8 +1,8 @@
 #![allow(dead_code, unused_macros)] // Different tests use a different subset of functions
 
-#[cfg(any(feature = "tokio-02-bufread", feature = "tokio-02-write"))]
+#[cfg(feature = "tokio-02")]
 mod tokio_02_ext;
-#[cfg(any(feature = "futures-write", feature = "tokio-02-write"))]
+#[cfg(feature = "futures-io")]
 mod track_closed;
 
 use proptest_derive::Arbitrary;
@@ -35,7 +35,7 @@ impl InputStream {
         .interleave_pending()
     }
 
-    #[cfg(feature = "futures-bufread")]
+    #[cfg(feature = "futures-io")]
     pub fn reader(&self) -> impl futures::io::AsyncBufRead {
         use futures::stream::TryStreamExt;
         use futures_test::stream::StreamTestExt;
@@ -53,7 +53,7 @@ impl InputStream {
         .into_async_read()
     }
 
-    #[cfg(feature = "tokio-02-bufread")]
+    #[cfg(feature = "tokio-02")]
     pub fn tokio_reader(&self) -> impl tokio_02::io::AsyncBufRead {
         use bytes::Bytes;
         use futures_test::stream::StreamTestExt;
@@ -98,20 +98,22 @@ pub mod prelude {
     pub use async_compression::Level;
     #[cfg(feature = "stream")]
     pub use bytes::Bytes;
+    #[cfg(feature = "futures-io")]
+    pub use futures::io::{AsyncBufRead, AsyncRead, AsyncWrite};
+    #[cfg(feature = "stream")]
+    pub use futures::stream::{self, Stream};
     pub use futures::{
         executor::{block_on, block_on_stream},
-        io::{AsyncBufRead, AsyncRead, AsyncWrite},
         pin_mut,
-        stream::{self, Stream},
     };
     pub use std::{
         io::{self, Read},
         pin::Pin,
     };
-    #[cfg(feature = "tokio-02-write")]
-    pub use tokio_02::io::AsyncWrite as TokioWrite;
-    #[cfg(feature = "tokio-02-bufread")]
-    pub use tokio_02::io::{AsyncBufRead as TokioBufRead, AsyncRead as TokioRead};
+    #[cfg(feature = "tokio-02")]
+    pub use tokio_02::io::{
+        AsyncBufRead as TokioBufRead, AsyncRead as TokioRead, AsyncWrite as TokioWrite,
+    };
 
     pub fn read_to_vec(mut read: impl Read) -> Vec<u8> {
         let mut output = vec![];
@@ -119,7 +121,7 @@ pub mod prelude {
         output
     }
 
-    #[cfg(feature = "futures-bufread")]
+    #[cfg(feature = "futures-io")]
     pub fn async_read_to_vec(read: impl AsyncRead) -> Vec<u8> {
         // TODO: https://github.com/rust-lang-nursery/futures-rs/issues/1510
         // All current test cases are < 100kB
@@ -135,7 +137,7 @@ pub mod prelude {
         output
     }
 
-    #[cfg(feature = "futures-write")]
+    #[cfg(feature = "futures-io")]
     pub fn async_write_to_vec(
         input: &[Vec<u8>],
         create_writer: impl for<'a> FnOnce(
@@ -176,7 +178,7 @@ pub mod prelude {
             .collect()
     }
 
-    #[cfg(feature = "tokio-02-bufread")]
+    #[cfg(feature = "tokio-02")]
     pub fn tokio_read_to_vec(read: impl TokioRead) -> Vec<u8> {
         let mut output = std::io::Cursor::new(vec![0; 102_400]);
         pin_mut!(read);
@@ -190,7 +192,7 @@ pub mod prelude {
         output
     }
 
-    #[cfg(feature = "tokio-02-write")]
+    #[cfg(feature = "tokio-02")]
     pub fn tokio_write_to_vec(
         input: &[Vec<u8>],
         create_writer: impl for<'a> FnOnce(
@@ -246,8 +248,8 @@ macro_rules! algos {
                     }
                 }
 
+                #[cfg(feature = "futures-io")]
                 pub mod futures {
-                    #[cfg(feature = "futures-bufread")]
                     pub mod bufread {
                         use crate::utils::prelude::*;
                         pub use async_compression::futures::bufread::{
@@ -265,7 +267,6 @@ macro_rules! algos {
                         }
                     }
 
-                    #[cfg(feature = "futures-write")]
                     pub mod write {
                         use crate::utils::prelude::*;
                         pub use async_compression::futures::write::{
@@ -286,8 +287,8 @@ macro_rules! algos {
                     }
                 }
 
+                #[cfg(feature = "tokio-02")]
                 pub mod tokio_02 {
-                    #[cfg(feature = "tokio-02-bufread")]
                     pub mod bufread {
                         use crate::utils::prelude::*;
                         pub use async_compression::tokio_02::bufread::{
@@ -305,7 +306,6 @@ macro_rules! algos {
                         }
                     }
 
-                    #[cfg(feature = "tokio-02-write")]
                     pub mod write {
                         use crate::utils::prelude::*;
                         pub use async_compression::tokio_02::write::{
@@ -712,8 +712,8 @@ macro_rules! test_cases {
                 }
             }
 
+            #[cfg(feature = "futures-io")]
             mod futures {
-                #[cfg(feature = "futures-bufread")]
                 mod bufread {
                     mod compress {
                         use crate::utils::{self, prelude::*};
@@ -919,7 +919,6 @@ macro_rules! test_cases {
                     }
                 }
 
-                #[cfg(feature = "futures-write")]
                 mod write {
                     mod compress {
                         use crate::utils::{self, prelude::*};
@@ -1144,8 +1143,8 @@ macro_rules! test_cases {
                 }
             }
 
+            #[cfg(feature = "tokio-02")]
             mod tokio_02 {
-                #[cfg(feature = "tokio-02-bufread")]
                 mod bufread {
                     mod compress {
                         use crate::utils::{self, prelude::*};
@@ -1359,7 +1358,6 @@ macro_rules! test_cases {
                     }
                 }
 
-                #[cfg(feature = "tokio-02-write")]
                 mod write {
                     mod compress {
                         use crate::utils::{self, prelude::*};

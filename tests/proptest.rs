@@ -65,8 +65,8 @@ macro_rules! tests {
                     }
                 }
 
+                #[cfg(feature = "futures-io")]
                 mod futures {
-                    #[cfg(feature = "futures-bufread")]
                     mod bufread {
                         use crate::utils;
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
@@ -108,7 +108,6 @@ macro_rules! tests {
                         }
                     }
 
-                    #[cfg(feature = "futures-write")]
                     mod write {
                         use crate::utils;
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
@@ -146,8 +145,8 @@ macro_rules! tests {
                     }
                 }
 
+                #[cfg(feature = "tokio-02")]
                 mod tokio_02 {
-                    #[cfg(feature = "tokio-02-bufread")]
                     mod bufread {
                         use crate::utils;
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
@@ -189,7 +188,6 @@ macro_rules! tests {
                         }
                     }
 
-                    #[cfg(feature = "tokio-02-write")]
                     mod write {
                         use crate::utils;
                         use proptest::{prelude::{any, ProptestConfig}, proptest};

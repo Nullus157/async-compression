@@ -30,20 +30,20 @@
 // TODO: Kill rustfmt on this section, `#![rustfmt::skip::attributes(cfg_attr)]` should do it, but
 // that's unstable
 #![cfg_attr(
-    feature = "futures-bufread",
-    doc = "[`futures-bufread`](crate::futures::bufread) | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead)"
+    feature = "futures-io",
+    doc = "[`futures-io`](crate::futures) | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead), [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
 )]
 #![cfg_attr(
-    not(feature = "futures-bufread"),
-    doc = "`futures-bufread` (*inactive*) | `futures::io::AsyncBufRead`"
+    not(feature = "futures-io"),
+    doc = "`futures-io` (*inactive*) | `futures::io::AsyncBufRead`, `futures::io::AsyncWrite`"
+)]
+#![cfg_attr(
+    feature = "futures-bufread",
+    doc = "`futures-bufread` | (*deprecated*, use `futures-io`)"
 )]
 #![cfg_attr(
     feature = "futures-write",
-    doc = "[`futures-write`](crate::futures::write) | [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
-)]
-#![cfg_attr(
-    not(feature = "futures-write"),
-    doc = "`futures-write` (*inactive*) | `futures::io::AsyncWrite`"
+    doc = "`futures-write` | (*deprecated*, use `futures-io`)"
 )]
 #![cfg_attr(
     feature = "stream",
@@ -52,6 +52,14 @@
 #![cfg_attr(
     not(feature = "stream"),
     doc = "`stream` (*inactive*) | `futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>`"
+)]
+#![cfg_attr(
+    feature = "tokio-02",
+    doc = "[`tokio-02`](crate::tokio_02) | [`tokio::io::AsyncBufRead`](::tokio_02::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio_02::io::AsyncWrite)"
+)]
+#![cfg_attr(
+    not(feature = "tokio-02"),
+    doc = "`tokio-02` (*inactive*) | `tokio::io::AsyncBufRead`, `tokio::io::AsyncWrite`"
 )]
 //!
 
@@ -142,11 +150,15 @@
 mod macros;
 mod codec;
 
-#[cfg(any(feature = "futures-bufread", feature = "futures-write"))]
+#[cfg(feature = "futures-io")]
+#[cfg_attr(docsrs, doc(cfg(feature = "futures-io")))]
 pub mod futures;
 #[cfg(feature = "stream")]
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
+#[cfg(feature = "tokio-02")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio-02")))]
+pub mod tokio_02;
 
 mod unshared;
 mod util;

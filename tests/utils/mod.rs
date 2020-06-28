@@ -1,5 +1,8 @@
 #![allow(dead_code, unused_macros)] // Different tests use a different subset of functions
 
+#[cfg(feature = "tokio-02")]
+mod tokio_02_ext;
+#[cfg(feature = "futures-io")]
 mod track_closed;
 
 use proptest_derive::Arbitrary;
@@ -32,7 +35,7 @@ impl InputStream {
         .interleave_pending()
     }
 
-    #[cfg(feature = "futures-bufread")]
+    #[cfg(feature = "futures-io")]
     pub fn reader(&self) -> impl futures::io::AsyncBufRead {
         use futures::stream::TryStreamExt;
         use futures_test::stream::StreamTestExt;
@@ -48,6 +51,26 @@ impl InputStream {
         )
         .interleave_pending()
         .into_async_read()
+    }
+
+    #[cfg(feature = "tokio-02")]
+    pub fn tokio_reader(&self) -> impl tokio_02::io::AsyncBufRead {
+        use bytes::Bytes;
+        use futures_test::stream::StreamTestExt;
+        // TODO: By using the stream here we ensure that each chunk will require a separate
+        // read/poll_fill_buf call to process to help test reading multiple chunks.
+        tokio_02::io::stream_reader(
+            futures::stream::iter(
+                self.0
+                    .clone()
+                    .into_iter()
+                    .map(Bytes::from)
+                    .flat_map(|bytes| vec![Bytes::new(), bytes])
+                    .chain(Some(Bytes::new()))
+                    .map(Ok),
+            )
+            .interleave_pending(),
+        )
     }
 
     pub fn bytes(&self) -> Vec<u8> {
@@ -75,22 +98,21 @@ pub mod prelude {
     pub use async_compression::Level;
     #[cfg(feature = "stream")]
     pub use bytes::Bytes;
+    #[cfg(feature = "futures-io")]
+    pub use futures::io::{AsyncBufRead, AsyncRead, AsyncWrite};
+    #[cfg(feature = "stream")]
+    pub use futures::stream::{self, Stream};
     pub use futures::{
         executor::{block_on, block_on_stream},
-        io::{
-            copy_buf, AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite,
-            AsyncWriteExt, BufReader, Cursor,
-        },
         pin_mut,
-        stream::{self, Stream, TryStreamExt},
-    };
-    pub use futures_test::{
-        io::{AsyncReadTestExt, AsyncWriteTestExt},
-        stream::StreamTestExt,
     };
     pub use std::{
         io::{self, Read},
         pin::Pin,
+    };
+    #[cfg(feature = "tokio-02")]
+    pub use tokio_02::io::{
+        AsyncBufRead as TokioBufRead, AsyncRead as TokioRead, AsyncWrite as TokioWrite,
     };
 
     pub fn read_to_vec(mut read: impl Read) -> Vec<u8> {
@@ -99,19 +121,23 @@ pub mod prelude {
         output
     }
 
-    #[cfg(feature = "futures-bufread")]
+    #[cfg(feature = "futures-io")]
     pub fn async_read_to_vec(read: impl AsyncRead) -> Vec<u8> {
         // TODO: https://github.com/rust-lang-nursery/futures-rs/issues/1510
         // All current test cases are < 100kB
-        let mut output = Cursor::new(vec![0; 102_400]);
+        let mut output = futures::io::Cursor::new(vec![0; 102_400]);
         pin_mut!(read);
-        let len = block_on(copy_buf(BufReader::with_capacity(2, read), &mut output)).unwrap();
+        let len = block_on(futures::io::copy_buf(
+            futures::io::BufReader::with_capacity(2, read),
+            &mut output,
+        ))
+        .unwrap();
         let mut output = output.into_inner();
         output.truncate(len as usize);
         output
     }
 
-    #[cfg(feature = "futures-write")]
+    #[cfg(feature = "futures-io")]
     pub fn async_write_to_vec(
         input: &[Vec<u8>],
         create_writer: impl for<'a> FnOnce(
@@ -119,14 +145,17 @@ pub mod prelude {
         ) -> Pin<Box<dyn AsyncWrite + 'a>>,
         limit: usize,
     ) -> Vec<u8> {
-        use crate::utils::track_closed::TrackClosedExt as _;
+        use crate::utils::track_closed::TrackClosed;
+        use futures::io::AsyncWriteExt as _;
+        use futures_test::io::AsyncWriteTestExt as _;
 
         let mut output = Vec::new();
         {
-            let mut test_writer = (&mut output)
-                .limited_write(limit)
-                .interleave_pending_write()
-                .track_closed();
+            let mut test_writer = TrackClosed::new(
+                (&mut output)
+                    .limited_write(limit)
+                    .interleave_pending_write(),
+            );
             {
                 let mut writer = create_writer(&mut test_writer);
                 for chunk in input {
@@ -147,6 +176,52 @@ pub mod prelude {
             .map(Result::unwrap)
             .flatten()
             .collect()
+    }
+
+    #[cfg(feature = "tokio-02")]
+    pub fn tokio_read_to_vec(read: impl TokioRead) -> Vec<u8> {
+        let mut output = std::io::Cursor::new(vec![0; 102_400]);
+        pin_mut!(read);
+        let len = block_on(crate::utils::tokio_02_ext::copy_buf(
+            tokio_02::io::BufReader::with_capacity(2, read),
+            &mut output,
+        ))
+        .unwrap();
+        let mut output = output.into_inner();
+        output.truncate(len as usize);
+        output
+    }
+
+    #[cfg(feature = "tokio-02")]
+    pub fn tokio_write_to_vec(
+        input: &[Vec<u8>],
+        create_writer: impl for<'a> FnOnce(
+            &'a mut (dyn TokioWrite + Unpin),
+        ) -> Pin<Box<dyn TokioWrite + 'a>>,
+        limit: usize,
+    ) -> Vec<u8> {
+        use crate::utils::tokio_02_ext::AsyncWriteTestExt;
+        use crate::utils::track_closed::TrackClosed;
+        use tokio_02::io::AsyncWriteExt as _;
+
+        let mut output = std::io::Cursor::new(Vec::new());
+        {
+            let mut test_writer = TrackClosed::new(
+                (&mut output)
+                    .limited_write(limit)
+                    .interleave_pending_write(),
+            );
+            {
+                let mut writer = create_writer(&mut test_writer);
+                for chunk in input {
+                    block_on(writer.write_all(chunk)).unwrap();
+                    block_on(writer.flush()).unwrap();
+                }
+                block_on(writer.shutdown()).unwrap();
+            }
+            assert!(test_writer.is_closed());
+        }
+        output.into_inner()
     }
 }
 
@@ -173,8 +248,8 @@ macro_rules! algos {
                     }
                 }
 
+                #[cfg(feature = "futures-io")]
                 pub mod futures {
-                    #[cfg(feature = "futures-bufread")]
                     pub mod bufread {
                         use crate::utils::prelude::*;
                         pub use async_compression::futures::bufread::{
@@ -192,7 +267,6 @@ macro_rules! algos {
                         }
                     }
 
-                    #[cfg(feature = "futures-write")]
                     pub mod write {
                         use crate::utils::prelude::*;
                         pub use async_compression::futures::write::{
@@ -209,6 +283,45 @@ macro_rules! algos {
 
                         pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
                             async_write_to_vec(input, |input| Box::pin(Decoder::new(input)), limit)
+                        }
+                    }
+                }
+
+                #[cfg(feature = "tokio-02")]
+                pub mod tokio_02 {
+                    pub mod bufread {
+                        use crate::utils::prelude::*;
+                        pub use async_compression::tokio_02::bufread::{
+                            $decoder as Decoder, $encoder as Encoder,
+                        };
+
+                        pub fn compress(input: impl TokioBufRead) -> Vec<u8> {
+                            pin_mut!(input);
+                            tokio_read_to_vec(Encoder::with_quality(input, Level::Fastest))
+                        }
+
+                        pub fn decompress(input: impl TokioBufRead) -> Vec<u8> {
+                            pin_mut!(input);
+                            tokio_read_to_vec(Decoder::new(input))
+                        }
+                    }
+
+                    pub mod write {
+                        use crate::utils::prelude::*;
+                        pub use async_compression::tokio_02::write::{
+                            $decoder as Decoder, $encoder as Encoder,
+                        };
+
+                        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+                            tokio_write_to_vec(
+                                input,
+                                |input| Box::pin(Encoder::with_quality(input, Level::Fastest)),
+                                limit,
+                            )
+                        }
+
+                        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+                            tokio_write_to_vec(input, |input| Box::pin(Decoder::new(input)), limit)
                         }
                     }
                 }
@@ -599,8 +712,8 @@ macro_rules! test_cases {
                 }
             }
 
+            #[cfg(feature = "futures-io")]
             mod futures {
-                #[cfg(feature = "futures-bufread")]
                 mod bufread {
                     mod compress {
                         use crate::utils::{self, prelude::*};
@@ -806,7 +919,6 @@ macro_rules! test_cases {
                     }
                 }
 
-                #[cfg(feature = "futures-write")]
                 mod write {
                     mod compress {
                         use crate::utils::{self, prelude::*};
@@ -1021,6 +1133,445 @@ macro_rules! test_cases {
                                 compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>(),
                             );
                             let output = utils::$variant::futures::write::decompress(
+                                stream.as_ref(),
+                                65_536,
+                            );
+
+                            assert_eq!(output, input);
+                        }
+                    }
+                }
+            }
+
+            #[cfg(feature = "tokio-02")]
+            mod tokio_02 {
+                mod bufread {
+                    mod compress {
+                        use crate::utils::{self, prelude::*};
+                        use std::iter::FromIterator;
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn empty() {
+                            let mut input: &[u8] = &[];
+                            let compressed =
+                                utils::$variant::tokio_02::bufread::compress(&mut input);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn empty_chunk() {
+                            let input = utils::InputStream::from(vec![vec![]]);
+
+                            let compressed =
+                                utils::$variant::tokio_02::bufread::compress(input.tokio_reader());
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, input.bytes());
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn short() {
+                            let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                            let compressed =
+                                utils::$variant::tokio_02::bufread::compress(input.tokio_reader());
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn long() {
+                            let input = vec![
+                                Vec::from_iter((0..32_768).map(|_| rand::random())),
+                                Vec::from_iter((0..32_768).map(|_| rand::random())),
+                            ];
+                            let input = utils::InputStream::from(input);
+
+                            let compressed =
+                                utils::$variant::tokio_02::bufread::compress(input.tokio_reader());
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, input.bytes());
+                        }
+
+                        #[test]
+                        fn with_level_0() {
+                            let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                            let encoder = utils::$variant::tokio_02::bufread::Encoder::with_quality(
+                                input.tokio_reader(),
+                                Level::Precise(0),
+                            );
+                            let compressed = tokio_read_to_vec(encoder);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        fn with_level_max() {
+                            let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                            let encoder = utils::$variant::tokio_02::bufread::Encoder::with_quality(
+                                input.tokio_reader(),
+                                Level::Precise(u32::max_value()),
+                            );
+                            let compressed = tokio_read_to_vec(encoder);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+                    }
+
+                    mod decompress {
+                        use crate::utils::{self, prelude::*};
+                        use std::iter::FromIterator;
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn empty() {
+                            let compressed = utils::$variant::sync::compress(&[]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let output = utils::$variant::tokio_02::bufread::decompress(
+                                stream.tokio_reader(),
+                            );
+
+                            assert_eq!(output, &[][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn zeros() {
+                            let compressed = utils::$variant::sync::compress(&[0; 10]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let output = utils::$variant::tokio_02::bufread::decompress(
+                                stream.tokio_reader(),
+                            );
+
+                            assert_eq!(output, &[0; 10][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn short() {
+                            let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let output = utils::$variant::tokio_02::bufread::decompress(
+                                stream.tokio_reader(),
+                            );
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn short_chunks() {
+                            let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                            let stream = utils::InputStream::from(
+                                compressed.chunks(2).map(Vec::from).collect::<Vec<_>>(),
+                            );
+                            let output = utils::$variant::tokio_02::bufread::decompress(
+                                stream.tokio_reader(),
+                            );
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn trailer() {
+                            let mut compressed =
+                                utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                            compressed.extend_from_slice(&[7, 8, 9, 10]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let mut reader = stream.tokio_reader();
+                            let output =
+                                utils::$variant::tokio_02::bufread::decompress(&mut reader);
+                            let trailer = tokio_read_to_vec(reader);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                            assert_eq!(trailer, &[7, 8, 9, 10][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn long() {
+                            let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                            let compressed = utils::$variant::sync::compress(&input);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let output = utils::$variant::tokio_02::bufread::decompress(
+                                stream.tokio_reader(),
+                            );
+
+                            assert_eq!(output, input);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn long_chunks() {
+                            let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                            let compressed = utils::$variant::sync::compress(&input);
+
+                            let stream = utils::InputStream::from(
+                                compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>(),
+                            );
+                            let output = utils::$variant::tokio_02::bufread::decompress(
+                                stream.tokio_reader(),
+                            );
+
+                            assert_eq!(output, input);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn multiple_members() {
+                            let compressed = [
+                                utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]),
+                                utils::$variant::sync::compress(&[6, 5, 4, 3, 2, 1]),
+                            ]
+                            .join(&[][..]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+
+                            let mut decoder = utils::$variant::tokio_02::bufread::Decoder::new(
+                                stream.tokio_reader(),
+                            );
+                            decoder.multiple_members(true);
+                            let output = utils::prelude::tokio_read_to_vec(decoder);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1][..]);
+                        }
+                    }
+                }
+
+                mod write {
+                    mod compress {
+                        use crate::utils::{self, prelude::*};
+                        use std::iter::FromIterator;
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn empty() {
+                            let input = utils::InputStream::from(vec![]);
+                            let compressed =
+                                utils::$variant::tokio_02::write::compress(input.as_ref(), 65_536);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn empty_chunk() {
+                            let input = utils::InputStream::from(vec![vec![]]);
+
+                            let compressed =
+                                utils::$variant::tokio_02::write::compress(input.as_ref(), 65_536);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, input.bytes());
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn short() {
+                            let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                            let compressed =
+                                utils::$variant::tokio_02::write::compress(input.as_ref(), 65_536);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn short_chunk_output() {
+                            let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                            let compressed =
+                                utils::$variant::tokio_02::write::compress(input.as_ref(), 2);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn long() {
+                            let input = vec![
+                                Vec::from_iter((0..32_768).map(|_| rand::random())),
+                                Vec::from_iter((0..32_768).map(|_| rand::random())),
+                            ];
+                            let input = utils::InputStream::from(input);
+
+                            let compressed =
+                                utils::$variant::tokio_02::write::compress(input.as_ref(), 65_536);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, input.bytes());
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn long_chunk_output() {
+                            let input = vec![
+                                Vec::from_iter((0..32_768).map(|_| rand::random())),
+                                Vec::from_iter((0..32_768).map(|_| rand::random())),
+                            ];
+                            let input = utils::InputStream::from(input);
+
+                            let compressed =
+                                utils::$variant::tokio_02::write::compress(input.as_ref(), 20);
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, input.bytes());
+                        }
+
+                        #[test]
+                        fn with_level_0() {
+                            let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                            let compressed = tokio_write_to_vec(
+                                input.as_ref(),
+                                |input| {
+                                    Box::pin(
+                                        utils::$variant::tokio_02::write::Encoder::with_quality(
+                                            input,
+                                            Level::Precise(0),
+                                        ),
+                                    )
+                                },
+                                65_536,
+                            );
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        fn with_level_max() {
+                            let input = utils::InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                            let compressed = tokio_write_to_vec(
+                                input.as_ref(),
+                                |input| {
+                                    Box::pin(
+                                        utils::$variant::tokio_02::write::Encoder::with_quality(
+                                            input,
+                                            Level::Precise(u32::max_value()),
+                                        ),
+                                    )
+                                },
+                                65_536,
+                            );
+                            let output = utils::$variant::sync::decompress(&compressed);
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+                    }
+
+                    mod decompress {
+                        use crate::utils;
+                        use std::iter::FromIterator;
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn empty() {
+                            let compressed = utils::$variant::sync::compress(&[]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let output = utils::$variant::tokio_02::write::decompress(
+                                stream.as_ref(),
+                                65_536,
+                            );
+
+                            assert_eq!(output, &[][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn zeros() {
+                            let compressed = utils::$variant::sync::compress(&[0; 10]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let output = utils::$variant::tokio_02::write::decompress(
+                                stream.as_ref(),
+                                65_536,
+                            );
+
+                            assert_eq!(output, &[0; 10][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn short() {
+                            let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let output = utils::$variant::tokio_02::write::decompress(
+                                stream.as_ref(),
+                                65_536,
+                            );
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn short_chunks() {
+                            let compressed = utils::$variant::sync::compress(&[1, 2, 3, 4, 5, 6]);
+
+                            let stream = utils::InputStream::from(
+                                compressed.chunks(2).map(Vec::from).collect::<Vec<_>>(),
+                            );
+                            let output = utils::$variant::tokio_02::write::decompress(
+                                stream.as_ref(),
+                                65_536,
+                            );
+
+                            assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn long() {
+                            let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                            let compressed = utils::$variant::sync::compress(&input);
+
+                            let stream = utils::InputStream::from(vec![compressed]);
+                            let output = utils::$variant::tokio_02::write::decompress(
+                                stream.as_ref(),
+                                65_536,
+                            );
+
+                            assert_eq!(output, input);
+                        }
+
+                        #[test]
+                        #[ntest::timeout(1000)]
+                        fn long_chunks() {
+                            let input = Vec::from_iter((0..65_536).map(|_| rand::random()));
+                            let compressed = utils::$variant::sync::compress(&input);
+
+                            let stream = utils::InputStream::from(
+                                compressed.chunks(1024).map(Vec::from).collect::<Vec<_>>(),
+                            );
+                            let output = utils::$variant::tokio_02::write::decompress(
                                 stream.as_ref(),
                                 65_536,
                             );

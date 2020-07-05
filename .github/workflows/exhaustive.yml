@@ -27,6 +27,37 @@ jobs:
         command: test
         args: --all --locked --all-features
 
+  min-versions:
+    name: cargo test --shallow-minimal-versions
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: nightly
+    - name: Update to shallow minimal versions
+      run:
+        cargo update $(
+          cargo metadata --all-features --format-version 1
+            | jq -r '
+              . as $root
+              | .resolve.nodes[]
+              | select(.id == $root.resolve.root)
+              | .deps[].pkg
+              | . as $dep
+              | $root.packages[]
+              | select(.id == $dep)
+              | "-p", "\(.name):\(.version)"
+            '
+        ) -Z minimal-versions
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: stable
+    - uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --workspace --locked --all-features
+
   check-features:
     name: cargo hack check --feature-powerset
     runs-on: ubuntu-latest

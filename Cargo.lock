@@ -135,9 +135,9 @@ dependencies = [
 
 [[package]]
 name = "bzip2"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42b7c3cbf0fa9c1b82308d57191728ca0256cb821220f4e2fd410a72ade26e3b"
+checksum = "275d84fe348b838dc49477d39770682839b3e73e21a3eadc07b12924f1a9fcbe"
 dependencies = [
  "bzip2-sys",
  "libc",

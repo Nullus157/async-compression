@@ -355,7 +355,7 @@ algos! {
 
             pub fn compress(bytes: &[u8]) -> Vec<u8> {
                 use bzip2::{bufread::BzEncoder, Compression};
-                read_to_vec(BzEncoder::new(bytes, Compression::Fastest))
+                read_to_vec(BzEncoder::new(bytes, Compression::fast()))
             }
 
             pub fn decompress(bytes: &[u8]) -> Vec<u8> {

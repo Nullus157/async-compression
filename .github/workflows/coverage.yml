@@ -24,8 +24,8 @@ jobs:
 
 on:
   push:
-    branches: [master]
+    branches: [prīmum]
   pull_request:
-    branches: [master]
+    branches: [prīmum]
   schedule:
   - cron: '0 0 * * 5'

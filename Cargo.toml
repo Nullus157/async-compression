@@ -61,7 +61,7 @@ futures-test = "0.3.5"
 ntest = "0.3.3"
 timebomb = "0.1.2"
 bytes = "0.5.0"
-tokio-02 = { package = "tokio", version = "0.2.21", default-features = false, features = ["io-util", "stream"] }
+tokio-02 = { package = "tokio", version = "0.2.21", default-features = false, features = ["io-util", "stream", "macros", "io-std"] }
 tokio-03 = { package = "tokio", version = "0.3.0", default-features = false, features = ["io-util", "stream"] }
 tokio-util = { version = "0.4.0", default-features = false, features = ["io"] }
 
@@ -96,3 +96,11 @@ required-features = ["zlib"]
 [[test]]
 name = "zstd"
 required-features = ["zstd"]
+
+[[example]]
+name = "zlib_tokio_02_write"
+required-features = ["zlib", "tokio-02"]
+
+[[example]]
+name = "zstd_gzip"
+required-features = ["zstd", "gzip", "tokio-02"]

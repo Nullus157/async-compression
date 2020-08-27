@@ -26,15 +26,15 @@ pin_project! {
     }
 }
 
-impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
-    pub fn new(reader: R, encoder: E) -> Self {
-        Self {
-            reader,
-            encoder,
-            state: State::Encoding,
-        }
+pub fn new<R: AsyncBufRead, E: Encode>(reader: R, encoder: E) -> Encoder<R, E> {
+    Encoder {
+        reader,
+        encoder,
+        state: State::Encoding,
     }
+}
 
+impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
     pub fn get_ref(&self) -> &R {
         &self.reader
     }

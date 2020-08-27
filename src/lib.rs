@@ -145,6 +145,7 @@
     missing_debug_implementations
 )]
 #![cfg_attr(not(all), allow(unused))]
+#![feature(type_alias_impl_trait, generators)]
 
 #[macro_use]
 mod macros;

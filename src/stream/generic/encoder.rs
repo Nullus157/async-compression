@@ -31,17 +31,20 @@ pin_project! {
     }
 }
 
-impl<S: Stream<Item = Result<Bytes>>, E: Encode> Encoder<S, E> {
-    pub(crate) fn new(stream: S, encoder: E) -> Self {
-        Self {
-            stream,
-            encoder,
-            state: State::Reading,
-            input: Bytes::new(),
-            output: BytesMut::new(),
-        }
+pub(crate) fn new<S: Stream<Item = Result<Bytes>>, E: Encode>(
+    stream: S,
+    encoder: E,
+) -> Encoder<S, E> {
+    Encoder {
+        stream,
+        encoder,
+        state: State::Reading,
+        input: Bytes::new(),
+        output: BytesMut::new(),
     }
+}
 
+impl<S: Stream<Item = Result<Bytes>>, E: Encode> Encoder<S, E> {
     pub(crate) fn get_ref(&self) -> &S {
         &self.stream
     }

@@ -19,37 +19,6 @@ macro_rules! encoder {
                 ///
                 $($constructor)*
             )*
-
-            /// Acquires a reference to the underlying reader that this encoder is wrapping.
-            pub fn get_ref(&self) -> &$inner {
-                self.inner.get_ref()
-            }
-
-            /// Acquires a mutable reference to the underlying reader that this encoder is
-            /// wrapping.
-            ///
-            /// Note that care must be taken to avoid tampering with the state of the reader which
-            /// may otherwise confuse this encoder.
-            pub fn get_mut(&mut self) -> &mut $inner {
-                self.inner.get_mut()
-            }
-
-            /// Acquires a pinned mutable reference to the underlying reader that this encoder is
-            /// wrapping.
-            ///
-            /// Note that care must be taken to avoid tampering with the state of the reader which
-            /// may otherwise confuse this encoder.
-            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut $inner> {
-                self.project().inner.get_pin_mut()
-            }
-
-            /// Consumes this encoder returning the underlying reader.
-            ///
-            /// Note that this may discard internal state of this encoder, so care should be taken
-            /// to avoid losing resources when this is called.
-            pub fn into_inner(self) -> $inner {
-                self.inner.into_inner()
-            }
         }
 
         impl<$inner: futures_io::AsyncBufRead> futures_io::AsyncRead for $name<$inner> {

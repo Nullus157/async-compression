@@ -1,4 +1,4 @@
 mod decoder;
-mod encoder;
+pub mod encoder;
 
 pub use self::{decoder::Decoder, encoder::Encoder};

@@ -25,6 +25,7 @@ dependencies = [
 name = "async-compression"
 version = "0.3.5"
 dependencies = [
+ "async-io-macros",
  "brotli",
  "bytes",
  "bzip2",
@@ -33,9 +34,11 @@ dependencies = [
  "futures-core",
  "futures-io",
  "futures-test",
+ "futures-util",
  "memchr",
  "ntest",
  "pin-project-lite",
+ "pin-utils",
  "proptest",
  "proptest-derive",
  "rand 0.7.3",
@@ -44,6 +47,27 @@ dependencies = [
  "xz2",
  "zstd",
  "zstd-safe",
+]
+
+[[package]]
+name = "async-io-macros"
+version = "0.1.0"
+source = "git+https://github.com/Nemo157/async-io-macros?branch=prīmum#5dd57d6cbe831bc7ca5b9462bfe0ed6c9c9a7979"
+dependencies = [
+ "async-io-macros-impl",
+ "futures-core",
+ "futures-io",
+ "pin-project-lite",
+]
+
+[[package]]
+name = "async-io-macros-impl"
+version = "0.1.0"
+source = "git+https://github.com/Nemo157/async-io-macros?branch=prīmum#5dd57d6cbe831bc7ca5b9462bfe0ed6c9c9a7979"
+dependencies = [
+ "proc-macro2 1.0.18",
+ "quote 1.0.7",
+ "syn 1.0.31",
 ]
 
 [[package]]

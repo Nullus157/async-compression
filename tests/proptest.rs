@@ -227,6 +227,86 @@ macro_rules! tests {
                         }
                     }
                 }
+
+                #[cfg(feature = "tokio-03")]
+                mod tokio_03 {
+                    mod bufread {
+                        use crate::utils::{algos::$name::{tokio_03::{read, bufread}, sync}, InputStream};
+                        use proptest::{prelude::{any, ProptestConfig}, proptest};
+                        use std::iter::FromIterator;
+
+                        proptest! {
+                            #[test]
+                            fn compress(ref input in any::<InputStream>()) {
+                                let compressed = bufread::compress(bufread::from(input));
+                                let output = sync::decompress(&compressed);
+                                assert_eq!(output, input.bytes());
+                            }
+
+                            #[test]
+                            fn decompress(
+                                ref bytes in any::<Vec<u8>>(),
+                                chunk_size in 1..20usize,
+                            ) {
+                                let compressed = sync::compress(bytes);
+                                let input = InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                                let output = bufread::decompress(bufread::from(&input));
+                                assert_eq!(&output, bytes);
+                            }
+                        }
+
+                        proptest! {
+                            #![proptest_config(ProptestConfig::with_cases(32))]
+
+                            #[test]
+                            fn compress_with_level(
+                                ref input in any::<InputStream>(),
+                                level in crate::any_level(),
+                            ) {
+                                let encoder = bufread::Encoder::with_quality(bufread::from(input), level);
+                                let compressed = read::to_vec(encoder);
+                                let output = sync::decompress(&compressed);
+                                assert_eq!(output, input.bytes());
+                            }
+                        }
+                    }
+
+                    mod write {
+                        use crate::utils::{algos::$name::{tokio_03::write, sync}, InputStream};
+                        use proptest::{prelude::{any, ProptestConfig}, proptest};
+
+                        proptest! {
+                            #[test]
+                            fn compress(
+                                ref input in any::<InputStream>(),
+                                limit in 1..20usize,
+                            ) {
+                                let compressed = write::compress(input.as_ref(), limit);
+                                let output = sync::decompress(&compressed);
+                                assert_eq!(output, input.bytes());
+                            }
+                        }
+
+                        proptest! {
+                            #![proptest_config(ProptestConfig::with_cases(32))]
+
+                            #[test]
+                            fn compress_with_level(
+                                ref input in any::<InputStream>(),
+                                limit in 1..20usize,
+                                level in crate::any_level(),
+                            ) {
+                                let compressed = write::to_vec(
+                                    input.as_ref(),
+                                    |input| Box::pin(write::Encoder::with_quality(input, level)),
+                                    limit,
+                                );
+                                let output = sync::decompress(&compressed);
+                                assert_eq!(output, input.bytes());
+                            }
+                        }
+                    }
+                }
             }
         )*
     }

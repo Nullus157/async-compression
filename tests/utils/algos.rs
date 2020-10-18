@@ -118,6 +118,54 @@ macro_rules! algos {
                         }
                     }
                 }
+
+                #[cfg(feature = "tokio-03")]
+                pub mod tokio_03 {
+                    pub mod read {
+                        pub use crate::utils::impls::tokio_03::read::to_vec;
+                    }
+
+                    pub mod bufread {
+                        pub use async_compression::tokio_03::bufread::{
+                            $decoder as Decoder, $encoder as Encoder,
+                        };
+                        pub use crate::utils::impls::tokio_03::bufread::from;
+
+                        use crate::utils::{Level, pin_mut};
+                        use tokio_03::io::AsyncBufRead;
+
+                        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+                            pin_mut!(input);
+                            super::read::to_vec(Encoder::with_quality(input, Level::Fastest))
+                        }
+
+                        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+                            pin_mut!(input);
+                            super::read::to_vec(Decoder::new(input))
+                        }
+                    }
+
+                    pub mod write {
+                        pub use async_compression::tokio_03::write::{
+                            $decoder as Decoder, $encoder as Encoder,
+                        };
+                        pub use crate::utils::impls::tokio_03::write::to_vec;
+
+                        use crate::utils::Level;
+
+                        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+                            to_vec(
+                                input,
+                                |input| Box::pin(Encoder::with_quality(input, Level::Fastest)),
+                                limit,
+                            )
+                        }
+
+                        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+                            to_vec(input, |input| Box::pin(Decoder::new(input)), limit)
+                        }
+                    }
+                }
             }
         )*
     }

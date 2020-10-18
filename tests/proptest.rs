@@ -25,15 +25,15 @@ macro_rules! tests {
             mod $name {
                 #[cfg(feature = "stream")]
                 mod stream {
-                    use crate::utils;
+                    use crate::utils::{algos::$name::{stream, sync}, InputStream};
                     use proptest::{prelude::{any, ProptestConfig}, proptest};
                     use std::iter::FromIterator;
 
                     proptest! {
                         #[test]
-                        fn compress(ref input in any::<utils::InputStream>()) {
-                            let compressed = utils::$name::stream::compress(input.stream());
-                            let output = utils::$name::sync::decompress(&compressed);
+                        fn compress(ref input in any::<InputStream>()) {
+                            let compressed = stream::compress(input.stream());
+                            let output = sync::decompress(&compressed);
                             assert_eq!(output, input.bytes());
                         }
 
@@ -42,9 +42,9 @@ macro_rules! tests {
                             ref input in any::<Vec<u8>>(),
                             chunk_size in 1..20usize,
                         ) {
-                            let compressed = utils::$name::sync::compress(input);
-                            let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-                            let output = utils::$name::stream::decompress(stream.stream());
+                            let compressed = sync::compress(input);
+                            let stream = InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                            let output = stream::decompress(stream.stream());
                             assert_eq!(&output, input);
                         }
                     }
@@ -54,12 +54,12 @@ macro_rules! tests {
 
                         #[test]
                         fn compress_with_level(
-                            ref input in any::<utils::InputStream>(),
+                            ref input in any::<InputStream>(),
                             level in crate::any_level(),
                         ) {
-                            let encoder = utils::$name::stream::Encoder::with_quality(input.stream(), level);
-                            let compressed = utils::prelude::stream_to_vec(encoder);
-                            let output = utils::$name::sync::decompress(&compressed);
+                            let encoder = stream::Encoder::with_quality(input.stream(), level);
+                            let compressed = stream::to_vec(encoder);
+                            let output = sync::decompress(&compressed);
                             assert_eq!(output, input.bytes());
                         }
                     }
@@ -68,27 +68,29 @@ macro_rules! tests {
                 #[cfg(feature = "futures-io")]
                 mod futures {
                     mod bufread {
-                        use crate::utils;
+                        use crate::utils::{algos::$name::{futures_io::{bufread, read}, sync}, InputStream};
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
                         use std::iter::FromIterator;
 
                         proptest! {
                             #[test]
-                            fn compress(ref input in any::<utils::InputStream>()) {
-                                let compressed = utils::$name::futures::bufread::compress(input.reader());
-                                let output = utils::$name::sync::decompress(&compressed);
+                            fn compress(ref input in any::<InputStream>()) {
+                                let reader = bufread::from(input);
+                                let compressed = bufread::compress(reader);
+                                let output = sync::decompress(&compressed);
                                 assert_eq!(output, input.bytes());
                             }
 
                             #[test]
                             fn decompress(
-                                ref input in any::<Vec<u8>>(),
+                                ref bytes in any::<Vec<u8>>(),
                                 chunk_size in 1..20usize,
                             ) {
-                                let compressed = utils::$name::sync::compress(input);
-                                let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-                                let output = utils::$name::futures::bufread::decompress(stream.reader());
-                                assert_eq!(&output, input);
+                                let compressed = sync::compress(bytes);
+                                let input = InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                                let reader = bufread::from(&input);
+                                let output = bufread::decompress(reader);
+                                assert_eq!(&output, bytes);
                             }
                         }
 
@@ -97,29 +99,30 @@ macro_rules! tests {
 
                             #[test]
                             fn compress_with_level(
-                                ref input in any::<utils::InputStream>(),
+                                ref input in any::<InputStream>(),
                                 level in crate::any_level(),
                             ) {
-                                let encoder = utils::$name::futures::bufread::Encoder::with_quality(input.reader(), level);
-                                let compressed = utils::prelude::async_read_to_vec(encoder);
-                                let output = utils::$name::sync::decompress(&compressed);
+                                let reader = bufread::from(input);
+                                let encoder = bufread::Encoder::with_quality(reader, level);
+                                let compressed = read::to_vec(encoder);
+                                let output = sync::decompress(&compressed);
                                 assert_eq!(output, input.bytes());
                             }
                         }
                     }
 
                     mod write {
-                        use crate::utils;
+                        use crate::utils::{algos::$name::{futures_io::write, sync}, InputStream};
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
 
                         proptest! {
                             #[test]
                             fn compress(
-                                ref input in any::<utils::InputStream>(),
+                                ref input in any::<InputStream>(),
                                 limit in 1..20usize,
                             ) {
-                                let compressed = utils::$name::futures::write::compress(input.as_ref(), limit);
-                                let output = utils::$name::sync::decompress(&compressed);
+                                let compressed = write::compress(input.as_ref(), limit);
+                                let output = sync::decompress(&compressed);
                                 assert_eq!(output, input.bytes());
                             }
                         }
@@ -129,16 +132,16 @@ macro_rules! tests {
 
                             #[test]
                             fn compress_with_level(
-                                ref input in any::<utils::InputStream>(),
+                                ref input in any::<InputStream>(),
                                 limit in 1..20usize,
                                 level in crate::any_level(),
                             ) {
-                                let compressed = utils::prelude::async_write_to_vec(
+                                let compressed = write::to_vec(
                                     input.as_ref(),
-                                    |input| Box::pin(utils::$name::futures::write::Encoder::with_quality(input, level)),
+                                    |input| Box::pin(write::Encoder::with_quality(input, level)),
                                     limit,
                                 );
-                                let output = utils::$name::sync::decompress(&compressed);
+                                let output = sync::decompress(&compressed);
                                 assert_eq!(output, input.bytes());
                             }
                         }
@@ -148,27 +151,27 @@ macro_rules! tests {
                 #[cfg(feature = "tokio-02")]
                 mod tokio_02 {
                     mod bufread {
-                        use crate::utils;
+                        use crate::utils::{algos::$name::{tokio_02::{read, bufread}, sync}, InputStream};
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
                         use std::iter::FromIterator;
 
                         proptest! {
                             #[test]
-                            fn compress(ref input in any::<utils::InputStream>()) {
-                                let compressed = utils::$name::tokio_02::bufread::compress(input.tokio_reader());
-                                let output = utils::$name::sync::decompress(&compressed);
+                            fn compress(ref input in any::<InputStream>()) {
+                                let compressed = bufread::compress(bufread::from(input));
+                                let output = sync::decompress(&compressed);
                                 assert_eq!(output, input.bytes());
                             }
 
                             #[test]
                             fn decompress(
-                                ref input in any::<Vec<u8>>(),
+                                ref bytes in any::<Vec<u8>>(),
                                 chunk_size in 1..20usize,
                             ) {
-                                let compressed = utils::$name::sync::compress(input);
-                                let stream = utils::InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-                                let output = utils::$name::tokio_02::bufread::decompress(stream.tokio_reader());
-                                assert_eq!(&output, input);
+                                let compressed = sync::compress(bytes);
+                                let input = InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
+                                let output = bufread::decompress(bufread::from(&input));
+                                assert_eq!(&output, bytes);
                             }
                         }
 
@@ -177,29 +180,29 @@ macro_rules! tests {
 
                             #[test]
                             fn compress_with_level(
-                                ref input in any::<utils::InputStream>(),
+                                ref input in any::<InputStream>(),
                                 level in crate::any_level(),
                             ) {
-                                let encoder = utils::$name::tokio_02::bufread::Encoder::with_quality(input.tokio_reader(), level);
-                                let compressed = utils::prelude::tokio_read_to_vec(encoder);
-                                let output = utils::$name::sync::decompress(&compressed);
+                                let encoder = bufread::Encoder::with_quality(bufread::from(input), level);
+                                let compressed = read::to_vec(encoder);
+                                let output = sync::decompress(&compressed);
                                 assert_eq!(output, input.bytes());
                             }
                         }
                     }
 
                     mod write {
-                        use crate::utils;
+                        use crate::utils::{algos::$name::{tokio_02::write, sync}, InputStream};
                         use proptest::{prelude::{any, ProptestConfig}, proptest};
 
                         proptest! {
                             #[test]
                             fn compress(
-                                ref input in any::<utils::InputStream>(),
+                                ref input in any::<InputStream>(),
                                 limit in 1..20usize,
                             ) {
-                                let compressed = utils::$name::tokio_02::write::compress(input.as_ref(), limit);
-                                let output = utils::$name::sync::decompress(&compressed);
+                                let compressed = write::compress(input.as_ref(), limit);
+                                let output = sync::decompress(&compressed);
                                 assert_eq!(output, input.bytes());
                             }
                         }
@@ -209,16 +212,16 @@ macro_rules! tests {
 
                             #[test]
                             fn compress_with_level(
-                                ref input in any::<utils::InputStream>(),
+                                ref input in any::<InputStream>(),
                                 limit in 1..20usize,
                                 level in crate::any_level(),
                             ) {
-                                let compressed = utils::prelude::tokio_write_to_vec(
+                                let compressed = write::to_vec(
                                     input.as_ref(),
-                                    |input| Box::pin(utils::$name::tokio_02::write::Encoder::with_quality(input, level)),
+                                    |input| Box::pin(write::Encoder::with_quality(input, level)),
                                     limit,
                                 );
-                                let output = utils::$name::sync::decompress(&compressed);
+                                let output = sync::decompress(&compressed);
                                 assert_eq!(output, input.bytes());
                             }
                         }

@@ -6,23 +6,32 @@ mod utils;
 
 test_cases!(xz);
 
+#[allow(unused)]
+use utils::{algos::xz::sync, InputStream};
+
+#[cfg(feature = "stream")]
+use utils::algos::xz::stream;
+
+#[cfg(feature = "futures-io")]
+use utils::algos::xz::futures_io::{bufread, read};
+
 #[test]
 #[ntest::timeout(1000)]
 #[cfg(feature = "stream")]
 fn stream_multiple_members_with_padding() {
     let compressed = [
-        utils::xz::sync::compress(&[1, 2, 3, 4, 5, 6]),
+        sync::compress(&[1, 2, 3, 4, 5, 6]),
         vec![0, 0, 0, 0],
-        utils::xz::sync::compress(&[6, 5, 4, 3, 2, 1]),
+        sync::compress(&[6, 5, 4, 3, 2, 1]),
         vec![0, 0, 0, 0],
     ]
     .join(&[][..]);
 
-    let stream = utils::InputStream::from(vec![compressed]);
+    let input = InputStream::from(vec![compressed]);
 
-    let mut decoder = utils::xz::stream::Decoder::new(stream.stream());
+    let mut decoder = stream::Decoder::new(input.stream());
     decoder.multiple_members(true);
-    let output = utils::prelude::stream_to_vec(decoder);
+    let output = stream::to_vec(decoder);
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1][..]);
 }
@@ -32,16 +41,16 @@ fn stream_multiple_members_with_padding() {
 #[cfg(feature = "stream")]
 fn stream_multiple_members_with_invalid_padding() {
     let compressed = [
-        utils::xz::sync::compress(&[1, 2, 3, 4, 5, 6]),
+        sync::compress(&[1, 2, 3, 4, 5, 6]),
         vec![0, 0, 0],
-        utils::xz::sync::compress(&[6, 5, 4, 3, 2, 1]),
+        sync::compress(&[6, 5, 4, 3, 2, 1]),
         vec![0, 0, 0, 0],
     ]
     .join(&[][..]);
 
-    let stream = utils::InputStream::from(vec![compressed]);
+    let input = InputStream::from(vec![compressed]);
 
-    let mut decoder = utils::xz::stream::Decoder::new(stream.stream());
+    let mut decoder = stream::Decoder::new(input.stream());
     decoder.multiple_members(true);
 
     assert!(block_on(decoder.next()).unwrap().is_err());
@@ -50,40 +59,40 @@ fn stream_multiple_members_with_invalid_padding() {
 
 #[test]
 #[ntest::timeout(1000)]
-#[cfg(feature = "futures-bufread")]
+#[cfg(feature = "futures-io")]
 fn bufread_multiple_members_with_padding() {
     let compressed = [
-        utils::xz::sync::compress(&[1, 2, 3, 4, 5, 6]),
+        sync::compress(&[1, 2, 3, 4, 5, 6]),
         vec![0, 0, 0, 0],
-        utils::xz::sync::compress(&[6, 5, 4, 3, 2, 1]),
+        sync::compress(&[6, 5, 4, 3, 2, 1]),
         vec![0, 0, 0, 0],
     ]
     .join(&[][..]);
 
-    let stream = utils::InputStream::from(vec![compressed]);
+    let input = InputStream::from(vec![compressed]);
 
-    let mut decoder = utils::xz::futures::bufread::Decoder::new(stream.reader());
+    let mut decoder = bufread::Decoder::new(bufread::from(&input));
     decoder.multiple_members(true);
-    let output = utils::prelude::async_read_to_vec(decoder);
+    let output = read::to_vec(decoder);
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 1][..]);
 }
 
 #[test]
 #[ntest::timeout(1000)]
-#[cfg(feature = "futures-bufread")]
+#[cfg(feature = "futures-io")]
 fn bufread_multiple_members_with_invalid_padding() {
     let compressed = [
-        utils::xz::sync::compress(&[1, 2, 3, 4, 5, 6]),
+        sync::compress(&[1, 2, 3, 4, 5, 6]),
         vec![0, 0, 0],
-        utils::xz::sync::compress(&[6, 5, 4, 3, 2, 1]),
+        sync::compress(&[6, 5, 4, 3, 2, 1]),
         vec![0, 0, 0, 0],
     ]
     .join(&[][..]);
 
-    let stream = utils::InputStream::from(vec![compressed]);
+    let input = InputStream::from(vec![compressed]);
 
-    let mut decoder = utils::xz::futures::bufread::Decoder::new(stream.reader());
+    let mut decoder = bufread::Decoder::new(bufread::from(&input));
     decoder.multiple_members(true);
 
     let mut output = Vec::new();

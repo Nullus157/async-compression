@@ -1,8 +1,9 @@
-use core::{
+#[cfg_attr(not(feature = "all-implementations"), allow(unused))]
+use std::{
+    io::Result,
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::Result;
 
 pub struct TrackClosed<W> {
     inner: W,

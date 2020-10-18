@@ -1,0 +1,42 @@
+
+[package]
+name = "async-compression-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.3"
+futures = "0.3.5"
+futures-test = "0.3.5"
+bytes = "0.5.0"
+
+[dependencies.async-compression]
+path = ".."
+features = ["brotli", "stream"]
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_target_1"
+path = "fuzz_targets/fuzz_target_1.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "brotli"
+path = "fuzz_targets/brotli.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "brotli_stream"
+path = "fuzz_targets/brotli_stream.rs"
+test = false
+doc = false

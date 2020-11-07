@@ -1062,6 +1062,7 @@ dependencies = [
  "futures-core",
  "memchr",
  "pin-project-lite",
+ "tokio-macros",
 ]
 
 [[package]]
@@ -1074,6 +1075,17 @@ dependencies = [
  "futures-core",
  "memchr",
  "pin-project-lite",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0c3acc6aa564495a0f2e1d59fab677cd7f81a19994cfc7f3ad0e64301560389"
+dependencies = [
+ "proc-macro2 1.0.18",
+ "quote 1.0.7",
+ "syn 1.0.31",
 ]
 
 [[package]]

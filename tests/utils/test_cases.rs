@@ -23,6 +23,17 @@ macro_rules! io_test_cases {
 
                     #[test]
                     #[ntest::timeout(1000)]
+                    fn to_full_output() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+                        let mut output = [];
+
+                        let encoder = bufread::Encoder::new(bufread::from(&input));
+                        let result = read::poll_read(encoder, &mut output);
+                        assert!(matches!(result, Ok(0)));
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
                     fn empty_chunk() {
                         let input = InputStream::from(vec![vec![]]);
 
@@ -104,6 +115,17 @@ macro_rules! io_test_cases {
                         let output = bufread::decompress(bufread::from(&input));
 
                         assert_eq!(output, &[][..]);
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
+                    fn to_full_output() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+                        let mut output = [];
+
+                        let decoder = bufread::Decoder::new(bufread::from(&input));
+                        let result = read::poll_read(decoder, &mut output);
+                        assert!(matches!(result, Ok(0)));
                     }
 
                     #[test]

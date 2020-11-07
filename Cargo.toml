@@ -1,6 +1,6 @@
 [package]
 name = "async-compression"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["Wim Looman <wim@nemo157.com>", "Allen Bui <fairingrey@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -19,7 +19,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 # groups
 default = []
 all = ["all-implementations", "all-algorithms"]
-all-implementations = ["futures-io", "stream", "tokio-02"]
+all-implementations = ["futures-io", "stream", "tokio-02", "tokio-03"]
 all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "zstd"]
 
 # implementations
@@ -50,6 +50,7 @@ libzstd = { package = "zstd", version = "0.5.0", optional = true, default-featur
 zstd-safe = { version = "2.0.0", optional = true, default-features = false }
 memchr = "2.2.1"
 tokio-02 = { package = "tokio", version = "0.2.21", optional = true, default-features = false }
+tokio-03 = { package = "tokio", version = "0.3.0", optional = true, default-features = false }
 
 [dev-dependencies]
 proptest = "0.9.4"
@@ -61,6 +62,8 @@ ntest = "0.3.3"
 timebomb = "0.1.2"
 bytes = "0.5.0"
 tokio-02 = { package = "tokio", version = "0.2.21", default-features = false, features = ["io-util", "stream"] }
+tokio-03 = { package = "tokio", version = "0.3.0", default-features = false, features = ["io-util", "stream"] }
+tokio-util = { version = "0.4.0", default-features = false, features = ["io"] }
 
 [[test]]
 name = "brotli"

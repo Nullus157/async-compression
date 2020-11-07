@@ -26,7 +26,7 @@ macro_rules! algos {
                 #[cfg(feature = "futures-io")]
                 pub mod futures_io {
                     pub mod read {
-                        pub use crate::utils::impls::futures_io::read::to_vec;
+                        pub use crate::utils::impls::futures_io::read::{to_vec, poll_read};
                     }
 
                     pub mod bufread {
@@ -74,7 +74,7 @@ macro_rules! algos {
                 #[cfg(feature = "tokio-02")]
                 pub mod tokio_02 {
                     pub mod read {
-                        pub use crate::utils::impls::tokio_02::read::to_vec;
+                        pub use crate::utils::impls::tokio_02::read::{to_vec, poll_read};
                     }
 
                     pub mod bufread {
@@ -122,7 +122,7 @@ macro_rules! algos {
                 #[cfg(feature = "tokio-03")]
                 pub mod tokio_03 {
                     pub mod read {
-                        pub use crate::utils::impls::tokio_03::read::to_vec;
+                        pub use crate::utils::impls::tokio_03::read::{to_vec, poll_read};
                     }
 
                     pub mod bufread {

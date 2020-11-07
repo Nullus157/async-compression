@@ -23,6 +23,17 @@ macro_rules! io_test_cases {
 
                     #[test]
                     #[ntest::timeout(1000)]
+                    fn to_full_output() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+                        let mut output = [];
+
+                        let encoder = bufread::Encoder::new(bufread::from(&input));
+                        let result = read::poll_read(encoder, &mut output);
+                        assert!(matches!(result, Ok(0)));
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
                     fn empty_chunk() {
                         let input = InputStream::from(vec![vec![]]);
 
@@ -55,6 +66,29 @@ macro_rules! io_test_cases {
                         let output = sync::decompress(&compressed);
 
                         assert_eq!(output, input.bytes());
+                    }
+
+                    #[test]
+                    fn with_level_best() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                        let encoder =
+                            bufread::Encoder::with_quality(bufread::from(&input), Level::Best);
+                        let compressed = read::to_vec(encoder);
+                        let output = sync::decompress(&compressed);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                    }
+
+                    #[test]
+                    fn with_level_default() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                        let encoder = bufread::Encoder::new(bufread::from(&input));
+                        let compressed = read::to_vec(encoder);
+                        let output = sync::decompress(&compressed);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
                     }
 
                     #[test]
@@ -104,6 +138,17 @@ macro_rules! io_test_cases {
                         let output = bufread::decompress(bufread::from(&input));
 
                         assert_eq!(output, &[][..]);
+                    }
+
+                    #[test]
+                    #[ntest::timeout(1000)]
+                    fn to_full_output() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+                        let mut output = [];
+
+                        let decoder = bufread::Decoder::new(bufread::from(&input));
+                        let result = read::poll_read(decoder, &mut output);
+                        assert!(matches!(result, Ok(0)));
                     }
 
                     #[test]
@@ -279,6 +324,34 @@ macro_rules! io_test_cases {
                         let output = sync::decompress(&compressed);
 
                         assert_eq!(output, input.bytes());
+                    }
+
+                    #[test]
+                    fn with_level_best() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                        let compressed = write::to_vec(
+                            input.as_ref(),
+                            |input| Box::pin(write::Encoder::with_quality(input, Level::Best)),
+                            65_536,
+                        );
+                        let output = sync::decompress(&compressed);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                    }
+
+                    #[test]
+                    fn with_level_default() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                        let compressed = write::to_vec(
+                            input.as_ref(),
+                            |input| Box::pin(write::Encoder::new(input)),
+                            65_536,
+                        );
+                        let output = sync::decompress(&compressed);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
                     }
 
                     #[test]
@@ -467,6 +540,28 @@ macro_rules! test_cases {
 
                         assert!(block_on(stream.next()).unwrap().is_err());
                         assert!(block_on(stream.next()).is_none());
+                    }
+
+                    #[test]
+                    fn with_level_best() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                        let encoder = stream::Encoder::with_quality(input.stream(), Level::Best);
+                        let compressed = stream::to_vec(encoder);
+                        let output = sync::decompress(&compressed);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+                    }
+
+                    #[test]
+                    fn with_level_default() {
+                        let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
+
+                        let encoder = stream::Encoder::new(input.stream());
+                        let compressed = stream::to_vec(encoder);
+                        let output = sync::decompress(&compressed);
+
+                        assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
                     }
 
                     #[test]

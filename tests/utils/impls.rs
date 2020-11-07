@@ -23,7 +23,7 @@ pub mod futures_io {
 
     pub mod read {
         use crate::utils::{block_on, pin_mut};
-        use futures::io::{copy_buf, AsyncRead, BufReader, Cursor};
+        use futures::io::{copy_buf, AsyncRead, AsyncReadExt, BufReader, Cursor};
 
         pub fn to_vec(read: impl AsyncRead) -> Vec<u8> {
             // TODO: https://github.com/rust-lang-nursery/futures-rs/issues/1510
@@ -34,6 +34,11 @@ pub mod futures_io {
             let mut output = output.into_inner();
             output.truncate(len as usize);
             output
+        }
+
+        pub fn poll_read(reader: impl AsyncRead, output: &mut [u8]) -> std::io::Result<usize> {
+            pin_mut!(reader);
+            block_on(reader.read(output))
         }
     }
 
@@ -102,7 +107,7 @@ pub mod tokio_02 {
     pub mod read {
         use crate::utils::{block_on, pin_mut, tokio_02_ext::copy_buf};
         use std::io::Cursor;
-        use tokio_02::io::{AsyncRead, BufReader};
+        use tokio_02::io::{AsyncRead, AsyncReadExt, BufReader};
 
         pub fn to_vec(read: impl AsyncRead) -> Vec<u8> {
             let mut output = Cursor::new(vec![0; 102_400]);
@@ -111,6 +116,11 @@ pub mod tokio_02 {
             let mut output = output.into_inner();
             output.truncate(len as usize);
             output
+        }
+
+        pub fn poll_read(reader: impl AsyncRead, output: &mut [u8]) -> std::io::Result<usize> {
+            pin_mut!(reader);
+            block_on(reader.read(output))
         }
     }
 
@@ -167,7 +177,7 @@ pub mod tokio_03 {
     pub mod read {
         use crate::utils::{block_on, pin_mut, tokio_03_ext::copy_buf};
         use std::io::Cursor;
-        use tokio_03::io::{AsyncRead, BufReader};
+        use tokio_03::io::{AsyncRead, AsyncReadExt, BufReader};
 
         pub fn to_vec(read: impl AsyncRead) -> Vec<u8> {
             let mut output = Cursor::new(vec![0; 102_400]);
@@ -176,6 +186,11 @@ pub mod tokio_03 {
             let mut output = output.into_inner();
             output.truncate(len as usize);
             output
+        }
+
+        pub fn poll_read(reader: impl AsyncRead, output: &mut [u8]) -> std::io::Result<usize> {
+            pin_mut!(reader);
+            block_on(reader.read(output))
         }
     }
 

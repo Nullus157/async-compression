@@ -53,17 +53,17 @@ tokio-02 = { package = "tokio", version = "0.2.21", optional = true, default-fea
 tokio-03 = { package = "tokio", version = "0.3.0", optional = true, default-features = false }
 
 [dev-dependencies]
-proptest = "0.9.4"
-proptest-derive = "0.1.2"
+proptest = "0.10.1"
+proptest-derive = "0.2.0"
 rand = "0.7.2"
 futures = "0.3.5"
 futures-test = "0.3.5"
-ntest = "0.3.3"
+ntest = "0.7.2"
 timebomb = "0.1.2"
-bytes = "0.5.0"
+bytes = "0.6.0"
 tokio-02 = { package = "tokio", version = "0.2.21", default-features = false, features = ["io-util", "stream", "macros", "io-std"] }
 tokio-03 = { package = "tokio", version = "0.3.0", default-features = false, features = ["io-util", "stream"] }
-tokio-util = { version = "0.4.0", default-features = false, features = ["io"] }
+tokio-util = { version = "0.5.0", default-features = false, features = ["io"] }
 
 [[test]]
 name = "brotli"

@@ -13,7 +13,7 @@ use utils::{algos::gzip::sync, InputStream};
 use utils::algos::gzip::stream;
 
 #[cfg(feature = "futures-io")]
-use utils::algos::gzip::futures_io::bufread;
+use utils::algos::gzip::futures::bufread;
 
 /// Splits the input bytes into the first 10 bytes, the rest and the last 8 bytes, taking apart the
 /// 3 parts of compressed gzip data.

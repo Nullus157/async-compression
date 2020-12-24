@@ -13,7 +13,7 @@ use utils::{algos::xz::sync, InputStream};
 use utils::algos::xz::stream;
 
 #[cfg(feature = "futures-io")]
-use utils::algos::xz::futures_io::{bufread, read};
+use utils::algos::xz::futures::{bufread, read};
 
 #[test]
 #[ntest::timeout(1000)]

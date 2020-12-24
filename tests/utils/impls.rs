@@ -9,13 +9,12 @@ pub mod sync {
 }
 
 #[cfg(feature = "futures-io")]
-pub mod futures_io {
+pub mod futures {
     pub mod bufread {
+        pub use futures::io::AsyncBufRead;
+
         use crate::utils::InputStream;
-        use futures::{
-            stream::{StreamExt as _, TryStreamExt as _},
-            AsyncBufRead,
-        };
+        use futures::stream::{StreamExt as _, TryStreamExt as _};
 
         pub fn from(input: &InputStream) -> impl AsyncBufRead {
             // By using the stream here we ensure that each chunk will require a separate
@@ -98,8 +97,10 @@ pub mod stream {
 #[cfg(feature = "tokio-02")]
 pub mod tokio_02 {
     pub mod bufread {
+        pub use tokio_02::io::AsyncBufRead;
+
         use crate::utils::InputStream;
-        use tokio_02::io::{stream_reader, AsyncBufRead};
+        use tokio_02::io::stream_reader;
 
         pub fn from(input: &InputStream) -> impl AsyncBufRead {
             // By using the stream here we ensure that each chunk will require a separate
@@ -168,7 +169,7 @@ pub mod tokio_02 {
 pub mod tokio_03 {
     pub mod bufread {
         use crate::utils::InputStream;
-        use tokio_03::io::AsyncBufRead;
+        pub use tokio_03::io::AsyncBufRead;
         use tokio_util_04::io::StreamReader;
 
         pub fn from(input: &InputStream) -> impl AsyncBufRead {

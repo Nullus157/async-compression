@@ -149,7 +149,7 @@ macro_rules! tests {
             }
 
             #[cfg(feature = "futures-io")]
-            io_tests!(futures_io, $variant);
+            io_tests!(futures, $variant);
 
             #[cfg(feature = "tokio-02")]
             io_tests!(tokio_02, $variant);

@@ -1,3 +1,53 @@
+macro_rules! io_algo {
+    ($impl:ident, $algo:ident($encoder:ident, $decoder:ident)) => {
+        pub mod $impl {
+            pub mod read {
+                pub use crate::utils::impls::$impl::read::{poll_read, to_vec};
+            }
+
+            pub mod bufread {
+                pub use crate::utils::impls::$impl::bufread::{from, AsyncBufRead};
+                pub use async_compression::$impl::bufread::{
+                    $decoder as Decoder, $encoder as Encoder,
+                };
+
+                use crate::utils::{pin_mut, Level};
+
+                pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+                    pin_mut!(input);
+                    super::read::to_vec(Encoder::with_quality(input, Level::Fastest))
+                }
+
+                pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+                    pin_mut!(input);
+                    super::read::to_vec(Decoder::new(input))
+                }
+            }
+
+            pub mod write {
+                pub use crate::utils::impls::$impl::write::to_vec;
+                pub use async_compression::$impl::write::{
+                    $decoder as Decoder, $encoder as Encoder,
+                };
+
+                use crate::utils::Level;
+
+                pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+                    to_vec(
+                        input,
+                        |input| Box::pin(Encoder::with_quality(input, Level::Fastest)),
+                        limit,
+                    )
+                }
+
+                pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+                    to_vec(input, |input| Box::pin(Decoder::new(input)), limit)
+                }
+            }
+        }
+    };
+}
+
 macro_rules! algos {
     ($(pub mod $name:ident($feat:literal, $encoder:ident, $decoder:ident) { pub mod sync { $($tt:tt)* } })*) => {
         $(
@@ -25,148 +75,13 @@ macro_rules! algos {
                 }
 
                 #[cfg(feature = "futures-io")]
-                pub mod futures_io {
-                    pub mod read {
-                        pub use crate::utils::impls::futures_io::read::{to_vec, poll_read};
-                    }
-
-                    pub mod bufread {
-                        pub use async_compression::futures::bufread::{
-                            $decoder as Decoder, $encoder as Encoder,
-                        };
-                        pub use crate::utils::impls::futures_io::bufread::from;
-
-                        use crate::utils::{Level, pin_mut};
-                        use futures::io::AsyncBufRead;
-
-                        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                            pin_mut!(input);
-                            super::read::to_vec(Encoder::with_quality(input, Level::Fastest))
-                        }
-
-                        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                            pin_mut!(input);
-                            super::read::to_vec(Decoder::new(input))
-                        }
-                    }
-
-                    pub mod write {
-                        pub use async_compression::futures::write::{
-                            $decoder as Decoder, $encoder as Encoder,
-                        };
-                        pub use crate::utils::impls::futures_io::write::to_vec;
-
-                        use crate::utils::Level;
-
-                        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                            to_vec(
-                                input,
-                                |input| Box::pin(Encoder::with_quality(input, Level::Fastest)),
-                                limit,
-                            )
-                        }
-
-                        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                            to_vec(input, |input| Box::pin(Decoder::new(input)), limit)
-                        }
-                    }
-                }
+                io_algo!(futures, $name($encoder, $decoder));
 
                 #[cfg(feature = "tokio-02")]
-                pub mod tokio_02 {
-                    pub mod read {
-                        pub use crate::utils::impls::tokio_02::read::{to_vec, poll_read};
-                    }
-
-                    pub mod bufread {
-                        pub use async_compression::tokio_02::bufread::{
-                            $decoder as Decoder, $encoder as Encoder,
-                        };
-                        pub use crate::utils::impls::tokio_02::bufread::from;
-
-                        use crate::utils::{Level, pin_mut};
-                        use tokio_02::io::AsyncBufRead;
-
-                        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                            pin_mut!(input);
-                            super::read::to_vec(Encoder::with_quality(input, Level::Fastest))
-                        }
-
-                        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                            pin_mut!(input);
-                            super::read::to_vec(Decoder::new(input))
-                        }
-                    }
-
-                    pub mod write {
-                        pub use async_compression::tokio_02::write::{
-                            $decoder as Decoder, $encoder as Encoder,
-                        };
-                        pub use crate::utils::impls::tokio_02::write::to_vec;
-
-                        use crate::utils::Level;
-
-                        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                            to_vec(
-                                input,
-                                |input| Box::pin(Encoder::with_quality(input, Level::Fastest)),
-                                limit,
-                            )
-                        }
-
-                        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                            to_vec(input, |input| Box::pin(Decoder::new(input)), limit)
-                        }
-                    }
-                }
+                io_algo!(tokio_02, $name($encoder, $decoder));
 
                 #[cfg(feature = "tokio-03")]
-                pub mod tokio_03 {
-                    pub mod read {
-                        pub use crate::utils::impls::tokio_03::read::{to_vec, poll_read};
-                    }
-
-                    pub mod bufread {
-                        pub use async_compression::tokio_03::bufread::{
-                            $decoder as Decoder, $encoder as Encoder,
-                        };
-                        pub use crate::utils::impls::tokio_03::bufread::from;
-
-                        use crate::utils::{Level, pin_mut};
-                        use tokio_03::io::AsyncBufRead;
-
-                        pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
-                            pin_mut!(input);
-                            super::read::to_vec(Encoder::with_quality(input, Level::Fastest))
-                        }
-
-                        pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
-                            pin_mut!(input);
-                            super::read::to_vec(Decoder::new(input))
-                        }
-                    }
-
-                    pub mod write {
-                        pub use async_compression::tokio_03::write::{
-                            $decoder as Decoder, $encoder as Encoder,
-                        };
-                        pub use crate::utils::impls::tokio_03::write::to_vec;
-
-                        use crate::utils::Level;
-
-                        pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                            to_vec(
-                                input,
-                                |input| Box::pin(Encoder::with_quality(input, Level::Fastest)),
-                                limit,
-                            )
-                        }
-
-                        pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                            to_vec(input, |input| Box::pin(Decoder::new(input)), limit)
-                        }
-                    }
-                }
+                io_algo!(tokio_03, $name($encoder, $decoder));
             }
         )*
     }

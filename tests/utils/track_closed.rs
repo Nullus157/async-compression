@@ -24,7 +24,7 @@ impl<W> TrackClosed<W> {
 }
 
 #[cfg(feature = "futures-io")]
-impl<W: futures_io::AsyncWrite + Unpin> futures_io::AsyncWrite for TrackClosed<W> {
+impl<W: futures::io::AsyncWrite + Unpin> futures::io::AsyncWrite for TrackClosed<W> {
     fn poll_write(mut self: Pin<&mut Self>, cx: &mut Context, buf: &[u8]) -> Poll<Result<usize>> {
         assert!(!self.closed);
         Pin::new(&mut self.inner).poll_write(cx, buf)

@@ -1,5 +1,5 @@
 //! Types which operate over [`Stream`](futures_core::stream::Stream)`<Item =
-//! `[`io::Result`](std::io::Result)`<`[`Bytes`](bytes::Bytes)`>>` streams, both encoders and
+//! `[`io::Result`](std::io::Result)`<`[`Bytes`](bytes_05::Bytes)`>>` streams, both encoders and
 //! decoders for various formats.
 //!
 //! The `Stream` is treated as a single byte-stream to be compressed/decompressed, each item is a

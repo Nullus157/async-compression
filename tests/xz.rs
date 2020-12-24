@@ -29,7 +29,7 @@ fn stream_multiple_members_with_padding() {
 
     let input = InputStream::from(vec![compressed]);
 
-    let mut decoder = stream::Decoder::new(input.stream());
+    let mut decoder = stream::Decoder::new(input.bytes_05_stream());
     decoder.multiple_members(true);
     let output = stream::to_vec(decoder);
 
@@ -50,7 +50,7 @@ fn stream_multiple_members_with_invalid_padding() {
 
     let input = InputStream::from(vec![compressed]);
 
-    let mut decoder = stream::Decoder::new(input.stream());
+    let mut decoder = stream::Decoder::new(input.bytes_05_stream());
     decoder.multiple_members(true);
 
     assert!(block_on(decoder.next()).unwrap().is_err());

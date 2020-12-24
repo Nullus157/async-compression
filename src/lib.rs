@@ -47,7 +47,7 @@
 )]
 #![cfg_attr(
     feature = "stream",
-    doc = "[`stream`] | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes::Bytes`]`>>`"
+    doc = "[`stream`] | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes_05::Bytes`]`>>`"
 )]
 #![cfg_attr(
     not(feature = "stream"),

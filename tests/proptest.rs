@@ -115,7 +115,7 @@ macro_rules! tests {
                 proptest! {
                     #[test]
                     fn compress(ref input in any::<InputStream>()) {
-                        let compressed = stream::compress(input.stream());
+                        let compressed = stream::compress(input.bytes_05_stream());
                         let output = sync::decompress(&compressed);
                         assert_eq!(output, input.bytes());
                     }
@@ -127,7 +127,7 @@ macro_rules! tests {
                     ) {
                         let compressed = sync::compress(input);
                         let stream = InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-                        let output = stream::decompress(stream.stream());
+                        let output = stream::decompress(stream.bytes_05_stream());
                         assert_eq!(&output, input);
                     }
                 }
@@ -140,7 +140,7 @@ macro_rules! tests {
                         ref input in any::<InputStream>(),
                         level in crate::any_level(),
                     ) {
-                        let encoder = stream::Encoder::with_quality(input.stream(), level);
+                        let encoder = stream::Encoder::with_quality(input.bytes_05_stream(), level);
                         let compressed = stream::to_vec(encoder);
                         let output = sync::decompress(&compressed);
                         assert_eq!(output, input.bytes());

@@ -9,8 +9,9 @@ macro_rules! algos {
                 pub mod stream {
                     pub use async_compression::stream::{$decoder as Decoder, $encoder as Encoder};
                     pub use crate::utils::impls::stream::to_vec;
+                    use bytes_05::Bytes;
 
-                    use crate::utils::{Level, pin_mut, Stream, Bytes, Result};
+                    use crate::utils::{Level, pin_mut, Stream, Result};
 
                     pub fn compress(input: impl Stream<Item = Result<Bytes>>) -> Vec<u8> {
                         pin_mut!(input);

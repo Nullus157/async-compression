@@ -36,7 +36,7 @@ fn gzip_stream_decompress_single_chunk() {
 
     // The entirety in one chunk
     let input = InputStream::from(vec![compressed]);
-    let output = stream::decompress(input.stream());
+    let output = stream::decompress(input.bytes_05_stream());
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
@@ -49,7 +49,7 @@ fn gzip_stream_decompress_segmented() {
 
     // Header, body and footer in separate chunks, similar to how `GzipStream` outputs it.
     let input = InputStream::from(vec![header, body, footer]);
-    let output = stream::decompress(input.stream());
+    let output = stream::decompress(input.bytes_05_stream());
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
@@ -70,7 +70,7 @@ fn gzip_stream_decompress_split() {
         Vec::from(&footer[4..8]),
     ]);
 
-    let output = stream::decompress(input.stream());
+    let output = stream::decompress(input.bytes_05_stream());
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
@@ -99,7 +99,7 @@ fn gzip_stream_decompress_split_mixed() {
         Vec::from(&footer[4..8]),
     ]);
 
-    let output = stream::decompress(input.stream());
+    let output = stream::decompress(input.bytes_05_stream());
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
@@ -129,7 +129,7 @@ fn gzip_stream_decompress_with_extra_header() {
     let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
 
     let input = InputStream::from(vec![bytes]);
-    let output = stream::decompress(input.stream());
+    let output = stream::decompress(input.bytes_05_stream());
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
@@ -141,7 +141,7 @@ fn gzip_stream_chunks_decompress_with_extra_header() {
     let bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
 
     let input = InputStream::from(bytes.chunks(2).map(Vec::from).collect::<Vec<_>>());
-    let output = stream::decompress(input.stream());
+    let output = stream::decompress(input.bytes_05_stream());
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }

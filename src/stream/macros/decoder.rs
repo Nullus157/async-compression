@@ -12,7 +12,7 @@ macro_rules! decoder {
             }
         }
 
-        impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>> $name<S> {
+        impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes_05::Bytes>>> $name<S> {
             /// Creates a new decoder which will read compressed data from the given stream and
             /// emit an uncompressed stream.
             pub fn new(stream: S) -> Self {
@@ -63,15 +63,15 @@ macro_rules! decoder {
             }
         }
 
-        impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes::Bytes>>>
+        impl<S: futures_core::stream::Stream<Item = std::io::Result<bytes_05::Bytes>>>
             futures_core::stream::Stream for $name<S>
         {
-            type Item = std::io::Result<bytes::Bytes>;
+            type Item = std::io::Result<bytes_05::Bytes>;
 
             fn poll_next(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,
-            ) -> std::task::Poll<Option<std::io::Result<bytes::Bytes>>> {
+            ) -> std::task::Poll<Option<std::io::Result<bytes_05::Bytes>>> {
                 self.project().inner.poll_next(cx)
             }
         }
@@ -79,7 +79,7 @@ macro_rules! decoder {
         const _: () = {
             fn _assert() {
                 use std::{pin::Pin, io::Result};
-                use bytes::Bytes;
+                use bytes_05::Bytes;
                 use futures_core::stream::Stream;
                 use crate::util::{_assert_send, _assert_sync};
 

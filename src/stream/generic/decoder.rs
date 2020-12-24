@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{codec::Decode, util::PartialBuffer};
-use bytes::{Buf, Bytes, BytesMut};
+use bytes_05::{Buf, Bytes, BytesMut};
 use futures_core::{ready, stream::Stream};
 use pin_project_lite::pin_project;
 

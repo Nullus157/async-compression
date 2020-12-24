@@ -499,7 +499,7 @@ macro_rules! test_cases {
                     fn empty_chunk() {
                         let input = InputStream::from(vec![vec![]]);
 
-                        let compressed = stream::compress(input.stream());
+                        let compressed = stream::compress(input.bytes_05_stream());
                         let output = sync::decompress(&compressed);
 
                         assert_eq!(output, input.bytes());
@@ -510,7 +510,7 @@ macro_rules! test_cases {
                     fn short() {
                         let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
-                        let compressed = stream::compress(input.stream());
+                        let compressed = stream::compress(input.bytes_05_stream());
                         let output = sync::decompress(&compressed);
 
                         assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
@@ -524,7 +524,7 @@ macro_rules! test_cases {
                             Vec::from_iter((0..32_768).map(|_| rand::random())),
                         ]);
 
-                        let compressed = stream::compress(input.stream());
+                        let compressed = stream::compress(input.bytes_05_stream());
                         let output = sync::decompress(&compressed);
 
                         assert_eq!(output, input.bytes());
@@ -546,7 +546,8 @@ macro_rules! test_cases {
                     fn with_level_best() {
                         let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
-                        let encoder = stream::Encoder::with_quality(input.stream(), Level::Best);
+                        let encoder =
+                            stream::Encoder::with_quality(input.bytes_05_stream(), Level::Best);
                         let compressed = stream::to_vec(encoder);
                         let output = sync::decompress(&compressed);
 
@@ -557,7 +558,7 @@ macro_rules! test_cases {
                     fn with_level_default() {
                         let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
-                        let encoder = stream::Encoder::new(input.stream());
+                        let encoder = stream::Encoder::new(input.bytes_05_stream());
                         let compressed = stream::to_vec(encoder);
                         let output = sync::decompress(&compressed);
 
@@ -568,8 +569,10 @@ macro_rules! test_cases {
                     fn with_level_0() {
                         let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
-                        let encoder =
-                            stream::Encoder::with_quality(input.stream(), Level::Precise(0));
+                        let encoder = stream::Encoder::with_quality(
+                            input.bytes_05_stream(),
+                            Level::Precise(0),
+                        );
                         let compressed = stream::to_vec(encoder);
                         let output = sync::decompress(&compressed);
 
@@ -581,7 +584,7 @@ macro_rules! test_cases {
                         let input = InputStream::from([[1, 2, 3], [4, 5, 6]]);
 
                         let encoder = stream::Encoder::with_quality(
-                            input.stream(),
+                            input.bytes_05_stream(),
                             Level::Precise(u32::max_value()),
                         );
                         let compressed = stream::to_vec(encoder);
@@ -596,6 +599,7 @@ macro_rules! test_cases {
                         algos::$variant::{stream, sync},
                         block_on, FromIterator, InputStream,
                     };
+                    use bytes_05::Bytes;
                     use futures::stream::StreamExt as _;
 
                     #[test]
@@ -604,7 +608,7 @@ macro_rules! test_cases {
                         let compressed = sync::compress(&[]);
 
                         let input = InputStream::from(vec![compressed]);
-                        let output = stream::decompress(input.stream());
+                        let output = stream::decompress(input.bytes_05_stream());
 
                         assert_eq!(output, &[][..]);
                     }
@@ -615,7 +619,7 @@ macro_rules! test_cases {
                         let compressed = sync::compress(&[1, 2, 3, 4, 5, 6]);
 
                         let input = InputStream::from(vec![compressed]);
-                        let output = stream::decompress(input.stream());
+                        let output = stream::decompress(input.bytes_05_stream());
 
                         assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
                     }
@@ -627,7 +631,7 @@ macro_rules! test_cases {
                         let compressed = sync::compress(&bytes);
 
                         let input = InputStream::from(vec![compressed]);
-                        let output = stream::decompress(input.stream());
+                        let output = stream::decompress(input.bytes_05_stream());
 
                         assert_eq!(output, bytes);
                     }
@@ -641,7 +645,7 @@ macro_rules! test_cases {
                         let input = InputStream::from(Vec::from_iter(
                             compressed.chunks(1024).map(Vec::from),
                         ));
-                        let output = stream::decompress(input.stream());
+                        let output = stream::decompress(input.bytes_05_stream());
 
                         assert_eq!(output, bytes);
                     }
@@ -657,7 +661,7 @@ macro_rules! test_cases {
 
                         let input = InputStream::from(vec![compressed, vec![7, 8, 9, 10]]);
 
-                        let mut stream = input.stream();
+                        let mut stream = input.bytes_05_stream();
                         let output = stream::decompress(&mut stream);
                         let trailer = stream::to_vec(stream);
 
@@ -676,7 +680,7 @@ macro_rules! test_cases {
 
                         let input = InputStream::from(vec![compressed]);
 
-                        let mut decoder = stream::Decoder::new(input.stream());
+                        let mut decoder = stream::Decoder::new(input.bytes_05_stream());
                         decoder.multiple_members(true);
                         let output = stream::to_vec(decoder);
 
@@ -695,7 +699,7 @@ macro_rules! test_cases {
                         let input =
                             InputStream::from(Vec::from_iter(compressed.chunks(1).map(Vec::from)));
 
-                        let mut decoder = stream::Decoder::new(input.stream());
+                        let mut decoder = stream::Decoder::new(input.bytes_05_stream());
                         decoder.multiple_members(true);
                         let output = stream::to_vec(decoder);
 
@@ -717,9 +721,8 @@ macro_rules! test_cases {
                     #[test]
                     #[ntest::timeout(1000)]
                     fn invalid_data() {
-                        let input = futures::stream::iter(vec![Ok(bytes::Bytes::from(
-                            &[1, 2, 3, 4, 5, 6][..],
-                        ))]);
+                        let input =
+                            futures::stream::iter(vec![Ok(Bytes::from(&[1, 2, 3, 4, 5, 6][..]))]);
 
                         let mut stream = stream::Decoder::new(input);
 
@@ -730,13 +733,16 @@ macro_rules! test_cases {
             }
 
             #[cfg(feature = "futures-io")]
-            io_test_cases!(futures_io, $variant);
+            io_test_cases!(futures, $variant);
 
             #[cfg(feature = "tokio-02")]
             io_test_cases!(tokio_02, $variant);
 
             #[cfg(feature = "tokio-03")]
             io_test_cases!(tokio_03, $variant);
+
+            #[cfg(feature = "tokio")]
+            io_test_cases!(tokio, $variant);
         }
     };
 }

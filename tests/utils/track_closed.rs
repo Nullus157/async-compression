@@ -24,7 +24,7 @@ impl<W> TrackClosed<W> {
 }
 
 #[cfg(feature = "futures-io")]
-impl<W: futures_io::AsyncWrite + Unpin> futures_io::AsyncWrite for TrackClosed<W> {
+impl<W: futures::io::AsyncWrite + Unpin> futures::io::AsyncWrite for TrackClosed<W> {
     fn poll_write(mut self: Pin<&mut Self>, cx: &mut Context, buf: &[u8]) -> Poll<Result<usize>> {
         assert!(!self.closed);
         Pin::new(&mut self.inner).poll_write(cx, buf)
@@ -82,6 +82,30 @@ impl<W: tokio_02::io::AsyncWrite + Unpin> tokio_02::io::AsyncWrite for TrackClos
 
 #[cfg(feature = "tokio-03")]
 impl<W: tokio_03::io::AsyncWrite + Unpin> tokio_03::io::AsyncWrite for TrackClosed<W> {
+    fn poll_write(mut self: Pin<&mut Self>, cx: &mut Context, buf: &[u8]) -> Poll<Result<usize>> {
+        assert!(!self.closed);
+        Pin::new(&mut self.inner).poll_write(cx, buf)
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<()>> {
+        assert!(!self.closed);
+        Pin::new(&mut self.inner).poll_flush(cx)
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<()>> {
+        assert!(!self.closed);
+        match Pin::new(&mut self.inner).poll_shutdown(cx) {
+            Poll::Ready(Ok(())) => {
+                self.closed = true;
+                Poll::Ready(Ok(()))
+            }
+            other => other,
+        }
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl<W: tokio::io::AsyncWrite + Unpin> tokio::io::AsyncWrite for TrackClosed<W> {
     fn poll_write(mut self: Pin<&mut Self>, cx: &mut Context, buf: &[u8]) -> Poll<Result<usize>> {
         assert!(!self.closed);
         Pin::new(&mut self.inner).poll_write(cx, buf)

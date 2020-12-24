@@ -47,7 +47,7 @@
 )]
 #![cfg_attr(
     feature = "stream",
-    doc = "[`stream`] | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes::Bytes`]`>>`"
+    doc = "[`stream`] | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes_05::Bytes`]`>>`"
 )]
 #![cfg_attr(
     not(feature = "stream"),
@@ -68,6 +68,14 @@
 #![cfg_attr(
     not(feature = "tokio-03"),
     doc = "`tokio-03` (*inactive*) | `tokio::io::AsyncBufRead`, `tokio::io::AsyncWrite`"
+)]
+#![cfg_attr(
+    feature = "tokio",
+    doc = "[`tokio`](crate::tokio) | [`tokio::io::AsyncBufRead`](::tokio::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio::io::AsyncWrite)"
+)]
+#![cfg_attr(
+    not(feature = "tokio"),
+    doc = "`tokio` (*inactive*) | `tokio::io::AsyncBufRead`, `tokio::io::AsyncWrite`"
 )]
 //!
 
@@ -164,6 +172,9 @@ pub mod futures;
 #[cfg(feature = "stream")]
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
+#[cfg(feature = "tokio")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+pub mod tokio;
 #[cfg(feature = "tokio-02")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio-02")))]
 pub mod tokio_02;

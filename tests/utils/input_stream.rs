@@ -1,8 +1,6 @@
-use bytes::Bytes;
-use futures::stream::Stream;
+use futures::stream::{Stream, StreamExt as _};
 use futures_test::stream::StreamTestExt as _;
 use proptest_derive::Arbitrary;
-use std::io::Result;
 
 #[derive(Arbitrary, Debug, Clone)]
 pub struct InputStream(Vec<Vec<u8>>);
@@ -12,7 +10,7 @@ impl InputStream {
         &self.0
     }
 
-    pub fn stream(&self) -> impl Stream<Item = Result<Bytes>> {
+    pub fn stream(&self) -> impl Stream<Item = Vec<u8>> {
         // The resulting stream here will interleave empty chunks before and after each chunk, and
         // then interleave a `Poll::Pending` between each yielded chunk, that way we test the
         // handling of these two conditions in every point of the tested stream.
@@ -20,12 +18,16 @@ impl InputStream {
             self.0
                 .clone()
                 .into_iter()
-                .map(Bytes::from)
-                .flat_map(|bytes| vec![Bytes::new(), bytes])
-                .chain(Some(Bytes::new()))
-                .map(Ok),
+                .flat_map(|bytes| vec![vec![], bytes])
+                .chain(Some(vec![])),
         )
         .interleave_pending()
+    }
+
+    pub fn bytes_05_stream(&self) -> impl Stream<Item = std::io::Result<bytes_05::Bytes>> {
+        self.stream()
+            .map(bytes_05::Bytes::from)
+            .map(std::io::Result::Ok)
     }
 
     pub fn bytes(&self) -> Vec<u8> {

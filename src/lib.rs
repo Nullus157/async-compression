@@ -69,6 +69,14 @@
     not(feature = "tokio-03"),
     doc = "`tokio-03` (*inactive*) | `tokio::io::AsyncBufRead`, `tokio::io::AsyncWrite`"
 )]
+#![cfg_attr(
+    feature = "tokio",
+    doc = "[`tokio`](crate::tokio) | [`tokio::io::AsyncBufRead`](::tokio::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio::io::AsyncWrite)"
+)]
+#![cfg_attr(
+    not(feature = "tokio"),
+    doc = "`tokio` (*inactive*) | `tokio::io::AsyncBufRead`, `tokio::io::AsyncWrite`"
+)]
 //!
 
 //! ## Compression algorithm
@@ -164,6 +172,9 @@ pub mod futures;
 #[cfg(feature = "stream")]
 #[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
 pub mod stream;
+#[cfg(feature = "tokio")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+pub mod tokio;
 #[cfg(feature = "tokio-02")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio-02")))]
 pub mod tokio_02;

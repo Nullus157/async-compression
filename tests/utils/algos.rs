@@ -82,6 +82,9 @@ macro_rules! algos {
 
                 #[cfg(feature = "tokio-03")]
                 io_algo!(tokio_03, $name($encoder, $decoder));
+
+                #[cfg(feature = "tokio")]
+                io_algo!(tokio, $name($encoder, $decoder));
             }
         )*
     }

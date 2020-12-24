@@ -5,6 +5,8 @@ mod input_stream;
 mod tokio_02_ext;
 #[cfg(feature = "tokio-03")]
 mod tokio_03_ext;
+#[cfg(feature = "tokio")]
+mod tokio_ext;
 mod track_closed;
 #[macro_use]
 mod test_cases;

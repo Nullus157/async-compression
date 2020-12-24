@@ -4,7 +4,7 @@ use std::io::Result;
 
 #[derive(Debug)]
 pub struct ZstdEncoder {
-    encoder: Unshared<Encoder>,
+    encoder: Unshared<Encoder<'static>>,
 }
 
 impl ZstdEncoder {

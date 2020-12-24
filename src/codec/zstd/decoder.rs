@@ -5,7 +5,7 @@ use libzstd::stream::raw::{Decoder, Operation};
 
 #[derive(Debug)]
 pub struct ZstdDecoder {
-    decoder: Unshared<Decoder>,
+    decoder: Unshared<Decoder<'static>>,
 }
 
 impl ZstdDecoder {

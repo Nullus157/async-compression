@@ -97,8 +97,7 @@ algos! {
 
             pub fn compress(bytes: &[u8]) -> Vec<u8> {
                 use brotli::{enc::backward_references::BrotliEncoderParams, CompressorReader};
-                let mut params = BrotliEncoderParams::default();
-                params.quality = 1;
+                let params = BrotliEncoderParams { quality: 1, ..Default::default() };
                 to_vec(CompressorReader::with_params(bytes, 0, &params))
             }
 

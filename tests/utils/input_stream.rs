@@ -6,6 +6,10 @@ use proptest_derive::Arbitrary;
 pub struct InputStream(Vec<Vec<u8>>);
 
 impl InputStream {
+    pub fn new(input: Vec<Vec<u8>>) -> Self {
+        InputStream(input)
+    }
+
     pub fn as_ref(&self) -> &[Vec<u8>] {
         &self.0
     }
@@ -39,15 +43,12 @@ impl InputStream {
     }
 }
 
-// This happens to be the only dimension we're using
-impl From<[[u8; 3]; 2]> for InputStream {
-    fn from(input: [[u8; 3]; 2]) -> InputStream {
-        InputStream(vec![Vec::from(&input[0][..]), Vec::from(&input[1][..])])
-    }
-}
-
-impl From<Vec<Vec<u8>>> for InputStream {
-    fn from(input: Vec<Vec<u8>>) -> InputStream {
-        InputStream(input)
+impl<I> From<I> for InputStream
+where
+    I: IntoIterator,
+    I::Item: Into<Vec<u8>>,
+{
+    fn from(input: I) -> InputStream {
+        Self::new(input.into_iter().map(|b| b.into()).collect())
     }
 }

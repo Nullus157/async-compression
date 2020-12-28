@@ -79,6 +79,7 @@ pub mod futures {
 }
 
 #[cfg(feature = "stream")]
+#[allow(deprecated)]
 pub mod stream {
     use crate::utils::{block_on, pin_mut, Result};
     use bytes_05::Bytes;

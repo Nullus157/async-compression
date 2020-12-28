@@ -107,6 +107,7 @@ macro_rules! tests {
     ($variant:ident) => {
         mod $variant {
             #[cfg(feature = "stream")]
+            #[allow(deprecated)]
             mod stream {
                 use crate::utils::{algos::$variant::{stream, sync}, InputStream};
                 use proptest::{prelude::{any, ProptestConfig}, proptest};

@@ -20,7 +20,6 @@
 //! use futures::{stream::Stream, TryStreamExt};
 //! use std::io::Result;
 //!
-//!
 //! /// For code that looks like this, choose one of the options below to replace it
 //! fn from(
 //!     input: impl Stream<Item = Result<bytes_05::Bytes>>,
@@ -96,6 +95,50 @@
 //!             }
 //!         })
 //! }
+//! #
+//! # futures::executor::block_on(async {
+//! #     let data = || futures::stream::iter(vec![Ok(vec![1, 2, 3]), Ok(vec![4, 5, 6])]);
+//! #     let expected: Vec<Vec<u8>> = from(data().map_ok(bytes_05::Bytes::from))
+//! #         .map_ok(|bytes| bytes.as_ref().into())
+//! #         .try_collect()
+//! #         .await?;
+//! #
+//! #     assert_eq!(
+//! #         expected,
+//! #         tokio_02_bytes_05(data().map_ok(bytes_05::Bytes::from))
+//! #             .map_ok(|bytes| bytes.as_ref().into())
+//! #             .try_collect::<Vec<Vec<u8>>>()
+//! #             .await?,
+//! #     );
+//! #     assert_eq!(
+//! #         expected,
+//! #         tokio_03_bytes_05(data().map_ok(bytes_05::Bytes::from))
+//! #             .map_ok(|bytes| bytes.as_ref().into())
+//! #             .try_collect::<Vec<Vec<u8>>>()
+//! #             .await?,
+//! #     );
+//! #     assert_eq!(
+//! #         expected,
+//! #         tokio_03_bytes_06(data().map_ok(bytes_06::Bytes::from))
+//! #             .map_ok(|bytes| bytes.as_ref().into())
+//! #             .try_collect::<Vec<Vec<u8>>>()
+//! #             .await?,
+//! #     );
+//! #     assert_eq!(
+//! #         expected,
+//! #         tokio_bytes(data().map_ok(bytes::Bytes::from))
+//! #             .map_ok(|bytes| bytes.as_ref().into())
+//! #             .try_collect::<Vec<Vec<u8>>>()
+//! #             .await?,
+//! #     );
+//! #     assert_eq!(
+//! #         expected,
+//! #         futures_vec(data())
+//! #             .try_collect::<Vec<Vec<u8>>>()
+//! #             .await?
+//! #     );
+//! #     Ok::<_, std::io::Error>(())
+//! # })?; Ok::<_, std::io::Error>(())
 //! ```
 
 #![deprecated(

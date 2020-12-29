@@ -66,9 +66,9 @@ tokio-02 = { package = "tokio", version = "0.2.21", default-features = false, fe
 tokio-03 = { package = "tokio", version = "0.3.0", default-features = false, features = ["io-util", "stream"] }
 tokio = { version = "1.0.0", default-features = false, features = ["io-util"] }
 tokio-util-03 = { package = "tokio-util", version = "0.3.0", default-features = false, features = ["codec"] }
-tokio-util-04 = { package = "tokio-util", version = "0.4.0", default-features = false, features = ["codec", "io"] }
-tokio-util-05 = { package = "tokio-util", version = "0.5.0", default-features = false, features = ["codec", "io"] }
-tokio-util-06 = { package = "tokio-util", version = "0.6.0", default-features = false, features = ["codec", "io"] }
+tokio-util-04 = { package = "tokio-util", version = "0.4.0", default-features = false, features = ["io"] }
+tokio-util-05 = { package = "tokio-util", version = "0.5.0", default-features = false, features = ["io"] }
+tokio-util-06 = { package = "tokio-util", version = "0.6.0", default-features = false, features = ["io"] }
 futures_codec = { version = "0.4.1", default-features = false }
 
 [[test]]

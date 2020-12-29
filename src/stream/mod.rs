@@ -44,36 +44,33 @@
 //! fn tokio_03_bytes_05(
 //!     input: impl Stream<Item = Result<bytes_05::Bytes>>,
 //! ) -> impl Stream<Item = Result<bytes_05::Bytes>> {
-//!     tokio_util_04::codec::FramedRead::new(
+//!     tokio_util_04::io::ReaderStream::new(
 //!         async_compression::tokio_03::bufread::GzipEncoder::new(
 //!             tokio_util_04::io::StreamReader::new(input),
 //!         ),
-//!         tokio_util_04::codec::BytesCodec::new(),
-//!     ).map_ok(|bytes| bytes.freeze())
+//!     )
 //! }
 //!
 //! /// Upgrade replacement with `tokio` v0.3 and `bytes` v0.6 using `tokio-util` v0.5
 //! fn tokio_03_bytes_06(
 //!     input: impl Stream<Item = Result<bytes_06::Bytes>>,
 //! ) -> impl Stream<Item = Result<bytes_06::Bytes>> {
-//!     tokio_util_05::codec::FramedRead::new(
+//!     tokio_util_05::io::ReaderStream::new(
 //!         async_compression::tokio_03::bufread::GzipEncoder::new(
 //!             tokio_util_05::io::StreamReader::new(input),
 //!         ),
-//!         tokio_util_05::codec::BytesCodec::new(),
-//!     ).map_ok(|bytes| bytes.freeze())
+//!     )
 //! }
 //!
 //! /// Upgrade replacement with `tokio` v1.0 and `bytes` v1.0 using `tokio-util` v0.6
 //! fn tokio_bytes(
 //!     input: impl Stream<Item = Result<bytes::Bytes>>,
 //! ) -> impl Stream<Item = Result<bytes::Bytes>> {
-//!     tokio_util_06::codec::FramedRead::new(
+//!     tokio_util_06::io::ReaderStream::new(
 //!         async_compression::tokio::bufread::GzipEncoder::new(
 //!             tokio_util_06::io::StreamReader::new(input),
 //!         ),
-//!         tokio_util_06::codec::BytesCodec::new(),
-//!     ).map_ok(|bytes| bytes.freeze())
+//!     )
 //! }
 //!
 //! /// What if you didn't want anything to do with `bytes`, but just a `Vec<u8>` instead?

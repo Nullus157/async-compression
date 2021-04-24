@@ -56,6 +56,7 @@ macro_rules! algos {
                 pub mod sync { $($tt)* }
 
                 #[cfg(feature = "stream")]
+                #[allow(deprecated)]
                 pub mod stream {
                     pub use async_compression::stream::{$decoder as Decoder, $encoder as Encoder};
                     pub use crate::utils::impls::stream::to_vec;

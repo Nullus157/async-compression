@@ -448,6 +448,7 @@ macro_rules! test_cases {
     ($variant:ident) => {
         mod $variant {
             #[cfg(feature = "stream")]
+            #[allow(deprecated)]
             mod stream {
                 mod compress {
                     use crate::utils::{

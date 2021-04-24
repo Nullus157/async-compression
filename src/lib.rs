@@ -47,11 +47,11 @@
 )]
 #![cfg_attr(
     feature = "stream",
-    doc = "[`stream`] | [`futures::stream::Stream`](futures_core::stream::Stream)`<Item = `[`std::io::Result`]`<`[`bytes_05::Bytes`]`>>`"
+    doc = "[`stream`] | (*deprecated*, see [`async-compression:stream`](crate::stream) docs for migration)"
 )]
 #![cfg_attr(
     not(feature = "stream"),
-    doc = "`stream` (*inactive*) | `futures::stream::Stream<Item = std::io::Result<bytes::Bytes>>`"
+    doc = "`stream` (*inactive*) | (*deprecated*, see `async-compression::stream` docs for migration)"
 )]
 #![cfg_attr(
     feature = "tokio-02",

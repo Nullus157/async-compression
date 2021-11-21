@@ -37,15 +37,15 @@ futures-write = ["futures-io"]
 
 [dependencies]
 xz2 = { version = "0.1.6", optional = true }
-brotli = { version = "3.3.0", optional = true }
+brotli = { version = "3.3.2", optional = true }
 bytes-05 = { package = "bytes", version = "0.5.0", optional = true }
-bzip2 = { version = "0.4.1" , optional = true }
-flate2 = { version = "1.0.11", optional = true }
+bzip2 = { version = "0.4.3" , optional = true }
+flate2 = { version = "1.0.22", optional = true }
 futures-core = { version = "0.3.0", default-features = false }
 futures-io = { version = "0.3.0", default-features = false, features = ["std"], optional = true }
 pin-project-lite = "0.2.0"
 libzstd = { package = "zstd", version = "0.9.0", optional = true, default-features = false }
-zstd-safe = { version = "4.1.0", optional = true, default-features = false }
+zstd-safe = { version = "4.1.1", optional = true, default-features = false }
 memchr = "2.2.1"
 tokio-02 = { package = "tokio", version = "0.2.21", optional = true, default-features = false }
 tokio-03 = { package = "tokio", version = "0.3.0", optional = true, default-features = false }

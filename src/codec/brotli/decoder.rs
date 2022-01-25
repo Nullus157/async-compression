@@ -35,10 +35,10 @@ impl BrotliDecoder {
         let status = match BrotliDecompressStream(
             &mut in_buf.len(),
             &mut input_len,
-            &in_buf,
+            in_buf,
             &mut out_buf.len(),
             &mut output_len,
-            &mut out_buf,
+            out_buf,
             &mut 0,
             &mut self.state,
         ) {

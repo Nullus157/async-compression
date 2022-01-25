@@ -43,7 +43,7 @@ impl BrotliEncoder {
             in_buf,
             &mut input_len,
             &mut out_buf.len(),
-            &mut out_buf,
+            out_buf,
             &mut output_len,
             &mut None,
             &mut |_, _, _, _| (),

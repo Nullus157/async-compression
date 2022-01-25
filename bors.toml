@@ -10,7 +10,7 @@ status = [
   "cargo hack check --all-targets --feature-powerset",
   "cargo fmt --check",
   "cargo clippy",
-  "cargo audit",
+  # "cargo audit",
   "cargo doc --cfg docsrs",
 ]
 delete_merged_branches = true

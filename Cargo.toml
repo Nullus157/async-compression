@@ -1,6 +1,6 @@
 [package]
 name = "async-compression"
-version = "0.3.10"
+version = "0.3.11"
 authors = ["Wim Looman <wim@nemo157.com>", "Allen Bui <fairingrey@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"

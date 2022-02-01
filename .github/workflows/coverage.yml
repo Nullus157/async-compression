@@ -14,7 +14,6 @@ jobs:
         toolchain: stable
     - uses: actions-rs/tarpaulin@v0.1
       with:
-        version: 0.13.3  # v0.14.0 has issues with time v0.2.16
         args:
           --locked
           --all-features

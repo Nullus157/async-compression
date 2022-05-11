@@ -1,0 +1,30 @@
+name: deny
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  cargo-deny-advisories:
+    name: cargo deny advisories
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v2
+    - uses: EmbarkStudios/cargo-deny-action@v1
+      with:
+        command: check advisories
+
+  cargo-deny-licenses:
+    name: cargo deny bans licenses sources
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: EmbarkStudios/cargo-deny-action@v1
+      with:
+        command: check bans licenses sources
+
+on:
+  push:
+    branches: [staging, trying]
+  pull_request:
+    branches: [prīmum]

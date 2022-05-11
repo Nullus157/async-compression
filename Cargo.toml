@@ -68,7 +68,6 @@ tokio-util-03 = { package = "tokio-util", version = "0.3.0", default-features = 
 tokio-util-04 = { package = "tokio-util", version = "0.4.0", default-features = false, features = ["io"] }
 tokio-util-05 = { package = "tokio-util", version = "0.5.0", default-features = false, features = ["io"] }
 tokio-util-06 = { package = "tokio-util", version = "0.6.0", default-features = false, features = ["io"] }
-futures_codec = { version = "0.4.1", default-features = false }
 
 [[test]]
 name = "brotli"

@@ -80,8 +80,20 @@ impl GzipDecoder {
 
                 State::Decoding => {
                     let prior = output.written().len();
-                    let done = inner(self, input, output)?;
+
+                    let done = inner(self, input, output).or_else(|e| match e {
+                        // we need to make an exception, if output flushed
+                        // from the decoder, to update the crc
+                        e if e.kind() == std::io::ErrorKind::Other
+                            && output.written().len() > 0 =>
+                        {
+                            Ok(false)
+                        }
+                        _ => Err(e),
+                    })?;
+
                     self.crc.update(&output.written()[prior..]);
+
                     if done {
                         self.state = State::Footer(vec![0; 8].into())
                     }

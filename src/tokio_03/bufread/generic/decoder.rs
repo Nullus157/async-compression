@@ -70,6 +70,9 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                 State::Decoding => {
                     let input = ready!(this.reader.as_mut().poll_fill_buf(cx))?;
                     if input.is_empty() {
+                        // Avoid attempting to reinitialise the decoder if the reader
+                        // has returned EOF.
+                        *this.multiple_members = false;
                         State::Flushing
                     } else {
                         let mut input = PartialBuffer::new(input);

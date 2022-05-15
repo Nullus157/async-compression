@@ -13,13 +13,13 @@ pub mod futures {
     pub mod bufread {
         pub use futures::io::AsyncBufRead;
 
-        use crate::utils::InputStream;
+        use crate::utils::{InputStream, TrackEof};
         use futures::stream::{StreamExt as _, TryStreamExt as _};
 
         pub fn from(input: &InputStream) -> impl AsyncBufRead {
             // By using the stream here we ensure that each chunk will require a separate
             // read/poll_fill_buf call to process to help test reading multiple chunks.
-            input.stream().map(Ok).into_async_read()
+            TrackEof::new(input.stream().map(Ok).into_async_read())
         }
     }
 
@@ -100,13 +100,13 @@ pub mod tokio_02 {
     pub mod bufread {
         pub use tokio_02::io::AsyncBufRead;
 
-        use crate::utils::InputStream;
+        use crate::utils::{InputStream, TrackEof};
         use tokio_02::io::stream_reader;
 
         pub fn from(input: &InputStream) -> impl AsyncBufRead {
             // By using the stream here we ensure that each chunk will require a separate
             // read/poll_fill_buf call to process to help test reading multiple chunks.
-            stream_reader(input.bytes_05_stream())
+            TrackEof::new(stream_reader(input.bytes_05_stream()))
         }
     }
 
@@ -169,14 +169,14 @@ pub mod tokio_02 {
 #[cfg(feature = "tokio-03")]
 pub mod tokio_03 {
     pub mod bufread {
-        use crate::utils::InputStream;
+        use crate::utils::{InputStream, TrackEof};
         pub use tokio_03::io::AsyncBufRead;
         use tokio_util_04::io::StreamReader;
 
         pub fn from(input: &InputStream) -> impl AsyncBufRead {
             // By using the stream here we ensure that each chunk will require a separate
             // read/poll_fill_buf call to process to help test reading multiple chunks.
-            StreamReader::new(input.bytes_05_stream())
+            TrackEof::new(StreamReader::new(input.bytes_05_stream()))
         }
     }
 
@@ -239,7 +239,7 @@ pub mod tokio_03 {
 #[cfg(feature = "tokio")]
 pub mod tokio {
     pub mod bufread {
-        use crate::utils::InputStream;
+        use crate::utils::{InputStream, TrackEof};
         use bytes::Bytes;
         use futures::stream::StreamExt;
         pub use tokio::io::AsyncBufRead;
@@ -248,7 +248,9 @@ pub mod tokio {
         pub fn from(input: &InputStream) -> impl AsyncBufRead {
             // By using the stream here we ensure that each chunk will require a separate
             // read/poll_fill_buf call to process to help test reading multiple chunks.
-            StreamReader::new(input.stream().map(Bytes::from).map(std::io::Result::Ok))
+            TrackEof::new(StreamReader::new(
+                input.stream().map(Bytes::from).map(std::io::Result::Ok),
+            ))
         }
     }
 

@@ -4,11 +4,8 @@ use core::{
 };
 use std::io::{Error, ErrorKind, Result};
 
-use crate::{
-    codec::Decode,
-    tokio_02::write::{AsyncBufWrite, BufWriter},
-    util::PartialBuffer,
-};
+use crate::{codec::Decode, util::PartialBuffer};
+use async_buf_write::{tokio_02::Compat, AsyncBufWrite, AsyncBufWriter};
 use futures_core::ready;
 use pin_project_lite::pin_project;
 use tokio_02::io::AsyncWrite;
@@ -24,7 +21,7 @@ pin_project! {
     #[derive(Debug)]
     pub struct Decoder<W, D: Decode> {
         #[pin]
-        writer: BufWriter<W>,
+        writer: AsyncBufWriter<Compat<W>>,
         decoder: D,
         state: State,
     }
@@ -33,26 +30,26 @@ pin_project! {
 impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
     pub fn new(writer: W, decoder: D) -> Self {
         Self {
-            writer: BufWriter::new(writer),
+            writer: AsyncBufWriter::new(Compat::new(writer)),
             decoder,
             state: State::Decoding,
         }
     }
 
     pub fn get_ref(&self) -> &W {
-        self.writer.get_ref()
+        self.writer.get_ref().get_ref()
     }
 
     pub fn get_mut(&mut self) -> &mut W {
-        self.writer.get_mut()
+        self.writer.get_mut().get_mut()
     }
 
     pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut W> {
-        self.project().writer.get_pin_mut()
+        self.project().writer.get_pin_mut().get_pin_mut()
     }
 
     pub fn into_inner(self) -> W {
-        self.writer.into_inner()
+        self.writer.into_inner().into_inner()
     }
 
     fn do_poll_write(

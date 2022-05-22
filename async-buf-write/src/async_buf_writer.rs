@@ -1,38 +1,35 @@
-// Originally sourced from `futures_util::io::buf_writer`, needs to be redefined locally so that
-// the `AsyncBufWrite` impl can access its internals, and changed a bit to make it more efficient
-// with those methods.
-
-use super::AsyncBufWrite;
 use futures_core::ready;
-use pin_project_lite::pin_project;
 use std::{
     cmp::min,
     fmt, io,
     pin::Pin,
     task::{Context, Poll},
 };
-use tokio::io::AsyncWrite;
+
+// Originally sourced from `futures_util::io::buf_writer`, needs to be redefined locally so that
+// the `AsyncBufWrite` impl can access its internals, and changed a bit to make it more efficient
+// with those methods.
 
 const DEFAULT_BUF_SIZE: usize = 8192;
 
-pin_project! {
-    pub struct BufWriter<W> {
+pin_project_lite::pin_project! {
+    pub struct AsyncBufWriter<W> {
         #[pin]
-        inner: W,
-        buf: Box<[u8]>,
-        written: usize,
-        buffered: usize,
+        pub(crate) inner: W,
+        pub(crate) buf: Box<[u8]>,
+        pub(crate) written: usize,
+        pub(crate) buffered: usize,
     }
 }
 
-impl<W: AsyncWrite> BufWriter<W> {
-    /// Creates a new `BufWriter` with a default buffer capacity. The default is currently 8 KB,
+impl<W: crate::AsyncWrite> AsyncBufWriter<W> {
+    /// Creates a new `AsyncBufWriter` with a default buffer capacity. The default is currently 8 KB,
     /// but may change in the future.
     pub fn new(inner: W) -> Self {
         Self::with_capacity(DEFAULT_BUF_SIZE, inner)
     }
 
-    /// Creates a new `BufWriter` with the specified buffer capacity.
+    /// Creates a new `AsyncBufWriter` with the specified buffer capacity.
     pub fn with_capacity(cap: usize, inner: W) -> Self {
         Self {
             inner,
@@ -42,7 +39,11 @@ impl<W: AsyncWrite> BufWriter<W> {
         }
     }
 
-    fn partial_flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    #[allow(dead_code)]
+    pub(crate) fn partial_flush_buf(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<()>> {
         let mut this = self.project();
 
         let mut ret = Ok(());
@@ -84,7 +85,8 @@ impl<W: AsyncWrite> BufWriter<W> {
         }
     }
 
-    fn flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    #[allow(dead_code)]
+    pub(crate) fn flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut this = self.project();
 
         let mut ret = Ok(());
@@ -133,7 +135,7 @@ impl<W: AsyncWrite> BufWriter<W> {
         self.project().inner
     }
 
-    /// Consumes this `BufWriter`, returning the underlying writer.
+    /// Consumes this `AsyncBufWriter`, returning the underlying writer.
     ///
     /// Note that any leftover data in the internal buffer is lost.
     pub fn into_inner(self) -> W {
@@ -141,7 +143,20 @@ impl<W: AsyncWrite> BufWriter<W> {
     }
 }
 
-impl<W: AsyncWrite> AsyncWrite for BufWriter<W> {
+impl<W: fmt::Debug> fmt::Debug for AsyncBufWriter<W> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AsyncBufWriter")
+            .field("writer", &self.inner)
+            .field(
+                "buffer",
+                &format_args!("{}/{}", self.buffered, self.buf.len()),
+            )
+            .field("written", &self.written)
+            .finish()
+    }
+}
+
+impl<W: crate::AsyncWrite> crate::AsyncWrite for AsyncBufWriter<W> {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -174,13 +189,13 @@ impl<W: AsyncWrite> AsyncWrite for BufWriter<W> {
         self.project().inner.poll_flush(cx)
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         ready!(self.as_mut().flush_buf(cx))?;
-        self.project().inner.poll_shutdown(cx)
+        self.project().inner.poll_close(cx)
     }
 }
 
-impl<W: AsyncWrite> AsyncBufWrite for BufWriter<W> {
+impl<W: crate::AsyncWrite> crate::AsyncBufWrite for AsyncBufWriter<W> {
     fn poll_partial_flush_buf(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -192,18 +207,5 @@ impl<W: AsyncWrite> AsyncBufWrite for BufWriter<W> {
 
     fn produce(self: Pin<&mut Self>, amt: usize) {
         *self.project().buffered += amt;
-    }
-}
-
-impl<W: fmt::Debug> fmt::Debug for BufWriter<W> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("BufWriter")
-            .field("writer", &self.inner)
-            .field(
-                "buffer",
-                &format_args!("{}/{}", self.buffered, self.buf.len()),
-            )
-            .field("written", &self.written)
-            .finish()
     }
 }

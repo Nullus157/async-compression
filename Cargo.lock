@@ -24,9 +24,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-buf-write"
+version = "0.1.0"
+dependencies = [
+ "futures-core",
+ "futures-io",
+ "pin-project-lite 0.2.8",
+ "tokio 0.2.25",
+ "tokio 0.3.7",
+ "tokio 1.15.0",
+]
+
+[[package]]
 name = "async-compression"
 version = "0.3.14"
 dependencies = [
+ "async-buf-write",
  "brotli",
  "bytes 0.5.6",
  "bytes 0.6.0",

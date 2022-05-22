@@ -11,6 +11,9 @@ description = """
 Adaptors between compression crates and Rust's modern asynchronous IO types.
 """
 
+[workspace]
+members = ["async-buf-write"]
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
@@ -21,6 +24,12 @@ default = []
 all = ["all-implementations", "all-algorithms"]
 all-implementations = ["futures-io", "stream", "tokio-02", "tokio-03", "tokio"]
 all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "zstd"]
+
+# implementations
+futures-io = ["dep:futures-io", "async-buf-write/futures-io-03"]
+tokio-02 = ["dep:tokio-02", "async-buf-write/tokio-02"]
+tokio-03 = ["dep:tokio-03", "async-buf-write/tokio-03"]
+tokio = ["dep:tokio", "async-buf-write/tokio"]
 
 # algorithms
 deflate = ["flate2"]
@@ -36,20 +45,21 @@ futures-bufread = ["futures-io"]
 futures-write = ["futures-io"]
 
 [dependencies]
+async-buf-write = { version = "0.1.0", path = "async-buf-write", optional = true }
 xz2 = { version = "0.1.6", optional = true }
 brotli = { version = "3.3.0", optional = true, default-features = false, features = ["std"] }
 bytes-05 = { package = "bytes", version = "0.5.0", optional = true }
 bzip2 = { version = "0.4.1" , optional = true }
 flate2 = { version = "1.0.11", optional = true }
 futures-core = { version = "0.3.0", default-features = false }
-futures-io = { version = "0.3.0", default-features = false, features = ["std"], optional = true }
+futures-io = { package = "futures-io", version = "0.3.0", default-features = false, features = ["std"], optional = true }
 pin-project-lite = "0.2.0"
 libzstd = { package = "zstd", version = "0.11.1", optional = true, default-features = false }
 zstd-safe = { version = "5.0.1", optional = true, default-features = false }
 memchr = "2.2.1"
 tokio-02 = { package = "tokio", version = "0.2.21", optional = true, default-features = false }
 tokio-03 = { package = "tokio", version = "0.3.0", optional = true, default-features = false }
-tokio = { version = "1.0.0", optional = true, default-features = false }
+tokio = { package = "tokio", version = "1.0.0", optional = true, default-features = false }
 
 [dev-dependencies]
 proptest = "1.0.0"
@@ -63,7 +73,7 @@ bytes-06 = { package = "bytes", version = "0.6.0" }
 bytes = "1.0.0"
 tokio-02 = { package = "tokio", version = "0.2.21", default-features = false, features = ["io-util", "stream", "macros", "io-std"] }
 tokio-03 = { package = "tokio", version = "0.3.0", default-features = false, features = ["io-util", "stream"] }
-tokio = { version = "1.0.0", default-features = false, features = ["io-util"] }
+tokio = { package = "tokio", version = "1.0.0", default-features = false, features = ["io-util"] }
 tokio-util-03 = { package = "tokio-util", version = "0.3.0", default-features = false, features = ["codec"] }
 tokio-util-04 = { package = "tokio-util", version = "0.4.0", default-features = false, features = ["io"] }
 tokio-util-05 = { package = "tokio-util", version = "0.5.0", default-features = false, features = ["io"] }

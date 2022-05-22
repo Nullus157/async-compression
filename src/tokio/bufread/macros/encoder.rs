@@ -20,6 +20,15 @@ macro_rules! encoder {
                 $($constructor)*
             )*
 
+            pub(crate) fn with_encoder(
+                writer: $inner,
+                encoder: crate::codec::$name
+            ) -> $name<$inner> {
+                $name {
+                    inner: crate::tokio::bufread::Encoder::new(writer, encoder),
+                }
+            }
+
             /// Acquires a reference to the underlying reader that this encoder is wrapping.
             pub fn get_ref(&self) -> &$inner {
                 self.inner.get_ref()

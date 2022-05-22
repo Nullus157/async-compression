@@ -6,7 +6,7 @@ macro_rules! make_compat {
             pub struct Compat<W> { #[pin] inner: W, }
         }
 
-        impl<W: $($AsyncWrite)::+> Compat<W> {
+        impl<W> Compat<W> {
             pub fn new(inner: W) -> Self {
                 Self { inner }
             }
@@ -64,27 +64,27 @@ macro_rules! make_compat {
             fn compat(self) -> Compat<Self> { Compat::new(self) }
         }
 
-        impl<W: crate::AsyncWrite> $($AsyncWrite)::+ for crate::AsyncBufWriter<W> {
+        impl<W: crate::AsyncWrite> $($AsyncWrite)::+ for Compat<W> {
             fn poll_write(
                 self: core::pin::Pin<&mut Self>,
                 cx: &mut core::task::Context<'_>,
                 buf: &[u8],
             ) -> core::task::Poll<std::io::Result<usize>> {
-                crate::AsyncWrite::poll_write(self, cx, buf)
+                crate::AsyncWrite::poll_write(self.get_pin_mut(), cx, buf)
             }
 
             fn poll_flush(
                 self: core::pin::Pin<&mut Self>,
                 cx: &mut core::task::Context<'_>,
             ) -> core::task::Poll<std::io::Result<()>> {
-                crate::AsyncWrite::poll_flush(self, cx)
+                crate::AsyncWrite::poll_flush(self.get_pin_mut(), cx)
             }
 
             fn $poll_close(
                 self: core::pin::Pin<&mut Self>,
                 cx: &mut core::task::Context<'_>,
             ) -> core::task::Poll<std::io::Result<()>> {
-                crate::AsyncWrite::poll_close(self, cx)
+                crate::AsyncWrite::poll_close(self.get_pin_mut(), cx)
             }
         }
     };

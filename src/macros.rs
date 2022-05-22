@@ -27,89 +27,73 @@ macro_rules! algos {
         algos!(@algo brotli ["brotli"] BrotliDecoder BrotliEncoder<$inner> {
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
                 let params = brotli::enc::backward_references::BrotliEncoderParams::default();
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::BrotliEncoder::new(level.into_brotli(params)),
-                    ),
-                }
+                Self::with_encoder(
+                    inner,
+                    crate::codec::BrotliEncoder::new(level.into_brotli(params)),
+                )
             }
         });
 
         algos!(@algo bzip2 ["bzip2"] BzDecoder BzEncoder<$inner> {
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::BzEncoder::new(level.into_bzip2(), 0),
-                    ),
-                }
+                Self::with_encoder(
+                    inner,
+                    crate::codec::BzEncoder::new(level.into_bzip2(), 0),
+                )
             }
         });
 
         algos!(@algo deflate ["deflate"] DeflateDecoder DeflateEncoder<$inner> {
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::DeflateEncoder::new(level.into_flate2()),
-                    ),
-                }
+                Self::with_encoder(
+                    inner,
+                    crate::codec::DeflateEncoder::new(level.into_flate2()),
+                )
             }
         });
 
         algos!(@algo gzip ["gzip"] GzipDecoder GzipEncoder<$inner> {
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::GzipEncoder::new(level.into_flate2()),
-                    ),
-                }
+                Self::with_encoder(
+                    inner,
+                    crate::codec::GzipEncoder::new(level.into_flate2()),
+                )
             }
         });
 
         algos!(@algo zlib ["zlib"] ZlibDecoder ZlibEncoder<$inner> {
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::ZlibEncoder::new(level.into_flate2()),
-                    ),
-                }
+                Self::with_encoder(
+                    inner,
+                    crate::codec::ZlibEncoder::new(level.into_flate2()),
+                )
             }
         });
 
         algos!(@algo zstd ["zstd"] ZstdDecoder ZstdEncoder<$inner> {
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::ZstdEncoder::new(level.into_zstd()),
-                    ),
-                }
+                Self::with_encoder(
+                    inner,
+                    crate::codec::ZstdEncoder::new(level.into_zstd()),
+                )
             }
         });
 
         algos!(@algo xz ["xz"] XzDecoder XzEncoder<$inner> {
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::XzEncoder::new(level.into_xz2()),
-                    ),
-                }
+                Self::with_encoder(
+                    inner,
+                    crate::codec::XzEncoder::new(level.into_xz2()),
+                )
             }
         });
 
         algos!(@algo lzma ["lzma"] LzmaDecoder LzmaEncoder<$inner> {
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::LzmaEncoder::new(level.into_xz2()),
-                    ),
-                }
+                Self::with_encoder(
+                    inner,
+                    crate::codec::LzmaEncoder::new(level.into_xz2()),
+                )
             }
         });
     }

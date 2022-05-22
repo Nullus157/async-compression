@@ -3,8 +3,5 @@
 
 #[macro_use]
 mod macros;
-mod generic;
-
-use self::generic::{Decoder, Encoder};
 
 algos!(futures::write<W>);

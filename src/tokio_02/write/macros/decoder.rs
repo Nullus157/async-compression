@@ -8,22 +8,32 @@ macro_rules! decoder {
             /// take in compressed data and write it uncompressed to an underlying stream.
             pub struct $name<W> {
                 #[pin]
-                inner: crate::tokio_02::write::Decoder<W, crate::codec::$name>,
+                inner: async_buf_write::tokio_02::Compat<
+                    crate::generic::write::Decoder<
+                        async_buf_write::tokio_02::Compat<W>,
+                        crate::codec::$name,
+                    >,
+                >,
             }
         }
 
         impl<W: tokio_02::io::AsyncWrite> $name<W> {
-            /// Creates a new decoder which will take in compressed data and write it uncompressedd
+            /// Creates a new decoder which will take in compressed data and write it uncompressed
             /// to the given stream.
-            pub fn new(read: W) -> $name<W> {
+            pub fn new(writer: W) -> $name<W> {
                 $name {
-                    inner: crate::tokio_02::write::Decoder::new(read, crate::codec::$name::new()),
+                    inner: async_buf_write::tokio_02::Compat::new(
+                        crate::generic::write::Decoder::new(
+                            async_buf_write::tokio_02::Compat::new(writer),
+                            crate::codec::$name::new(),
+                        ),
+                    ),
                 }
             }
 
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
             pub fn get_ref(&self) -> &W {
-                self.inner.get_ref()
+                self.inner.get_ref().get_ref().get_ref()
             }
 
             /// Acquires a mutable reference to the underlying reader that this decoder is
@@ -32,7 +42,7 @@ macro_rules! decoder {
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this decoder.
             pub fn get_mut(&mut self) -> &mut W {
-                self.inner.get_mut()
+                self.inner.get_mut().get_mut().get_mut()
             }
 
             /// Acquires a pinned mutable reference to the underlying reader that this decoder is
@@ -41,7 +51,7 @@ macro_rules! decoder {
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this decoder.
             pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut W> {
-                self.project().inner.get_pin_mut()
+                self.project().inner.get_pin_mut().get_pin_mut().get_pin_mut()
             }
 
             /// Consumes this decoder returning the underlying reader.
@@ -49,7 +59,7 @@ macro_rules! decoder {
             /// Note that this may discard internal state of this decoder, so care should be taken
             /// to avoid losing resources when this is called.
             pub fn into_inner(self) -> W {
-                self.inner.into_inner()
+                self.inner.into_inner().into_inner().into_inner()
             }
         }
 

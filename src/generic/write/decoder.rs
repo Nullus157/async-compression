@@ -5,10 +5,9 @@ use core::{
 use std::io::{Error, ErrorKind, Result};
 
 use crate::{codec::Decode, util::PartialBuffer};
-use async_buf_write::{tokio::Compat, AsyncBufWrite, AsyncBufWriter};
+use async_buf_write::{AsyncBufWrite, AsyncBufWriter, AsyncWrite};
 use futures_core::ready;
 use pin_project_lite::pin_project;
-use tokio::io::AsyncWrite;
 
 #[derive(Debug)]
 enum State {
@@ -21,7 +20,7 @@ pin_project! {
     #[derive(Debug)]
     pub struct Decoder<W, D: Decode> {
         #[pin]
-        writer: AsyncBufWriter<Compat<W>>,
+        writer: AsyncBufWriter<W>,
         decoder: D,
         state: State,
     }
@@ -30,26 +29,26 @@ pin_project! {
 impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
     pub fn new(writer: W, decoder: D) -> Self {
         Self {
-            writer: AsyncBufWriter::new(Compat::new(writer)),
+            writer: AsyncBufWriter::new(writer),
             decoder,
             state: State::Decoding,
         }
     }
 
     pub fn get_ref(&self) -> &W {
-        self.writer.get_ref().get_ref()
+        self.writer.get_ref()
     }
 
     pub fn get_mut(&mut self) -> &mut W {
-        self.writer.get_mut().get_mut()
+        self.writer.get_mut()
     }
 
     pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut W> {
-        self.project().writer.get_pin_mut().get_pin_mut()
+        self.project().writer.get_pin_mut()
     }
 
     pub fn into_inner(self) -> W {
-        self.writer.into_inner().into_inner()
+        self.writer.into_inner()
     }
 
     fn do_poll_write(
@@ -152,7 +151,7 @@ impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
         Poll::Ready(Ok(()))
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
         if let State::Decoding = self.as_mut().project().state {
             *self.as_mut().project().state = State::Finishing;
         }
@@ -160,12 +159,12 @@ impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
         ready!(self.as_mut().do_poll_flush(cx))?;
 
         if let State::Done = self.as_mut().project().state {
-            ready!(self.as_mut().project().writer.as_mut().poll_shutdown(cx))?;
+            ready!(self.as_mut().project().writer.as_mut().poll_close(cx))?;
             Poll::Ready(Ok(()))
         } else {
             Poll::Ready(Err(Error::new(
                 ErrorKind::Other,
-                "Attempt to shutdown before finishing input",
+                "Attempt to close before finishing input",
             )))
         }
     }

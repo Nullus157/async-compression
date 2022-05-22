@@ -5,9 +5,8 @@ use core::{
 use std::io::Result;
 
 use crate::{codec::Encode, util::PartialBuffer};
-use async_buf_write::{futures_io_03::Compat, AsyncBufWrite, AsyncBufWriter};
+use async_buf_write::{AsyncBufWrite, AsyncBufWriter, AsyncWrite};
 use futures_core::ready;
-use futures_io::AsyncWrite;
 use pin_project_lite::pin_project;
 
 #[derive(Debug)]
@@ -21,7 +20,7 @@ pin_project! {
     #[derive(Debug)]
     pub struct Encoder<W, E: Encode> {
         #[pin]
-        writer: AsyncBufWriter<Compat<W>>,
+        writer: AsyncBufWriter<W>,
         encoder: E,
         state: State,
     }
@@ -30,26 +29,26 @@ pin_project! {
 impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
     pub fn new(writer: W, encoder: E) -> Self {
         Self {
-            writer: AsyncBufWriter::new(Compat::new(writer)),
+            writer: AsyncBufWriter::new(writer),
             encoder,
             state: State::Encoding,
         }
     }
 
     pub fn get_ref(&self) -> &W {
-        self.writer.get_ref().get_ref()
+        self.writer.get_ref()
     }
 
     pub fn get_mut(&mut self) -> &mut W {
-        self.writer.get_mut().get_mut()
+        self.writer.get_mut()
     }
 
     pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut W> {
-        self.project().writer.get_pin_mut().get_pin_mut()
+        self.project().writer.get_pin_mut()
     }
 
     pub fn into_inner(self) -> W {
-        self.writer.into_inner().into_inner()
+        self.writer.into_inner()
     }
 
     fn do_poll_write(

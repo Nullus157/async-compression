@@ -8,7 +8,12 @@ macro_rules! encoder {
             /// take in uncompressed data and write it compressed to an underlying stream.
             pub struct $name<$inner> {
                 #[pin]
-                inner: crate::tokio_03::write::Encoder<$inner, crate::codec::$name>,
+                inner: async_buf_write::tokio_03::Compat<
+                    crate::generic::write::Encoder<
+                        async_buf_write::tokio_03::Compat<$inner>,
+                        crate::codec::$name,
+                    >,
+                >,
             }
         }
 
@@ -20,9 +25,23 @@ macro_rules! encoder {
                 $($constructor)*
             )*
 
+            pub(crate) fn with_encoder(
+                writer: $inner,
+                encoder: crate::codec::$name,
+            ) -> $name<$inner> {
+                $name {
+                    inner: async_buf_write::tokio_03::Compat::new(
+                        crate::generic::write::Encoder::new(
+                            async_buf_write::tokio_03::Compat::new(writer),
+                            encoder,
+                        ),
+                    ),
+                }
+            }
+
             /// Acquires a reference to the underlying writer that this encoder is wrapping.
             pub fn get_ref(&self) -> &$inner {
-                self.inner.get_ref()
+                self.inner.get_ref().get_ref().get_ref()
             }
 
             /// Acquires a mutable reference to the underlying writer that this encoder is
@@ -31,7 +50,7 @@ macro_rules! encoder {
             /// Note that care must be taken to avoid tampering with the state of the writer which
             /// may otherwise confuse this encoder.
             pub fn get_mut(&mut self) -> &mut $inner {
-                self.inner.get_mut()
+                self.inner.get_mut().get_mut().get_mut()
             }
 
             /// Acquires a pinned mutable reference to the underlying writer that this encoder is
@@ -40,7 +59,7 @@ macro_rules! encoder {
             /// Note that care must be taken to avoid tampering with the state of the writer which
             /// may otherwise confuse this encoder.
             pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut $inner> {
-                self.project().inner.get_pin_mut()
+                self.project().inner.get_pin_mut().get_pin_mut().get_pin_mut()
             }
 
             /// Consumes this encoder returning the underlying writer.
@@ -48,7 +67,7 @@ macro_rules! encoder {
             /// Note that this may discard internal state of this encoder, so care should be taken
             /// to avoid losing resources when this is called.
             pub fn into_inner(self) -> $inner {
-                self.inner.into_inner()
+                self.inner.into_inner().into_inner().into_inner()
             }
         }
 

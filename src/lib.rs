@@ -166,6 +166,14 @@
 mod macros;
 mod codec;
 
+#[cfg(any(
+    feature = "futures-io",
+    feature = "tokio",
+    feature = "tokio-02",
+    feature = "tokio-03"
+))]
+mod generic;
+
 #[cfg(feature = "futures-io")]
 #[cfg_attr(docsrs, doc(cfg(feature = "futures-io")))]
 pub mod futures;

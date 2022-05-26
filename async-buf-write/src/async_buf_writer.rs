@@ -39,7 +39,6 @@ impl<W: crate::AsyncWrite> AsyncBufWriter<W> {
         }
     }
 
-    #[allow(dead_code)]
     pub(crate) fn partial_flush_buf(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -85,7 +84,6 @@ impl<W: crate::AsyncWrite> AsyncBufWriter<W> {
         }
     }
 
-    #[allow(dead_code)]
     pub(crate) fn flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut this = self.project();
 

@@ -7,8 +7,8 @@ use std::{
 };
 
 // Originally sourced from `futures_util::io::buf_writer`, needs to be redefined locally so that
-// the `AsyncBufWrite` impl can access its internals, and changed a bit to make it more efficient
-// with those methods.
+// the impl can access its internals, and changed a bit to make it more efficient with the new
+// methods.
 
 const DEFAULT_BUF_SIZE: usize = 8192;
 
@@ -139,6 +139,36 @@ impl<W: crate::AsyncWrite> AsyncBufWriter<W> {
     pub fn into_inner(self) -> W {
         self.inner
     }
+
+    /// Attempt to return an internal buffer to write to, flushing data out if it is full.
+    ///
+    /// On success, returns `Poll::Ready(Ok(buf))`.
+    ///
+    /// If the buffer is full and cannot be flushed immediately, the method returns `Poll::Pending`
+    /// and arranges for the current task context (`cx`) to receive a notification when the object
+    /// becomes flushable or is closed.
+    pub fn poll_partial_flush_buf(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<io::Result<&mut [u8]>> {
+        ready!(self.as_mut().partial_flush_buf(cx))?;
+        let this = self.project();
+        Poll::Ready(Ok(&mut this.buf[*this.buffered..]))
+    }
+
+    /// Tells this writer that `amt` bytes have been written to its buffer, so they should be
+    /// written out to the underlying IO when possible.
+    ///
+    /// This function is a lower-level call. It needs to be paired with the `poll_flush_buf` method
+    /// to function properly. This function does not perform any I/O, it simply informs this object
+    /// that some amount of its buffer, returned from `poll_flush_buf`, has been written to and
+    /// should be sent. As such, this function may do odd things if `poll_flush_buf` isn't called
+    /// before calling it.
+    ///
+    /// The `amt` must be `<=` the number of bytes in the buffer returned by `poll_flush_buf`.
+    pub fn produce(self: Pin<&mut Self>, amt: usize) {
+        *self.project().buffered += amt;
+    }
 }
 
 impl<W: fmt::Debug> fmt::Debug for AsyncBufWriter<W> {
@@ -190,20 +220,5 @@ impl<W: crate::AsyncWrite> crate::AsyncWrite for AsyncBufWriter<W> {
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         ready!(self.as_mut().flush_buf(cx))?;
         self.project().inner.poll_close(cx)
-    }
-}
-
-impl<W: crate::AsyncWrite> crate::AsyncBufWrite for AsyncBufWriter<W> {
-    fn poll_partial_flush_buf(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<io::Result<&mut [u8]>> {
-        ready!(self.as_mut().partial_flush_buf(cx))?;
-        let this = self.project();
-        Poll::Ready(Ok(&mut this.buf[*this.buffered..]))
-    }
-
-    fn produce(self: Pin<&mut Self>, amt: usize) {
-        *self.project().buffered += amt;
     }
 }

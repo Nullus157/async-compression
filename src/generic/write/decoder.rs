@@ -5,7 +5,7 @@ use core::{
 use std::io::{Error, ErrorKind, Result};
 
 use crate::{codec::Decode, util::PartialBuffer};
-use async_buf_write::{AsyncBufWrite, AsyncBufWriter, AsyncWrite};
+use async_buf_write::{AsyncBufWriter, AsyncWrite};
 use futures_core::ready;
 use pin_project_lite::pin_project;
 

@@ -8,19 +8,19 @@ pub struct PartialBuffer<B: AsRef<[u8]>> {
 }
 
 impl<B: AsRef<[u8]>> PartialBuffer<B> {
-    pub(crate) fn new(buffer: B) -> Self {
+    pub fn new(buffer: B) -> Self {
         Self { buffer, index: 0 }
     }
 
-    pub(crate) fn written(&self) -> &[u8] {
+    pub fn written(&self) -> &[u8] {
         &self.buffer.as_ref()[..self.index]
     }
 
-    pub(crate) fn unwritten(&self) -> &[u8] {
+    pub fn unwritten(&self) -> &[u8] {
         &self.buffer.as_ref()[self.index..]
     }
 
-    pub(crate) fn advance(&mut self, amount: usize) {
+    pub fn advance(&mut self, amount: usize) {
         self.index += amount;
     }
 

@@ -1,4 +1,4 @@
 mod decoder;
 mod encoder;
 
-pub(crate) use self::{decoder::ZstdDecoder, encoder::ZstdEncoder};
+pub use self::{decoder::ZstdDecoder, encoder::ZstdEncoder};

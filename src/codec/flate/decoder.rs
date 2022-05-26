@@ -10,7 +10,7 @@ pub struct FlateDecoder {
 }
 
 impl FlateDecoder {
-    pub(crate) fn new(zlib_header: bool) -> Self {
+    pub fn new(zlib_header: bool) -> Self {
         Self {
             zlib_header,
             decompress: Decompress::new(zlib_header),

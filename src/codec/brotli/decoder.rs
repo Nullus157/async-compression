@@ -11,7 +11,7 @@ pub struct BrotliDecoder {
 }
 
 impl BrotliDecoder {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             state: BrotliState::new(
                 StandardAlloc::default(),

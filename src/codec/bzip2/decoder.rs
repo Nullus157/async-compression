@@ -20,7 +20,7 @@ impl fmt::Debug for BzDecoder {
 }
 
 impl BzDecoder {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             decompress: Decompress::new(false),
         }

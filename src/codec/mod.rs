@@ -23,25 +23,25 @@ mod zlib;
 mod zstd;
 
 #[cfg(feature = "brotli")]
-pub(crate) use self::brotli::{BrotliDecoder, BrotliEncoder};
+pub use self::brotli::{BrotliDecoder, BrotliEncoder};
 #[cfg(feature = "bzip2")]
-pub(crate) use self::bzip2::{BzDecoder, BzEncoder};
+pub use self::bzip2::{BzDecoder, BzEncoder};
 #[cfg(feature = "deflate")]
-pub(crate) use self::deflate::{DeflateDecoder, DeflateEncoder};
+pub use self::deflate::{DeflateDecoder, DeflateEncoder};
 #[cfg(feature = "flate2")]
-pub(crate) use self::flate::{FlateDecoder, FlateEncoder};
+pub use self::flate::{FlateDecoder, FlateEncoder};
 #[cfg(feature = "gzip")]
-pub(crate) use self::gzip::{GzipDecoder, GzipEncoder};
+pub use self::gzip::{GzipDecoder, GzipEncoder};
 #[cfg(feature = "lzma")]
-pub(crate) use self::lzma::{LzmaDecoder, LzmaEncoder};
+pub use self::lzma::{LzmaDecoder, LzmaEncoder};
 #[cfg(feature = "xz")]
-pub(crate) use self::xz::{XzDecoder, XzEncoder};
+pub use self::xz::{XzDecoder, XzEncoder};
 #[cfg(feature = "xz2")]
-pub(crate) use self::xz2::{Xz2Decoder, Xz2Encoder, Xz2FileFormat};
+pub use self::xz2::{Xz2Decoder, Xz2Encoder, Xz2FileFormat};
 #[cfg(feature = "zlib")]
-pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};
+pub use self::zlib::{ZlibDecoder, ZlibEncoder};
 #[cfg(feature = "zstd")]
-pub(crate) use self::zstd::{ZstdDecoder, ZstdEncoder};
+pub use self::zstd::{ZstdDecoder, ZstdEncoder};
 
 pub trait Encode {
     fn encode(

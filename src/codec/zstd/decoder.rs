@@ -9,7 +9,7 @@ pub struct ZstdDecoder {
 }
 
 impl ZstdDecoder {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             decoder: Unshared::new(Decoder::new().unwrap()),
         }

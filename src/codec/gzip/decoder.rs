@@ -54,7 +54,7 @@ fn check_footer(crc: &Crc, input: &[u8]) -> Result<()> {
 }
 
 impl GzipDecoder {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             inner: crate::codec::FlateDecoder::new(false),
             crc: Crc::new(),

@@ -6,4 +6,4 @@ pub enum Xz2FileFormat {
     Lzma,
 }
 
-pub(crate) use self::{decoder::Xz2Decoder, encoder::Xz2Encoder};
+pub use self::{decoder::Xz2Decoder, encoder::Xz2Encoder};

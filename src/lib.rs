@@ -154,17 +154,12 @@
 //!
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![warn(
-    missing_docs,
-    rust_2018_idioms,
-    missing_copy_implementations,
-    missing_debug_implementations
-)]
+#![warn(rust_2018_idioms)]
 #![cfg_attr(not(all), allow(unused))]
 
 #[macro_use]
 mod macros;
-mod codec;
+pub mod codec;
 
 #[cfg(feature = "futures-io")]
 #[cfg_attr(docsrs, doc(cfg(feature = "futures-io")))]
@@ -183,7 +178,7 @@ pub mod tokio_02;
 pub mod tokio_03;
 
 mod unshared;
-mod util;
+pub mod util;
 
 #[cfg(feature = "brotli")]
 use brotli::enc::backward_references::BrotliEncoderParams;

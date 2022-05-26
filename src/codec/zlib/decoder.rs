@@ -7,7 +7,7 @@ pub struct ZlibDecoder {
 }
 
 impl ZlibDecoder {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             inner: crate::codec::FlateDecoder::new(true),
         }

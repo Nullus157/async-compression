@@ -450,12 +450,6 @@ macro_rules! test_cases {
             #[cfg(feature = "futures-io")]
             io_test_cases!(futures, $variant);
 
-            #[cfg(feature = "tokio-02")]
-            io_test_cases!(tokio_02, $variant);
-
-            #[cfg(feature = "tokio-03")]
-            io_test_cases!(tokio_03, $variant);
-
             #[cfg(feature = "tokio")]
             io_test_cases!(tokio, $variant);
         }

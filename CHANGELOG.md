@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 ## Unreleased
 
 - Remove deprecated `stream`, `futures-bufread` and `futures-write` features.
+- Remove Tokio 0.2.x and 0.3.x support (`tokio-02` and `tokio-03` features).
 
 ## 0.3.15 - 2022-10-08
 

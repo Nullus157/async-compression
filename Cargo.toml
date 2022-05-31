@@ -19,7 +19,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 # groups
 default = []
 all = ["all-implementations", "all-algorithms"]
-all-implementations = ["futures-io", "stream", "tokio-02", "tokio-03", "tokio"]
+all-implementations = ["futures-io", "tokio-02", "tokio-03", "tokio"]
 all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "zstd"]
 
 # algorithms
@@ -30,15 +30,9 @@ xz = ["xz2"]
 zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 
-# deprecated
-stream = ["bytes-05"]
-futures-bufread = ["futures-io"]
-futures-write = ["futures-io"]
-
 [dependencies]
 xz2 = { version = "0.1.6", optional = true }
 brotli = { version = "3.3.0", optional = true, default-features = false, features = ["std"] }
-bytes-05 = { package = "bytes", version = "0.5.0", optional = true }
 bzip2 = { version = "0.4.1" , optional = true }
 flate2 = { version = "1.0.11", optional = true }
 futures-core = { version = "0.3.0", default-features = false }
@@ -59,14 +53,11 @@ futures = "0.3.5"
 futures-test = "0.3.5"
 ntest = "0.7.5"
 bytes-05 = { package = "bytes", version = "0.5.0" }
-bytes-06 = { package = "bytes", version = "0.6.0" }
 bytes = "1.0.0"
 tokio-02 = { package = "tokio", version = "0.2.21", default-features = false, features = ["io-util", "stream", "macros", "io-std"] }
 tokio-03 = { package = "tokio", version = "0.3.0", default-features = false, features = ["io-util", "stream"] }
 tokio = { version = "1.0.0", default-features = false, features = ["io-util"] }
-tokio-util-03 = { package = "tokio-util", version = "0.3.0", default-features = false, features = ["codec"] }
 tokio-util-04 = { package = "tokio-util", version = "0.4.0", default-features = false, features = ["io"] }
-tokio-util-05 = { package = "tokio-util", version = "0.5.0", default-features = false, features = ["io"] }
 tokio-util-06 = { package = "tokio-util", version = "0.6.0", default-features = false, features = ["io"] }
 
 [[test]]

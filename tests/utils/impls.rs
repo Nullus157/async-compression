@@ -78,23 +78,6 @@ pub mod futures {
     }
 }
 
-#[cfg(feature = "stream")]
-#[allow(deprecated)]
-pub mod stream {
-    use crate::utils::{block_on, pin_mut, Result};
-    use bytes_05::Bytes;
-    use futures::stream::{Stream, TryStreamExt as _};
-
-    pub fn to_vec(stream: impl Stream<Item = Result<Bytes>>) -> Vec<u8> {
-        pin_mut!(stream);
-        block_on(stream.try_collect::<Vec<_>>())
-            .unwrap()
-            .into_iter()
-            .flatten()
-            .collect()
-    }
-}
-
 #[cfg(feature = "tokio-02")]
 pub mod tokio_02 {
     pub mod bufread {

@@ -55,26 +55,6 @@ macro_rules! algos {
             pub mod $name {
                 pub mod sync { $($tt)* }
 
-                #[cfg(feature = "stream")]
-                #[allow(deprecated)]
-                pub mod stream {
-                    pub use async_compression::stream::{$decoder as Decoder, $encoder as Encoder};
-                    pub use crate::utils::impls::stream::to_vec;
-                    use bytes_05::Bytes;
-
-                    use crate::utils::{Level, pin_mut, Stream, Result};
-
-                    pub fn compress(input: impl Stream<Item = Result<Bytes>>) -> Vec<u8> {
-                        pin_mut!(input);
-                        to_vec(Encoder::with_quality(input, Level::Fastest))
-                    }
-
-                    pub fn decompress(input: impl Stream<Item = Result<Bytes>>) -> Vec<u8> {
-                        pin_mut!(input);
-                        to_vec(Decoder::new(input))
-                    }
-                }
-
                 #[cfg(feature = "futures-io")]
                 io_algo!(futures, $name($encoder, $decoder));
 

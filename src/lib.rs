@@ -38,22 +38,6 @@
     doc = "`futures-io` (*inactive*) | `futures::io::AsyncBufRead`, `futures::io::AsyncWrite`"
 )]
 #![cfg_attr(
-    feature = "futures-bufread",
-    doc = "`futures-bufread` | (*deprecated*, use `futures-io`)"
-)]
-#![cfg_attr(
-    feature = "futures-write",
-    doc = "`futures-write` | (*deprecated*, use `futures-io`)"
-)]
-#![cfg_attr(
-    feature = "stream",
-    doc = "[`stream`] | (*deprecated*, see [`async-compression:stream`](crate::stream) docs for migration)"
-)]
-#![cfg_attr(
-    not(feature = "stream"),
-    doc = "`stream` (*inactive*) | (*deprecated*, see `async-compression::stream` docs for migration)"
-)]
-#![cfg_attr(
     feature = "tokio-02",
     doc = "[`tokio-02`](crate::tokio_02) | [`tokio::io::AsyncBufRead`](::tokio_02::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio_02::io::AsyncWrite)"
 )]
@@ -169,9 +153,6 @@ mod codec;
 #[cfg(feature = "futures-io")]
 #[cfg_attr(docsrs, doc(cfg(feature = "futures-io")))]
 pub mod futures;
-#[cfg(feature = "stream")]
-#[cfg_attr(docsrs, doc(cfg(feature = "stream")))]
-pub mod stream;
 #[cfg(feature = "tokio")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub mod tokio;

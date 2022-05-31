@@ -106,49 +106,6 @@ macro_rules! io_tests {
 macro_rules! tests {
     ($variant:ident) => {
         mod $variant {
-            #[cfg(feature = "stream")]
-            #[allow(deprecated)]
-            mod stream {
-                use crate::utils::{algos::$variant::{stream, sync}, InputStream};
-                use proptest::{prelude::{any, ProptestConfig}, proptest};
-                use std::iter::FromIterator;
-
-                proptest! {
-                    #[test]
-                    fn compress(ref input in any::<InputStream>()) {
-                        let compressed = stream::compress(input.bytes_05_stream());
-                        let output = sync::decompress(&compressed);
-                        assert_eq!(output, input.bytes());
-                    }
-
-                    #[test]
-                    fn decompress(
-                        ref input in any::<Vec<u8>>(),
-                        chunk_size in 1..20usize,
-                    ) {
-                        let compressed = sync::compress(input);
-                        let stream = InputStream::from(Vec::from_iter(compressed.chunks(chunk_size).map(Vec::from)));
-                        let output = stream::decompress(stream.bytes_05_stream());
-                        assert_eq!(&output, input);
-                    }
-                }
-
-                proptest! {
-                    #![proptest_config(ProptestConfig::with_cases(32))]
-
-                    #[test]
-                    fn compress_with_level(
-                        ref input in any::<InputStream>(),
-                        level in crate::any_level(),
-                    ) {
-                        let encoder = stream::Encoder::with_quality(input.bytes_05_stream(), level);
-                        let compressed = stream::to_vec(encoder);
-                        let output = sync::decompress(&compressed);
-                        assert_eq!(output, input.bytes());
-                    }
-                }
-            }
-
             #[cfg(feature = "futures-io")]
             io_tests!(futures, $variant);
 
@@ -161,7 +118,7 @@ macro_rules! tests {
             #[cfg(feature = "tokio")]
             io_tests!(tokio, $variant);
         }
-    }
+    };
 }
 
 mod proptest {

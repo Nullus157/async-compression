@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+- Remove deprecated `stream`, `futures-bufread` and `futures-write` features.
+
 ## 0.3.15 - 2022-10-08
 
 - `Level::Default::into_zstd()` now returns libzstd's default value `3`.

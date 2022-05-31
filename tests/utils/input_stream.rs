@@ -1,4 +1,4 @@
-use futures::stream::{Stream, StreamExt as _};
+use futures::stream::Stream;
 use futures_test::stream::StreamTestExt as _;
 use proptest_derive::Arbitrary;
 
@@ -26,12 +26,6 @@ impl InputStream {
                 .chain(Some(vec![])),
         )
         .interleave_pending()
-    }
-
-    pub fn bytes_05_stream(&self) -> impl Stream<Item = std::io::Result<bytes_05::Bytes>> {
-        self.stream()
-            .map(bytes_05::Bytes::from)
-            .map(std::io::Result::Ok)
     }
 
     pub fn bytes(&self) -> Vec<u8> {

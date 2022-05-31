@@ -38,22 +38,6 @@
     doc = "`futures-io` (*inactive*) | `futures::io::AsyncBufRead`, `futures::io::AsyncWrite`"
 )]
 #![cfg_attr(
-    feature = "tokio-02",
-    doc = "[`tokio-02`](crate::tokio_02) | [`tokio::io::AsyncBufRead`](::tokio_02::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio_02::io::AsyncWrite)"
-)]
-#![cfg_attr(
-    not(feature = "tokio-02"),
-    doc = "`tokio-02` (*inactive*) | `tokio::io::AsyncBufRead`, `tokio::io::AsyncWrite`"
-)]
-#![cfg_attr(
-    feature = "tokio-03",
-    doc = "[`tokio-03`](crate::tokio_03) | [`tokio::io::AsyncBufRead`](::tokio_03::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio_03::io::AsyncWrite)"
-)]
-#![cfg_attr(
-    not(feature = "tokio-03"),
-    doc = "`tokio-03` (*inactive*) | `tokio::io::AsyncBufRead`, `tokio::io::AsyncWrite`"
-)]
-#![cfg_attr(
     feature = "tokio",
     doc = "[`tokio`](crate::tokio) | [`tokio::io::AsyncBufRead`](::tokio::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio::io::AsyncWrite)"
 )]
@@ -156,12 +140,6 @@ pub mod futures;
 #[cfg(feature = "tokio")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub mod tokio;
-#[cfg(feature = "tokio-02")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio-02")))]
-pub mod tokio_02;
-#[cfg(feature = "tokio-03")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio-03")))]
-pub mod tokio_03;
 
 mod unshared;
 mod util;

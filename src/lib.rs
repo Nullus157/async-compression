@@ -244,7 +244,7 @@ impl Level {
             Self::Fastest => 1,
             Self::Best => 21,
             Self::Precise(quality) => quality.min(21) as i32,
-            Self::Default => 0,
+            Self::Default => libzstd::DEFAULT_COMPRESSION_LEVEL,
         }
     }
 

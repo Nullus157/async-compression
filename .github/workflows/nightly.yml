@@ -8,7 +8,7 @@ jobs:
     name: cargo +nightly test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@v1
       with:
         rust-version: nightly
@@ -22,7 +22,7 @@ jobs:
     name: cargo +nightly fmt --check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@v1
       with:
         rust-version: nightly
@@ -37,7 +37,7 @@ jobs:
     name: cargo +nightly clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@v1
       with:
         rust-version: nightly

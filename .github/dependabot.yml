@@ -8,7 +8,9 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    rebase-strategy: "disabled"
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: "daily"
+    rebase-strategy: "disabled"

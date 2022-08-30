@@ -16,7 +16,7 @@ jobs:
         - { toolchain: stable, target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
     runs-on: ${{ matrix.platform.os }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@v1
       with:
         rust-version: ${{ matrix.platform.toolchain }}
@@ -31,7 +31,7 @@ jobs:
     name: cargo test --shallow-minimal-versions
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@v1
       with:
         rust-version: nightly
@@ -64,7 +64,7 @@ jobs:
     env:
       RUSTFLAGS: -Dwarnings
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@v1
     - uses: actions-rs/cargo@v1
       with:
@@ -85,7 +85,7 @@ jobs:
     env:
       RUSTFLAGS: -Dwarnings
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@v1
     - uses: actions-rs/cargo@v1
       with:

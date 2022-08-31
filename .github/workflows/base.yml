@@ -10,10 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: hecrj/setup-rust-action@v1
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --workspace --locked --all-features
+    - name: test
+      run: cargo test --workspace --all-features
 
 on:
   push:

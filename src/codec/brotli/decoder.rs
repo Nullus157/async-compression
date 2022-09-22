@@ -7,17 +7,18 @@ use std::{
 use brotli::{enc::StandardAlloc, BrotliDecompressStream, BrotliResult, BrotliState};
 
 pub struct BrotliDecoder {
-    state: BrotliState<StandardAlloc, StandardAlloc, StandardAlloc>,
+    // `BrotliState` is very large (over 2kb) which is why we're boxing it.
+    state: Box<BrotliState<StandardAlloc, StandardAlloc, StandardAlloc>>,
 }
 
 impl BrotliDecoder {
     pub(crate) fn new() -> Self {
         Self {
-            state: BrotliState::new(
+            state: Box::new(BrotliState::new(
                 StandardAlloc::default(),
                 StandardAlloc::default(),
                 StandardAlloc::default(),
-            ),
+            )),
         }
     }
 
@@ -57,11 +58,11 @@ impl BrotliDecoder {
 
 impl Decode for BrotliDecoder {
     fn reinit(&mut self) -> Result<()> {
-        self.state = BrotliState::new(
+        self.state = Box::new(BrotliState::new(
             StandardAlloc::default(),
             StandardAlloc::default(),
             StandardAlloc::default(),
-        );
+        ));
         Ok(())
     }
 

@@ -25,7 +25,7 @@ dependencies = [
 
 [[package]]
 name = "async-compression"
-version = "0.3.14"
+version = "0.3.15"
 dependencies = [
  "brotli",
  "bytes 0.5.6",

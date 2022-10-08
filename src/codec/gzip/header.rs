@@ -85,7 +85,7 @@ impl Parser {
                     data.copy_unwritten_from(input);
 
                     if data.unwritten().is_empty() {
-                        let len = u16::from_be_bytes(data.take().into_inner());
+                        let len = u16::from_le_bytes(data.take().into_inner());
                         self.state = State::Extra(vec![0; usize::from(len)].into());
                     } else {
                         return Ok(None);

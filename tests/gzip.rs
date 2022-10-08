@@ -109,6 +109,7 @@ fn compress_with_header(data: &[u8]) -> Vec<u8> {
         let mut gz = GzBuilder::new()
             .filename("hello_world.txt")
             .comment("test file, please delete")
+            .extra(vec![1, 2, 3, 4])
             .write(&mut bytes, Compression::fast());
 
         gz.write_all(data).unwrap();

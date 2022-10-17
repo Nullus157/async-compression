@@ -46,6 +46,7 @@ dependencies = [
  "tokio 0.2.25",
  "tokio 0.3.7",
  "tokio 1.15.0",
+ "tokio-stream",
  "tokio-util 0.3.1",
  "tokio-util 0.4.0",
  "tokio-util 0.5.1",
@@ -725,7 +726,7 @@ dependencies = [
  "memchr",
  "pin-project-lite 0.1.12",
  "slab",
- "tokio-macros",
+ "tokio-macros 0.2.6",
 ]
 
 [[package]]
@@ -750,6 +751,7 @@ dependencies = [
  "bytes 1.1.0",
  "memchr",
  "pin-project-lite 0.2.8",
+ "tokio-macros 1.8.0",
 ]
 
 [[package]]
@@ -761,6 +763,28 @@ dependencies = [
  "proc-macro2 1.0.36",
  "quote 1.0.15",
  "syn 1.0.86",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9724f9a975fb987ef7a3cd9be0350edcbe130698af5b8f7a631e23d42d052484"
+dependencies = [
+ "proc-macro2 1.0.36",
+ "quote 1.0.15",
+ "syn 1.0.86",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d660770404473ccd7bc9f8b28494a811bc18542b915c0855c51e8f419d5223ce"
+dependencies = [
+ "futures-core",
+ "pin-project-lite 0.2.8",
+ "tokio 1.15.0",
 ]
 
 [[package]]

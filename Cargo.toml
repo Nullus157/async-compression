@@ -17,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 # groups
-default = ["gzip", "tokio"]
+default = []
 all = ["all-implementations", "all-algorithms"]
 all-implementations = ["futures-io", "stream", "tokio-02", "tokio-03", "tokio"]
 all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "zstd"]
@@ -68,7 +68,6 @@ tokio-util-03 = { package = "tokio-util", version = "0.3.0", default-features = 
 tokio-util-04 = { package = "tokio-util", version = "0.4.0", default-features = false, features = ["io"] }
 tokio-util-05 = { package = "tokio-util", version = "0.5.0", default-features = false, features = ["io"] }
 tokio-util-06 = { package = "tokio-util", version = "0.6.0", default-features = false, features = ["io"] }
-tokio-stream = { version = "0.1.11", features = ["time"] }
 
 [[test]]
 name = "brotli"

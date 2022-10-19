@@ -444,6 +444,76 @@ macro_rules! io_test_cases {
     };
 }
 
+macro_rules! io_flush_test_cases {
+    ($variant:ident) => {
+        mod tokio_flush {
+            mod bufread {
+                mod compress {
+                    use crate::utils::algos::$variant::tokio::bufread::Encoder;
+
+                    use std::time::Duration;
+
+                    use async_compression::tokio::flush::StreamingEncoder;
+                    use tokio::{
+                        io::{AsyncReadExt, AsyncWriteExt},
+                        time,
+                    };
+
+                    #[tokio::test]
+                    //#[ntest::timeout(1000)]
+                    async fn test() {
+                        let (mut client, server) = tokio::io::duplex(1024);
+                        tokio::task::spawn(async move {
+                            loop {
+                                client
+                                    .write_all(
+                                        &std::iter::repeat(b'A').take(256).collect::<Vec<_>>(),
+                                    )
+                                    .await
+                                    .unwrap();
+                                println!("sent data: 256 bytes");
+                                time::sleep(Duration::from_millis(100)).await;
+                            }
+                        });
+
+                        let mut encoder = Encoder::new(tokio::io::BufReader::new(server));
+                        //if this is commented out, the test will fail
+                        let mut encoder =
+                            Box::pin(StreamingEncoder::new(encoder, Duration::from_millis(250)));
+
+                        let mut buf = std::iter::repeat(0u8).take(1024).collect::<Vec<_>>();
+
+                        let start = std::time::Instant::now();
+                        let mut counter = 0usize;
+                        println!("start");
+                        loop {
+                            let read = encoder.read(&mut buf);
+                            match time::timeout(Duration::from_secs(5), read).await {
+                                Err(e) => {
+                                    panic!("{}ms | timeout: {:?}", start.elapsed().as_millis(), e);
+                                }
+
+                                Ok(res) => {
+                                    println!(
+                                        "{}ms | received data: {:?}",
+                                        start.elapsed().as_millis(),
+                                        res
+                                    );
+
+                                    counter += 1;
+                                    if counter == 10 {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+}
+
 macro_rules! test_cases {
     ($variant:ident) => {
         mod $variant {
@@ -702,6 +772,8 @@ macro_rules! test_cases {
 
             #[cfg(feature = "tokio")]
             io_test_cases!(tokio, $variant);
+            #[cfg(feature = "tokio")]
+            io_flush_test_cases!($variant);
         }
     };
 }

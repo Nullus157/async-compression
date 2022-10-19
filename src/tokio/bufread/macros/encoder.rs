@@ -62,7 +62,7 @@ macro_rules! encoder {
             }
         }
 
-        impl<$inner: tokio::io::AsyncBufRead> crate::tokio::AsyncFlush for $name<$inner> {
+        impl<$inner: tokio::io::AsyncBufRead> crate::tokio::flush::AsyncFlush for $name<$inner> {
             fn poll_flush(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,

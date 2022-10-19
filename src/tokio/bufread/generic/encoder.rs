@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-use crate::{codec::Encode, tokio::AsyncFlush, util::PartialBuffer};
+use crate::{codec::Encode, tokio::flush::AsyncFlush, util::PartialBuffer};
 use futures_core::ready;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncBufRead, AsyncRead, ReadBuf};

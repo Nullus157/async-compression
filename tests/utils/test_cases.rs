@@ -438,17 +438,7 @@ macro_rules! io_test_cases {
 
                         assert_eq!(output, bytes);
                     }
-                }
-            }
-        }
-    };
-}
 
-macro_rules! io_flush_test_cases {
-    ($variant:ident) => {
-        mod tokio_flush {
-            mod bufread {
-                mod compress {
                     use crate::utils::algos::$variant::tokio::bufread::Encoder;
 
                     use std::time::Duration;
@@ -462,6 +452,7 @@ macro_rules! io_flush_test_cases {
                         time,
                     };
 
+                    #[cfg(feature = "tokio")]
                     #[tokio::test]
                     //#[ntest::timeout(1000)]
                     async fn test() {
@@ -831,8 +822,6 @@ macro_rules! test_cases {
 
             #[cfg(feature = "tokio")]
             io_test_cases!(tokio, $variant);
-            #[cfg(feature = "tokio")]
-            io_flush_test_cases!($variant);
         }
     };
 }

@@ -50,6 +50,8 @@ memchr = "2.2.1"
 tokio-02 = { package = "tokio", version = "0.2.21", optional = true, default-features = false }
 tokio-03 = { package = "tokio", version = "0.3.0", optional = true, default-features = false }
 tokio = { version = "1.0.0", optional = true, default-features = false, features = ["time"] }
+futures-channel = "0.3.24"
+futures-util = "0.3.24"
 
 [dev-dependencies]
 proptest = "1.0.0"

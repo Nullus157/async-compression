@@ -467,10 +467,10 @@ macro_rules! io_test_cases {
                             }
                         });
 
-                        let (mut tx, rx) = futures_channel::mpsc::channel(1);
-                        let encoder = Encoder::new(tokio::io::BufReader::new(server));
+                        let (encoder, mut tx) =
+                            FlushableEncoder::new(Encoder::new(tokio::io::BufReader::new(server)));
                         //if this is commented out, the test will fail
-                        let mut encoder = Box::pin(FlushableEncoder::new(encoder, rx));
+                        let mut encoder = Box::pin(encoder);
 
                         let mut buf = std::iter::repeat(0u8).take(1024).collect::<Vec<_>>();
 

@@ -1,5 +1,3 @@
-use std::{time::Duration, time::Instant};
-
 use futures_core::Future;
 use futures_core::Stream;
 use futures_io::AsyncRead;

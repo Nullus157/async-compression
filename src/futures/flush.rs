@@ -33,26 +33,25 @@ pub trait AsyncFlush {
 pin_project! {
     /// This structure wraps an `Encoder` implementing [`AsyncRead`](tokio::io::AsyncRead) to
     /// allow the caller to flush its buffers.
-    pub struct FlushableEncoder<E: AsyncRead> {
+    pub struct FlushableEncoder<E: AsyncRead, Rx: Stream<Item=()>> {
         #[pin]
         encoder: E,
         #[pin]
-        receiver: futures_channel::mpsc::Receiver<()>,
+        receiver: Rx,
     }
 }
 
-impl<E: AsyncRead + AsyncFlush> FlushableEncoder<E> {
-    /// Creates a new `FlushableEncoder` and a channel sender from an existing `Encoder`
+impl<E: AsyncRead + AsyncFlush, Rx: Stream<Item = ()>> FlushableEncoder<E, Rx> {
+    /// Creates a new `FlushableEncoder` from an existing `Encoder` and a Stream
     ///
-    /// Whenever a message is sent on the channel, the encoder will flushes its buffers
+    /// Whenever a message is received from the stream, the encoder will flushes its buffers
     /// and compress them.
-    pub fn new(encoder: E) -> (Self, futures_channel::mpsc::Sender<()>) {
-        let (sender, receiver) = futures_channel::mpsc::channel(1);
-        (Self { encoder, receiver }, sender)
+    pub fn new(encoder: E, receiver: Rx) -> Self {
+        Self { encoder, receiver }
     }
 }
 
-impl<E: AsyncRead + AsyncFlush> AsyncRead for FlushableEncoder<E> {
+impl<E: AsyncRead + AsyncFlush, Rx: Stream<Item = ()>> AsyncRead for FlushableEncoder<E, Rx> {
     fn poll_read(
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,

@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::Result;
 
-use crate::{codec::Encode, util::PartialBuffer};
+use crate::{codec::Encode, tokio::flush::AsyncFlush, util::PartialBuffer};
 use futures_core::ready;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncBufRead, AsyncRead, ReadBuf};
@@ -112,6 +112,26 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
                 buf.advance(len);
                 Poll::Ready(Ok(()))
             }
+        }
+    }
+}
+
+impl<R: AsyncBufRead, E: Encode> AsyncFlush for Encoder<R, E> {
+    fn poll_flush(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<Result<bool>> {
+        let mut output = PartialBuffer::new(buf.initialize_unfilled());
+        let mut this = self.project();
+
+        match this.encoder.flush(&mut output)? {
+            true => {
+                let len = output.written().len();
+                buf.advance(len);
+                Poll::Ready(Ok(true))
+            }
+            false => Poll::Ready(Ok(false)),
         }
     }
 }

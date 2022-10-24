@@ -438,6 +438,73 @@ macro_rules! io_test_cases {
 
                         assert_eq!(output, bytes);
                     }
+
+                    use crate::utils::algos::$variant::tokio::bufread::Encoder;
+
+                    use std::time::Duration;
+
+                    use async_compression::tokio::flush::FlushableEncoder;
+                    use futures::SinkExt;
+                    use tokio::{
+                        io::{AsyncReadExt, AsyncWriteExt},
+                        time,
+                    };
+
+                    #[tokio::test]
+                    //#[ntest::timeout(1000)]
+                    async fn flushable_encoder() {
+                        let (mut client, server) = tokio::io::duplex(1024);
+                        tokio::task::spawn(async move {
+                            loop {
+                                client
+                                    .write_all(
+                                        &std::iter::repeat(b'A').take(256).collect::<Vec<_>>(),
+                                    )
+                                    .await
+                                    .unwrap();
+                                println!("sent data: 256 bytes");
+                                time::sleep(Duration::from_millis(100)).await;
+                            }
+                        });
+
+                        let (mut tx, rx) = futures_channel::mpsc::channel(1);
+                        let encoder = Encoder::new(tokio::io::BufReader::new(server));
+                        //if this is commented out, the test will fail
+                        let mut encoder = Box::pin(FlushableEncoder::new(encoder, rx));
+
+                        let mut buf = std::iter::repeat(0u8).take(1024).collect::<Vec<_>>();
+
+                        tokio::task::spawn(async move {
+                            loop {
+                                tokio::time::sleep(Duration::from_millis(250)).await;
+                                tx.send(()).await.unwrap();
+                            }
+                        });
+                        let start = std::time::Instant::now();
+                        let mut counter = 0usize;
+                        println!("start");
+                        loop {
+                            let read = encoder.read(&mut buf);
+                            match time::timeout(Duration::from_secs(5), read).await {
+                                Err(e) => {
+                                    panic!("{}ms | timeout: {:?}", start.elapsed().as_millis(), e);
+                                }
+
+                                Ok(res) => {
+                                    println!(
+                                        "{}ms | received data: {:?}",
+                                        start.elapsed().as_millis(),
+                                        res
+                                    );
+
+                                    counter += 1;
+                                    if counter == 10 {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

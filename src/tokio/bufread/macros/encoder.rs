@@ -62,6 +62,16 @@ macro_rules! encoder {
             }
         }
 
+        impl<$inner: tokio::io::AsyncBufRead> crate::tokio::flush::AsyncFlush for $name<$inner> {
+            fn poll_flush(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                buf: &mut tokio::io::ReadBuf<'_>,
+            ) -> std::task::Poll<std::io::Result<bool>> {
+                self.project().inner.poll_flush(cx, buf)
+            }
+        }
+
         const _: () = {
             fn _assert() {
                 use crate::util::{_assert_send, _assert_sync};

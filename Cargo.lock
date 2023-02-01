@@ -52,7 +52,7 @@ dependencies = [
  "tokio-util 0.6.9",
  "xz2",
  "zstd",
- "zstd-safe",
+ "zstd-safe 6.0.3+zstd.1.5.2",
 ]
 
 [[package]]
@@ -892,7 +892,7 @@ version = "0.11.1+zstd.1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77a16b8414fde0414e90c612eba70985577451c4c504b99885ebed24762cb81a"
 dependencies = [
- "zstd-safe",
+ "zstd-safe 5.0.1+zstd.1.5.2",
 ]
 
 [[package]]
@@ -900,6 +900,16 @@ name = "zstd-safe"
 version = "5.0.1+zstd.1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c12659121420dd6365c5c3de4901f97145b79651fb1d25814020ed2ed0585ae"
+dependencies = [
+ "libc",
+ "zstd-sys",
+]
+
+[[package]]
+name = "zstd-safe"
+version = "6.0.3+zstd.1.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68e4a3f57d13d0ab7e478665c60f35e2a613dcd527851c2c7287ce5c787e134a"
 dependencies = [
  "libc",
  "zstd-sys",

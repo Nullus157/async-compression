@@ -9,44 +9,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: nightly
-    - uses: actions-rs/cargo@v1
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
-        command: test
-        args: --all --locked --all-features
+    - run: cargo --locked test --all --all-features
 
   fmt:
     name: cargo +nightly fmt --check
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: nightly
-        components: rustfmt
-    - uses: actions-rs/cargo@v1
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
-        command: fmt
-        args: --all -- --check
+        components: rustfmt
+    - run: cargo fmt --all -- --check
 
   clippy:
     name: cargo +nightly clippy
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: nightly
-        components: clippy
-    - uses: actions-rs/cargo@v1
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
-        command: clippy
-        args: --all --all-targets --all-features --locked -- -D warnings
+        components: clippy
+    - run: cargo --locked clippy --all --all-targets --all-features -- -D warnings
 
 on:
   schedule:

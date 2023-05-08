@@ -56,7 +56,7 @@ proptest = "1.0.0"
 proptest-derive = "0.3.0"
 rand = "0.8.5"
 futures = "0.3.5"
-futures-test = "0.3.5"
+futures-test = "0.3.28"
 ntest = "0.8.1"
 bytes-05 = { package = "bytes", version = "0.5.0" }
 bytes-06 = { package = "bytes", version = "0.6.0" }

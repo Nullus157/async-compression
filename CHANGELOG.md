@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+- Remove Tokio v0.3.x support (`tokio-03` crate feature).
+
 ## 0.3.15 - 2022-10-08
 
 - `Level::Default::into_zstd()` now returns libzstd's default value `3`.

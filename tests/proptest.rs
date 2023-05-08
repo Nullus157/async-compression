@@ -155,9 +155,6 @@ macro_rules! tests {
             #[cfg(feature = "tokio-02")]
             io_tests!(tokio_02, $variant);
 
-            #[cfg(feature = "tokio-03")]
-            io_tests!(tokio_03, $variant);
-
             #[cfg(feature = "tokio")]
             io_tests!(tokio, $variant);
         }

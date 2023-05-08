@@ -97,49 +97,6 @@ impl<R: tokio_02::io::AsyncBufRead + Unpin> tokio_02::io::AsyncBufRead for Track
     }
 }
 
-#[cfg(feature = "tokio-03")]
-impl<R: tokio_03::io::AsyncRead + Unpin> tokio_03::io::AsyncRead for TrackEof<R> {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context,
-        buf: &mut tokio_03::io::ReadBuf,
-    ) -> Poll<Result<()>> {
-        let (inner, eof) = self.project();
-        assert!(!*eof);
-        let len = buf.filled().len();
-        match inner.poll_read(cx, buf) {
-            Poll::Ready(Ok(())) => {
-                if buf.filled().len() == len && buf.remaining() > 0 {
-                    *eof = true;
-                }
-                Poll::Ready(Ok(()))
-            }
-            other => other,
-        }
-    }
-}
-
-#[cfg(feature = "tokio-03")]
-impl<R: tokio_03::io::AsyncBufRead + Unpin> tokio_03::io::AsyncBufRead for TrackEof<R> {
-    fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<&[u8]>> {
-        let (inner, eof) = self.project();
-        assert!(!*eof);
-        match inner.poll_fill_buf(cx) {
-            Poll::Ready(Ok(buf)) => {
-                if buf.is_empty() {
-                    *eof = true;
-                }
-                Poll::Ready(Ok(buf))
-            }
-            other => other,
-        }
-    }
-
-    fn consume(self: Pin<&mut Self>, amt: usize) {
-        self.project().0.consume(amt)
-    }
-}
-
 #[cfg(feature = "tokio")]
 impl<R: tokio::io::AsyncRead + Unpin> tokio::io::AsyncRead for TrackEof<R> {
     fn poll_read(

@@ -40,28 +40,6 @@
 //!     ).map_ok(|bytes| bytes.freeze())
 //! }
 //!
-//! /// Upgrade replacement with `tokio` v0.3 and `bytes` v0.5 using `tokio-util` v0.4
-//! fn tokio_03_bytes_05(
-//!     input: impl Stream<Item = Result<bytes_05::Bytes>>,
-//! ) -> impl Stream<Item = Result<bytes_05::Bytes>> {
-//!     tokio_util_04::io::ReaderStream::new(
-//!         async_compression::tokio_03::bufread::GzipEncoder::new(
-//!             tokio_util_04::io::StreamReader::new(input),
-//!         ),
-//!     )
-//! }
-//!
-//! /// Upgrade replacement with `tokio` v0.3 and `bytes` v0.6 using `tokio-util` v0.5
-//! fn tokio_03_bytes_06(
-//!     input: impl Stream<Item = Result<bytes_06::Bytes>>,
-//! ) -> impl Stream<Item = Result<bytes_06::Bytes>> {
-//!     tokio_util_05::io::ReaderStream::new(
-//!         async_compression::tokio_03::bufread::GzipEncoder::new(
-//!             tokio_util_05::io::StreamReader::new(input),
-//!         ),
-//!     )
-//! }
-//!
 //! /// Upgrade replacement with `tokio` v1.0 and `bytes` v1.0 using `tokio-util` v0.6
 //! fn tokio_bytes(
 //!     input: impl Stream<Item = Result<bytes::Bytes>>,
@@ -103,20 +81,6 @@
 //! #     assert_eq!(
 //! #         expected,
 //! #         tokio_02_bytes_05(data().map_ok(bytes_05::Bytes::from))
-//! #             .map_ok(|bytes| bytes.as_ref().into())
-//! #             .try_collect::<Vec<Vec<u8>>>()
-//! #             .await?,
-//! #     );
-//! #     assert_eq!(
-//! #         expected,
-//! #         tokio_03_bytes_05(data().map_ok(bytes_05::Bytes::from))
-//! #             .map_ok(|bytes| bytes.as_ref().into())
-//! #             .try_collect::<Vec<Vec<u8>>>()
-//! #             .await?,
-//! #     );
-//! #     assert_eq!(
-//! #         expected,
-//! #         tokio_03_bytes_06(data().map_ok(bytes_06::Bytes::from))
 //! #             .map_ok(|bytes| bytes.as_ref().into())
 //! #             .try_collect::<Vec<Vec<u8>>>()
 //! #             .await?,

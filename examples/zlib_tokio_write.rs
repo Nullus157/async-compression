@@ -1,11 +1,10 @@
-use async_compression::tokio_02::write::ZlibDecoder;
-use async_compression::tokio_02::write::ZlibEncoder;
+use async_compression::tokio::write::ZlibDecoder;
+use async_compression::tokio::write::ZlibEncoder;
 
 use std::io::Result;
-use tokio_02::io::AsyncWriteExt as _; // for `write_all` and `shutdown`
+use tokio::io::AsyncWriteExt as _; // for `write_all` and `shutdown`
 
-use tokio_02 as tokio; // this enable the tokio main macro
-#[tokio_02::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     let data = b"example";
     let compressed_data = compress(data).await?;

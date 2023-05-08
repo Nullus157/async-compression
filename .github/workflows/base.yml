@@ -13,7 +13,7 @@ jobs:
     - run: cargo --locked test --workspace --all-features
 
 on:
-  push:
-    branches: [staging, trying]
+  merge_group:
+    types: [checks_requested]
   pull_request:
-    branches: [prīmum]
+    branches: [main]

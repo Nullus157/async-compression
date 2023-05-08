@@ -24,7 +24,7 @@ jobs:
         command: check bans licenses sources
 
 on:
-  push:
-    branches: [staging, trying]
+  merge_group:
+    types: [checks_requested]
   pull_request:
-    branches: [prīmum]
+    branches: [main]

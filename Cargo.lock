@@ -39,7 +39,7 @@ dependencies = [
  "futures-test",
  "memchr",
  "ntest",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "proptest",
  "proptest-derive",
  "rand",
@@ -321,7 +321,7 @@ dependencies = [
  "futures-sink",
  "futures-task",
  "memchr",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "pin-utils",
  "slab",
 ]
@@ -504,9 +504,9 @@ checksum = "257b64915a082f7811703966789728173279bdebb956b143dbcd23f6f970a777"
 
 [[package]]
 name = "pin-project-lite"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e280fbe77cc62c91527259e9442153f4688736748d24660126286329742b4c6c"
+checksum = "e0a7ae3ac2f1173085d398531c705756c94a4c56843785df85a60c1a0afac116"
 
 [[package]]
 name = "pin-utils"
@@ -786,7 +786,7 @@ dependencies = [
  "bytes 0.6.0",
  "futures-core",
  "memchr",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
 ]
 
 [[package]]
@@ -798,7 +798,7 @@ dependencies = [
  "autocfg",
  "bytes 1.1.0",
  "memchr",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "windows-sys 0.42.0",
 ]
 
@@ -851,7 +851,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "log",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "tokio 0.3.7",
 ]
 
@@ -865,7 +865,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "log",
- "pin-project-lite 0.2.8",
+ "pin-project-lite 0.2.9",
  "tokio 1.24.2",
 ]
 

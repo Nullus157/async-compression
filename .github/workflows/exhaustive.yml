@@ -28,9 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: nightly
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+      with: { toolchain: nightly }
     - name: Update to shallow minimal versions
       run:
         cargo update $(
@@ -46,9 +45,8 @@ jobs:
               | "-p", "\(.name):\(.version)"
             '
         ) -Z minimal-versions
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: stable
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+      with: { toolchain: stable }
     - run: cargo --locked test --workspace --all-features
 
   check-features:

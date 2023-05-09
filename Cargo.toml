@@ -41,7 +41,7 @@ pin-project-lite = "0.2.0"
 libzstd = { package = "zstd", version = "0.11.1", optional = true, default-features = false }
 zstd-safe = { version = "5.0.1", optional = true, default-features = false }
 memchr = "2.2.1"
-tokio = { version = "1.0.0", optional = true, default-features = false }
+tokio = { version = "1.28.0", optional = true, default-features = false }
 
 [dev-dependencies]
 proptest = "1.0.0"
@@ -51,7 +51,7 @@ futures = "0.3.5"
 futures-test = "0.3.5"
 ntest = "0.8.1"
 bytes = "1.0.0"
-tokio = { version = "1.0.0", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "io-std"] }
+tokio = { version = "1.28.0", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "io-std"] }
 tokio-util-06 = { package = "tokio-util", version = "0.6.0", default-features = false, features = ["io"] }
 
 [[test]]

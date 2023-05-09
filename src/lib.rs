@@ -121,7 +121,7 @@
 )]
 //!
 
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![warn(
     missing_docs,
     rust_2018_idioms,
@@ -135,10 +135,8 @@ mod macros;
 mod codec;
 
 #[cfg(feature = "futures-io")]
-#[cfg_attr(docsrs, doc(cfg(feature = "futures-io")))]
 pub mod futures;
 #[cfg(feature = "tokio")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub mod tokio;
 
 mod unshared;

@@ -1,20 +1,18 @@
 macro_rules! algos {
     (@algo $algo:ident [$algo_s:expr] $decoder:ident $encoder:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
-        #[cfg(feature = $algo_s)]
         decoder! {
             /// A
             #[doc = $algo_s]
             /// decoder, or decompressor.
-            #[cfg_attr(docsrs, doc(cfg(feature = $algo_s)))]
+            #[cfg(feature = $algo_s)]
             $decoder
         }
 
-        #[cfg(feature = $algo_s)]
         encoder! {
             /// A
-            #[doc = $algo_s]
             /// encoder, or compressor.
-            #[cfg_attr(docsrs, doc(cfg(feature = $algo_s)))]
+            #[doc = $algo_s]
+            #[cfg(feature = $algo_s)]
             $encoder<$inner> {
                 pub fn new(inner: $inner) -> Self {
                     Self::with_quality(inner, crate::Level::Default)

@@ -17,24 +17,19 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: ${{ matrix.platform.toolchain }}
-        targets: ${{ matrix.platform.target }}
-    - uses: actions-rs/cargo@v1
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: ${{ matrix.platform.toolchain }}
-        command: test
-        args: --all --locked --all-features
+        target: ${{ matrix.platform.target }}
+    - run: cargo --locked test --all --all-features
 
   min-versions:
     name: cargo test --shallow-minimal-versions
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: nightly
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+      with: { toolchain: nightly }
     - name: Update to shallow minimal versions
       run:
         cargo update $(
@@ -50,13 +45,9 @@ jobs:
               | "-p", "\(.name):\(.version)"
             '
         ) -Z minimal-versions
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: stable
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --workspace --locked --all-features
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+      with: { toolchain: stable }
+    - run: cargo --locked test --workspace --all-features
 
   check-features:
     name: cargo hack check --feature-powerset
@@ -65,15 +56,11 @@ jobs:
       RUSTFLAGS: -Dwarnings
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-    - uses: actions-rs/cargo@v1
-      with:
-        command: install
-        args: cargo-hack
-    - uses: actions-rs/cargo@v1
-      with:
-        command: hack
-        args: check
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - uses: taiki-e/cache-cargo-install-action@v1
+      with: { tool: cargo-hack }
+    - run:
+        cargo hack check
           --workspace
           --feature-powerset
           --no-dev-deps
@@ -86,20 +73,18 @@ jobs:
       RUSTFLAGS: -Dwarnings
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-    - uses: actions-rs/cargo@v1
-      with:
-        command: install
-        args: cargo-hack
-    - uses: actions-rs/cargo@v1
-      with:
-        command: hack
-        args: check
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - uses: taiki-e/cache-cargo-install-action@v1
+      with: { tool: cargo-hack }
+    - run:
+        cargo hack check
           --workspace
           --feature-powerset
           --all-targets
           --skip 'all,all-algorithms,all-implementations,futures-bufread,futures-write'
 
 on:
-  push:
-    branches: [staging, trying]
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    branches: [main]

@@ -9,14 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: hecrj/setup-rust-action@v1
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --workspace --locked --all-features
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - run: cargo --locked test --workspace --all-features
 
 on:
-  push:
-    branches: [staging, trying]
+  merge_group:
+    types: [checks_requested]
   pull_request:
-    branches: [prīmum]
+    branches: [main]

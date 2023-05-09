@@ -11,6 +11,7 @@ updates:
     rebase-strategy: "disabled"
   - package-ecosystem: "cargo"
     directory: "/"
+    versioning-strategy: "widen"
     schedule:
       interval: "daily"
     rebase-strategy: "disabled"

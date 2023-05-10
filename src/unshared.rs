@@ -2,7 +2,7 @@
 
 use core::fmt::{self, Debug};
 
-/// Wraps a type and only allows unique borrowing, the main usecase is to wrap a `!Sync` type and
+/// Wraps a type and only allows unique borrowing, the main use case is to wrap a `!Sync` type and
 /// implement `Sync` for it as this type blocks having multiple shared references to the inner
 /// value.
 ///

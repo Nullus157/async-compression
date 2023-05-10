@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
-- Remove deprecated `stream`, `futures-bufread` and `futures-write` features.
-- Remove Tokio 0.2.x and 0.3.x support (`tokio-02` and `tokio-03` features).
+- Update `zstd` dependency to `0.12`.
+- Remove deprecated `stream`, `futures-bufread` and `futures-write` crate features.
+- Remove Tokio 0.2.x and 0.3.x support (`tokio-02` and `tokio-03` crate features).
 
 ## 0.3.15 - 2022-10-08
 
-- `Level::Default::into_zstd()` now returns libzstd's default value `3`.
+- `Level::Default::into_zstd()` now returns zstd's default value `3`.
 - Fix endianness when reading the `extra` field of a gzip header.

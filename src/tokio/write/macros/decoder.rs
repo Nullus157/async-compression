@@ -2,10 +2,10 @@ macro_rules! decoder {
     ($(#[$attr:meta])* $name:ident) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
-            #[derive(Debug)]
             ///
             /// This structure implements an [`AsyncWrite`](tokio::io::AsyncWrite) interface and will
             /// take in compressed data and write it uncompressed to an underlying stream.
+            #[derive(Debug)]
             pub struct $name<W> {
                 #[pin]
                 inner: crate::tokio::write::Decoder<W, crate::codec::$name>,
@@ -13,7 +13,7 @@ macro_rules! decoder {
         }
 
         impl<W: tokio::io::AsyncWrite> $name<W> {
-            /// Creates a new decoder which will take in compressed data and write it uncompressedd
+            /// Creates a new decoder which will take in compressed data and write it uncompressed
             /// to the given stream.
             pub fn new(read: W) -> $name<W> {
                 $name {

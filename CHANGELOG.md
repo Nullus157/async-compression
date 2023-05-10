@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 - Update `zstd` dependency to `0.12`.
 - Remove deprecated `stream`, `futures-bufread` and `futures-write` crate features.
 - Remove Tokio 0.2.x and 0.3.x support (`tokio-02` and `tokio-03` crate features).
+- Variant `Level::Precise` now takes a `i32` instead of `u32`.
 
 ## 0.3.15 - 2022-10-08
 

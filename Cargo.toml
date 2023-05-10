@@ -32,14 +32,14 @@ zstd = ["libzstd", "zstd-safe"]
 
 [dependencies]
 brotli = { version = "3.3", optional = true, default-features = false, features = ["std"] }
-bzip2 = { version = "0.4.1", optional = true }
+bzip2 = { version = "0.4.4", optional = true }
 flate2 = { version = "1.0.11", optional = true }
 futures-core = { version = "0.3", default-features = false }
 futures-io = { version = "0.3", default-features = false, features = ["std"], optional = true }
 libzstd = { package = "zstd", version = "0.12", optional = true, default-features = false }
 memchr = "2"
 pin-project-lite = "0.2"
-tokio = { version = "1", optional = true, default-features = false }
+tokio = { version = "1.24.2", optional = true, default-features = false }
 xz2 = { version = "0.1.6", optional = true }
 zstd-safe = { version = "6", optional = true, default-features = false }
 
@@ -51,7 +51,7 @@ ntest = "0.9"
 proptest = "1"
 proptest-derive = "0.3"
 rand = "0.8.5"
-tokio = { version = "1", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "io-std"] }
+tokio = { version = "1.24.2", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "io-std"] }
 tokio-util-06 = { package = "tokio-util", version = "0.6", default-features = false, features = ["io"] }
 
 [[test]]

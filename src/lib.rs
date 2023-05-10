@@ -190,8 +190,7 @@ impl Level {
                 quality
                     .try_into()
                     .unwrap_or(0)
-                    .max(fastest.level())
-                    .min(best.level()),
+                    .clamp(fastest.level(), best.level())
             ),
             Self::Default => bzip2::Compression::default(),
         }
@@ -209,8 +208,7 @@ impl Level {
                 quality
                     .try_into()
                     .unwrap_or(0)
-                    .max(fastest.level())
-                    .min(best.level()),
+                    .clamp(fastest.level(), best.level())
             ),
             Self::Default => flate2::Compression::default(),
         }
@@ -222,7 +220,7 @@ impl Level {
         match self {
             Self::Fastest => fastest,
             Self::Best => best,
-            Self::Precise(quality) => quality.max(fastest).min(best),
+            Self::Precise(quality) => quality.clamp(fastest, best),
             Self::Default => libzstd::DEFAULT_COMPRESSION_LEVEL,
         }
     }

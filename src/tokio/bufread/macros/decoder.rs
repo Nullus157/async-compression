@@ -2,10 +2,10 @@ macro_rules! decoder {
     ($(#[$attr:meta])* $name:ident) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
-            #[derive(Debug)]
             ///
             /// This structure implements an [`AsyncRead`](tokio::io::AsyncRead) interface and will
             /// read compressed data from an underlying stream and emit a stream of uncompressed data.
+            #[derive(Debug)]
             pub struct $name<R> {
                 #[pin]
                 inner: crate::tokio::bufread::Decoder<R, crate::codec::$name>,

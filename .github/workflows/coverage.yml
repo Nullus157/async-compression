@@ -2,6 +2,8 @@ name: coverage
 
 env:
   RUST_BACKTRACE: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:
   codecov:
@@ -12,6 +14,17 @@ jobs:
     - uses: actions-rust-lang/setup-rust-toolchain@v1
     - uses: taiki-e/cache-cargo-install-action@v1
       with: { tool: cargo-tarpaulin }
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-index-
+
     - run: cargo --locked tarpaulin --all-features -- --skip 'proptest::'
     - uses: codecov/codecov-action@v3
 

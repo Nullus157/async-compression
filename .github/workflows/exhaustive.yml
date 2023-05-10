@@ -2,6 +2,8 @@ name: exhaustive
 
 env:
   RUST_BACKTRACE: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:
   test:
@@ -21,13 +23,30 @@ jobs:
       with:
         toolchain: ${{ matrix.platform.toolchain }}
         target: ${{ matrix.platform.target }}
-    - run: cargo --locked test --all --all-features
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-index-
+
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-nextest
+    - run: |
+        cargo nextest run --locked --workspace --all-features
+        cargo test --locked --workspace --doc --all-features
 
   min-versions:
     name: cargo test --shallow-minimal-versions
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with: { toolchain: nightly }
     - name: Update to shallow minimal versions
@@ -47,7 +66,23 @@ jobs:
         ) -Z minimal-versions
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with: { toolchain: stable }
-    - run: cargo --locked test --workspace --all-features
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-index-
+
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-nextest
+    - run: |
+        cargo nextest run --locked --workspace --all-features
+        cargo test --locked --workspace --doc --all-features
 
   check-features:
     name: cargo hack check --feature-powerset
@@ -59,6 +94,17 @@ jobs:
     - uses: actions-rust-lang/setup-rust-toolchain@v1
     - uses: taiki-e/cache-cargo-install-action@v1
       with: { tool: cargo-hack }
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-index-
+
     - run:
         cargo hack check
           --workspace
@@ -76,6 +122,17 @@ jobs:
     - uses: actions-rust-lang/setup-rust-toolchain@v1
     - uses: taiki-e/cache-cargo-install-action@v1
       with: { tool: cargo-hack }
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-index-
+
     - run:
         cargo hack check
           --workspace

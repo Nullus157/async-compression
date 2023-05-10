@@ -85,7 +85,7 @@ pub mod tokio {
         use bytes::Bytes;
         use futures::stream::StreamExt;
         pub use tokio::io::AsyncBufRead;
-        use tokio_util_06::io::StreamReader;
+        use tokio_util::io::StreamReader;
 
         pub fn from(input: &InputStream) -> impl AsyncBufRead {
             // By using the stream here we ensure that each chunk will require a separate

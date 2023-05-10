@@ -130,6 +130,9 @@
 )]
 #![cfg_attr(not(all), allow(unused))]
 
+#[cfg(any(feature = "bzip2", feature = "flate2", feature = "xz2"))]
+use std::convert::TryInto;
+
 #[macro_use]
 mod macros;
 mod codec;
@@ -159,7 +162,7 @@ pub enum Level {
     /// qualities. The interpretation of this depends on the algorithm chosen
     /// and the specific implementation backing it.
     /// Qualities are implicitly clamped to the algorithm's maximum.
-    Precise(u32),
+    Precise(i32),
 }
 
 impl Level {
@@ -168,7 +171,7 @@ impl Level {
         match self {
             Self::Fastest => params.quality = 0,
             Self::Best => params.quality = 11,
-            Self::Precise(quality) => params.quality = quality.min(11) as i32,
+            Self::Precise(quality) => params.quality = quality.clamp(0, 11),
             Self::Default => (),
         }
 
@@ -177,30 +180,47 @@ impl Level {
 
     #[cfg(feature = "bzip2")]
     fn into_bzip2(self) -> bzip2::Compression {
+        let fastest = bzip2::Compression::fast();
+        let best = bzip2::Compression::best();
+
         match self {
-            Self::Fastest => bzip2::Compression::fast(),
-            Self::Best => bzip2::Compression::best(),
-            Self::Precise(quality) => bzip2::Compression::new(quality.max(1).min(9)),
+            Self::Fastest => fastest,
+            Self::Best => best,
+            Self::Precise(quality) => bzip2::Compression::new(
+                quality
+                    .try_into()
+                    .unwrap_or(0)
+                    .clamp(fastest.level(), best.level()),
+            ),
             Self::Default => bzip2::Compression::default(),
         }
     }
 
     #[cfg(feature = "flate2")]
     fn into_flate2(self) -> flate2::Compression {
+        let fastest = flate2::Compression::fast();
+        let best = flate2::Compression::best();
+
         match self {
-            Self::Fastest => flate2::Compression::fast(),
-            Self::Best => flate2::Compression::best(),
-            Self::Precise(quality) => flate2::Compression::new(quality.min(10)),
+            Self::Fastest => fastest,
+            Self::Best => best,
+            Self::Precise(quality) => flate2::Compression::new(
+                quality
+                    .try_into()
+                    .unwrap_or(0)
+                    .clamp(fastest.level(), best.level()),
+            ),
             Self::Default => flate2::Compression::default(),
         }
     }
 
     #[cfg(feature = "zstd")]
     fn into_zstd(self) -> i32 {
+        let (fastest, best) = libzstd::compression_level_range().into_inner();
         match self {
-            Self::Fastest => 1,
-            Self::Best => 21,
-            Self::Precise(quality) => quality.min(21) as i32,
+            Self::Fastest => fastest,
+            Self::Best => best,
+            Self::Precise(quality) => quality.clamp(fastest, best),
             Self::Default => libzstd::DEFAULT_COMPRESSION_LEVEL,
         }
     }
@@ -210,7 +230,7 @@ impl Level {
         match self {
             Self::Fastest => 0,
             Self::Best => 9,
-            Self::Precise(quality) => quality.min(9),
+            Self::Precise(quality) => quality.try_into().unwrap_or(0).min(9),
             Self::Default => 5,
         }
     }

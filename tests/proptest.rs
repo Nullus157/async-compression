@@ -14,7 +14,7 @@ fn any_level() -> impl Strategy<Value = Level> {
         Just(Level::Fastest),
         Just(Level::Best),
         Just(Level::Default),
-        any::<u32>().prop_map(Level::Precise),
+        any::<i32>().prop_map(Level::Precise),
     ]
 }
 

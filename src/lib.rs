@@ -171,7 +171,7 @@ impl Level {
         match self {
             Self::Fastest => params.quality = 0,
             Self::Best => params.quality = 11,
-            Self::Precise(quality) => params.quality = quality.min(11),
+            Self::Precise(quality) => params.quality = quality.clamp(0, 11),
             Self::Default => (),
         }
 
@@ -190,7 +190,7 @@ impl Level {
                 quality
                     .try_into()
                     .unwrap_or(0)
-                    .clamp(fastest.level(), best.level())
+                    .clamp(fastest.level(), best.level()),
             ),
             Self::Default => bzip2::Compression::default(),
         }
@@ -208,7 +208,7 @@ impl Level {
                 quality
                     .try_into()
                     .unwrap_or(0)
-                    .clamp(fastest.level(), best.level())
+                    .clamp(fastest.level(), best.level()),
             ),
             Self::Default => flate2::Compression::default(),
         }

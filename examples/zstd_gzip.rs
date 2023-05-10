@@ -1,20 +1,23 @@
-use async_compression::tokio::bufread::ZstdDecoder;
-use async_compression::tokio::write::GzipEncoder;
+//! Run this example with the following command in a terminal:
+//!
+//! ```console
+//! $ echo -n 'example' | zstd | cargo run --example zstd_gzip --features="tokio,zstd,gzip" | gunzip -c
+//! 7example
+//! ```
+//!
+//! Note that the "7" prefix (input length) is printed to stdout but will likely show up as shown
+//! above. This is not an encoding error; see the code in `main`.
 
 use std::io::Result;
-use tokio::io::stderr;
-use tokio::io::stdin;
-use tokio::io::stdout;
-use tokio::io::AsyncReadExt as _; // for `read_to_end`
-use tokio::io::AsyncWriteExt as _; // for `write_all` and `shutdown`
-use tokio::io::BufReader;
 
-// Run this example by running the following in the terminal:
-// ```
-// echo 'example' | zstd | cargo run --example zstd_gzip --features="all" | gunzip -c                                                                                                                                                    ─╯
-// ```
+use async_compression::tokio::{bufread::ZstdDecoder, write::GzipEncoder};
+use tokio::io::{stderr, stdin, stdout, BufReader};
+use tokio::io::{
+    AsyncReadExt as _,  // for `read_to_end`
+    AsyncWriteExt as _, // for `write_all` and `shutdown`
+};
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     // Read zstd encoded data from stdin and decode
     let mut reader = ZstdDecoder::new(BufReader::new(stdin()));

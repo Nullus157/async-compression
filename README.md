@@ -2,6 +2,8 @@
 
 [![crates.io version][1]][2] ![build status][3]
 [![downloads][5]][6] [![docs.rs docs][7]][8]
+![MIT or Apache 2.0 licensed][9]
+[![dependency status][10]][11]
 
 This crate provides adaptors between compression crates and Rust's modern
 asynchronous IO types.
@@ -40,4 +42,7 @@ additional terms or conditions.
 [6]: https://crates.io/crates/async-compression
 [7]: https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square
 [8]: https://docs.rs/async-compression
+[9]: https://img.shields.io/crates/l/async-compression.svg?style=flat-square
+[10]: https://deps.rs/crate/async-compression/0.3.15/status.svg?style=flat-square
+[11]: https://deps.rs/crate/async-compression/0.3.15
 [releases]: https://github.com/Nullus157/async-compression/releases

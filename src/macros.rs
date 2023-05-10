@@ -85,6 +85,17 @@ macro_rules! algos {
                     ),
                 }
             }
+
+            /// Creates a new encoder, using the specified compression level and parameters, which
+            /// will read uncompressed data from the given stream and emit a compressed stream.
+            pub fn with_quality_and_params(inner: $inner, level: crate::Level, params: &[crate::zstd::CParameter]) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::ZstdEncoder::new_with_params(level.into_zstd(), params),
+                    ),
+                }
+            }
         });
 
         algos!(@algo xz ["xz"] XzDecoder XzEncoder<$inner> {

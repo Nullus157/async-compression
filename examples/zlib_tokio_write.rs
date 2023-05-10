@@ -1,10 +1,16 @@
-use async_compression::tokio::write::ZlibDecoder;
-use async_compression::tokio::write::ZlibEncoder;
+//! Run this example with the following command in a terminal:
+//!
+//! ```console
+//! $ cargo run --example zlib_tokio_write --features="tokio,zlib"
+//! "example"
+//! ```
 
 use std::io::Result;
+
+use async_compression::tokio::write::{ZlibDecoder, ZlibEncoder};
 use tokio::io::AsyncWriteExt as _; // for `write_all` and `shutdown`
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     let data = b"example";
     let compressed_data = compress(data).await?;

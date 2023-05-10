@@ -17,7 +17,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 # groups
-default = []
 all = ["all-implementations", "all-algorithms"]
 all-implementations = ["futures-io", "tokio"]
 all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "zstd"]

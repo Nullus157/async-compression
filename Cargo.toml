@@ -38,7 +38,7 @@ futures-io = { version = "0.3", default-features = false, features = ["std"], op
 libzstd = { package = "zstd", version = "0.12", optional = true, default-features = false }
 memchr = "2"
 pin-project-lite = "0.2"
-tokio = { version = "1.24.2", optional = true, default-features = false }
+tokio = { version = "1.28.1", optional = true, default-features = false }
 xz2 = { version = "0.1.6", optional = true }
 zstd-safe = { version = "6", optional = true, default-features = false }
 
@@ -50,7 +50,7 @@ ntest = "0.9"
 proptest = "1"
 proptest-derive = "0.3"
 rand = "0.8.5"
-tokio = { version = "1.24.2", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "io-std"] }
+tokio = { version = "1.28.1", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "io-std"] }
 tokio-util = { version = "0.7", default-features = false, features = ["io"] }
 
 [[test]]

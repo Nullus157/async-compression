@@ -23,7 +23,7 @@ jobs:
       with:
         toolchain: ${{ matrix.platform.toolchain }}
         target: ${{ matrix.platform.target }}
-    - uses: taiki-e/cache-cargo-install-action@v1
+    - uses: taiki-e/install-action@v1
       with: { tool: cargo-nextest }
     - run: |
         cargo nextest run --locked --workspace --all-features
@@ -54,7 +54,7 @@ jobs:
         ) -Z minimal-versions
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with: { toolchain: stable }
-    - uses: taiki-e/cache-cargo-install-action@v1
+    - uses: taiki-e/install-action@v1
       with: { tool: cargo-nextest }
     - run: |
         cargo nextest run --locked --workspace --all-features
@@ -68,7 +68,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: actions-rust-lang/setup-rust-toolchain@v1
-    - uses: taiki-e/cache-cargo-install-action@v1
+    - uses: taiki-e/install-action@v1
       with: { tool: cargo-hack }
     - run:
         cargo hack check
@@ -85,7 +85,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: actions-rust-lang/setup-rust-toolchain@v1
-    - uses: taiki-e/cache-cargo-install-action@v1
+    - uses: taiki-e/install-action@v1
       with: { tool: cargo-hack }
     - run:
         cargo hack check

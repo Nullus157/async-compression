@@ -12,7 +12,10 @@ jobs:
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
-    - run: cargo --locked test --all --all-features
+    - uses: taiki-e/install-action@v2
+      with: { tool: cargo-nextest }
+    - run: cargo --locked nextest run --workspace --all-features
+    - run: cargo --locked test --workspace --doc --all-features
 
   fmt:
     name: cargo +nightly fmt --check

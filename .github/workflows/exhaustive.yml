@@ -21,7 +21,10 @@ jobs:
       with:
         toolchain: ${{ matrix.platform.toolchain }}
         target: ${{ matrix.platform.target }}
-    - run: cargo --locked test --all --all-features
+    - uses: taiki-e/install-action@v2
+      with: { tool: cargo-nextest }
+    - run: cargo --locked nextest run --workspace --all-features
+    - run: cargo --locked test --workspace --doc --all-features
 
   min-versions:
     name: cargo test --shallow-minimal-versions
@@ -47,7 +50,10 @@ jobs:
         ) -Z minimal-versions
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with: { toolchain: stable }
-    - run: cargo --locked test --workspace --all-features
+    - uses: taiki-e/install-action@v2
+      with: { tool: cargo-nextest }
+    - run: cargo --locked nextest run --workspace --all-features
+    - run: cargo --locked test --workspace --doc --all-features
 
   check-features:
     name: cargo hack check --feature-powerset

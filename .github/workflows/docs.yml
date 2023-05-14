@@ -16,17 +16,6 @@ jobs:
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
-
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: ${{ runner.os }}-cargo-index-
-
     - run: cargo doc --all-features --no-deps
 
 on:

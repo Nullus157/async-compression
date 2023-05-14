@@ -12,20 +12,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: actions-rust-lang/setup-rust-toolchain@v1
-
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: ${{ runner.os }}-cargo-index-
-
-    - uses: taiki-e/install-action@v2
-      with:
-        tool: cargo-nextest
+    - uses: taiki-e/cache-cargo-install-action@v1
+      with: { tool: cargo-nextest }
     - run: |
         cargo nextest run --locked --workspace --all-features
         cargo test --locked --workspace --doc --all-features

@@ -25,11 +25,8 @@ jobs:
         key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-index-
 
-    - uses: taiki-e/install-action@v2
-      with:
-        tool: cargo-nextest
     - run: |
-        cargo nextest run --locked --workspace --all-features
+        cargo --locked test --workspace --all-features
         cargo test --locked --workspace --doc --all-features
 
   fmt:

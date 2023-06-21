@@ -14,4 +14,4 @@ use self::{
     generic::{Decoder, Encoder},
 };
 
-algos!(futures::write<W>);
+algos!(futures::write<W1, W2>);

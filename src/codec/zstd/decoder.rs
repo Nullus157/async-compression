@@ -14,6 +14,13 @@ impl ZstdDecoder {
             decoder: Unshared::new(Decoder::new().unwrap()),
         }
     }
+
+    pub(crate) fn new_with_dict(dictionary: &[u8]) -> Self {
+        let mut decoder = Decoder::with_dictionary(dictionary).unwrap();
+        Self {
+            decoder: Unshared::new(decoder),
+        }
+    }
 }
 
 impl Decode for ZstdDecoder {

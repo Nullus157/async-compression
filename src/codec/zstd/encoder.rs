@@ -23,6 +23,13 @@ impl ZstdEncoder {
             encoder: Unshared::new(encoder),
         }
     }
+
+    pub(crate) fn new_with_dict(level: i32, dictionary: &[u8]) -> Self {
+        let mut encoder = Encoder::with_dictionary(level, dictionary).unwrap();
+        Self {
+            encoder: Unshared::new(encoder),
+        }
+    }
 }
 
 impl Encode for ZstdEncoder {

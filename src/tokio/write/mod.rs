@@ -14,4 +14,4 @@ use self::{
     generic::{Decoder, Encoder},
 };
 
-algos!(tokio::write<W>);
+algos!(tokio::write<W1, W2>);

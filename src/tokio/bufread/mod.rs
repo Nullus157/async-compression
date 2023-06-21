@@ -7,4 +7,4 @@ mod generic;
 
 pub(crate) use generic::{Decoder, Encoder};
 
-algos!(tokio::bufread<R>);
+algos!(tokio::bufread<R1, R2>);

@@ -1,6 +1,6 @@
-use std::io;
 use crate::{codec::Encode, unshared::Unshared, util::PartialBuffer};
 use libzstd::stream::raw::{CParameter, Encoder, Operation};
+use std::io;
 use std::io::Result;
 
 #[derive(Debug)]

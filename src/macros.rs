@@ -101,13 +101,13 @@ macro_rules! algos {
             ///
             /// (Dictionaries provide better compression ratios for small files,
             /// but are required to be present during decompression.)
-            pub fn with_dict(inner: $inner_enc, level: crate::Level, dictionary: &[u8]) -> Self {
-                Self {
+            pub fn with_dict(inner: $inner_enc, level: crate::Level, dictionary: &[u8]) -> ::std::io::Result<Self> {
+                Ok(Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZstdEncoder::new_with_dict(level.into_zstd(), dictionary),
+                        crate::codec::ZstdEncoder::new_with_dict(level.into_zstd(), dictionary)?,
                     ),
-                }
+                })
             }
 
             /// Creates a new encoder, using the specified compression level and parameters, which
@@ -128,13 +128,13 @@ macro_rules! algos {
             ///
             /// (Dictionaries provide better compression ratios for small files but
             /// you must use the same dictionary for both encoding and decoding data)
-            pub fn with_dict(read: $inner_dec, dictionary: &[u8]) -> Self {
-                Self {
+            pub fn with_dict(read: $inner_dec, dictionary: &[u8]) -> ::std::io::Result<Self> {
+                Ok(Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,
-                        crate::codec::ZstdDecoder::new_with_dict(dictionary),
+                        crate::codec::ZstdDecoder::new_with_dict(dictionary)?,
                     ),
-                }
+                })
             }
         });
 

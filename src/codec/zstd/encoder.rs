@@ -1,3 +1,4 @@
+use std::io;
 use crate::{codec::Encode, unshared::Unshared, util::PartialBuffer};
 use libzstd::stream::raw::{CParameter, Encoder, Operation};
 use std::io::Result;
@@ -24,11 +25,11 @@ impl ZstdEncoder {
         }
     }
 
-    pub(crate) fn new_with_dict(level: i32, dictionary: &[u8]) -> Self {
-        let mut encoder = Encoder::with_dictionary(level, dictionary).unwrap();
-        Self {
+    pub(crate) fn new_with_dict(level: i32, dictionary: &[u8]) -> io::Result<Self> {
+        let mut encoder = Encoder::with_dictionary(level, dictionary)?;
+        Ok(Self {
             encoder: Unshared::new(encoder),
-        }
+        })
     }
 }
 

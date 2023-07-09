@@ -322,6 +322,10 @@ pub mod zstd {
             Self(DictIdFlag(value))
         }
 
+        /// **WARNING: Using this function requires feature `zstdmt` to be enabled,**
+        /// **otherwise it would cause panic in**
+        /// **`async_compression::tokio::write::ZstdEncoder::with_quality_and_params`.**
+        ///
         /// Number of threads to spawn.
         ///
         /// If set to 0, compression functions will block; if set to 1 or more, compression will

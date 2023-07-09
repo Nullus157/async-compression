@@ -28,6 +28,7 @@ lzma = ["xz2"]
 xz = ["xz2"]
 zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
+zstdmt = ["zstd", "zstd-safe/zstdmt"]
 
 [dependencies]
 brotli = { version = "3.3", optional = true, default-features = false, features = ["std"] }

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+- Add `zstdmt` crate feature that enables `zstd-safe/zstdmt`, allowing multi-threaded functionality to work as expected.
+
 ## 0.4.0 - 2023-05-10
 
 - `Level::Precise` variant now takes a `i32` instead of `u32`.

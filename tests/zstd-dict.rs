@@ -1,3 +1,5 @@
+#![cfg(not(windows))]
+
 use tokio::io::AsyncWriteExt as _;
 
 #[tokio::test]

@@ -122,7 +122,7 @@ macro_rules! algos {
             //
             // TODO: remove panic note on next breaking release, along with `CParameter::nb_workers`
             // change
-            pub fn with_quality_and_params(inner: $inner, level: crate::Level, params: &[crate::zstd::CParameter]) -> Self {
+            pub fn with_quality_and_params(inner: $inner_enc, level: crate::Level, params: &[crate::zstd::CParameter]) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,

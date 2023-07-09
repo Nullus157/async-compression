@@ -1,28 +1,28 @@
 macro_rules! decoder {
-    ($(#[$attr:meta])* $name:ident<$inner: ident> $({ $($constructor:tt)* })*) => {
+    ($(#[$attr:meta])* $name:ident $({ $($inherent_methods:tt)* })*) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
             ///
             /// This structure implements an [`AsyncRead`](tokio::io::AsyncRead) interface and will
             /// read compressed data from an underlying stream and emit a stream of uncompressed data.
             #[derive(Debug)]
-            pub struct $name<$inner> {
+            pub struct $name<R> {
                 #[pin]
-                inner: crate::tokio::bufread::Decoder<$inner, crate::codec::$name>,
+                inner: crate::tokio::bufread::Decoder<R, crate::codec::$name>,
             }
         }
 
-        impl<$inner: tokio::io::AsyncBufRead> $name<$inner> {
+        impl<R: tokio::io::AsyncBufRead> $name<R> {
             /// Creates a new decoder which will read compressed data from the given stream and
             /// emit a uncompressed stream.
-            pub fn new(read: $inner) -> $name<$inner> {
+            pub fn new(read: R) -> $name<R> {
                 $name {
                     inner: crate::tokio::bufread::Decoder::new(read, crate::codec::$name::new()),
                 }
             }
-            $(
-                $($constructor)*
-            )*
+
+            $($($inherent_methods)*)*
+
             /// Configure multi-member/frame decoding, if enabled this will reset the decoder state
             /// when reaching the end of a compressed member/frame and expect either EOF or another
             /// compressed member/frame to follow it in the stream.
@@ -31,7 +31,7 @@ macro_rules! decoder {
             }
 
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
-            pub fn get_ref(&self) -> &$inner {
+            pub fn get_ref(&self) -> &R {
                 self.inner.get_ref()
             }
 
@@ -40,7 +40,7 @@ macro_rules! decoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this decoder.
-            pub fn get_mut(&mut self) -> &mut $inner {
+            pub fn get_mut(&mut self) -> &mut R {
                 self.inner.get_mut()
             }
 
@@ -49,7 +49,7 @@ macro_rules! decoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this decoder.
-            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut $inner> {
+            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut R> {
                 self.project().inner.get_pin_mut()
             }
 
@@ -57,12 +57,12 @@ macro_rules! decoder {
             ///
             /// Note that this may discard internal state of this decoder, so care should be taken
             /// to avoid losing resources when this is called.
-            pub fn into_inner(self) -> $inner {
+            pub fn into_inner(self) -> R {
                 self.inner.into_inner()
             }
         }
 
-        impl<$inner: tokio::io::AsyncBufRead> tokio::io::AsyncRead for $name<$inner> {
+        impl<R: tokio::io::AsyncBufRead> tokio::io::AsyncRead for $name<R> {
             fn poll_read(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,

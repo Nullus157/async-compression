@@ -7,4 +7,4 @@ mod generic;
 
 pub(crate) use generic::{Decoder, Encoder};
 
-algos!(futures::bufread<R1, R2>);
+algos!(futures::bufread<R>);

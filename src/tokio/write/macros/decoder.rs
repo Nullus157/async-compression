@@ -1,33 +1,30 @@
 macro_rules! decoder {
-    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
+    ($(#[$attr:meta])* $name:ident $({ $($inherent_methods:tt)* })*) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
             ///
             /// This structure implements an [`AsyncWrite`](tokio::io::AsyncWrite) interface and will
             /// take in compressed data and write it uncompressed to an underlying stream.
             #[derive(Debug)]
-            pub struct $name<$inner> {
+            pub struct $name<W> {
                 #[pin]
-                inner: crate::tokio::write::Decoder<$inner, crate::codec::$name>,
+                inner: crate::tokio::write::Decoder<W, crate::codec::$name>,
             }
         }
 
-        impl<$inner: tokio::io::AsyncWrite> $name<$inner> {
+        impl<W: tokio::io::AsyncWrite> $name<W> {
             /// Creates a new decoder which will take in compressed data and write it uncompressed
             /// to the given stream.
-            pub fn new(read: $inner) -> $name<$inner> {
+            pub fn new(read: W) -> $name<W> {
                 $name {
                     inner: crate::tokio::write::Decoder::new(read, crate::codec::$name::new()),
                 }
             }
 
-            $(
-                $($constructor)*
-            )*
-
+            $($($inherent_methods)*)*
 
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
-            pub fn get_ref(&self) -> &$inner {
+            pub fn get_ref(&self) -> &W {
                 self.inner.get_ref()
             }
 
@@ -36,7 +33,7 @@ macro_rules! decoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this decoder.
-            pub fn get_mut(&mut self) -> &mut $inner {
+            pub fn get_mut(&mut self) -> &mut W {
                 self.inner.get_mut()
             }
 
@@ -45,7 +42,7 @@ macro_rules! decoder {
             ///
             /// Note that care must be taken to avoid tampering with the state of the reader which
             /// may otherwise confuse this decoder.
-            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut $inner> {
+            pub fn get_pin_mut(self: std::pin::Pin<&mut Self>) -> std::pin::Pin<&mut W> {
                 self.project().inner.get_pin_mut()
             }
 
@@ -53,12 +50,12 @@ macro_rules! decoder {
             ///
             /// Note that this may discard internal state of this decoder, so care should be taken
             /// to avoid losing resources when this is called.
-            pub fn into_inner(self) -> $inner {
+            pub fn into_inner(self) -> W {
                 self.inner.into_inner()
             }
         }
 
-        impl<$inner: tokio::io::AsyncWrite> tokio::io::AsyncWrite for $name<$inner> {
+        impl<W: tokio::io::AsyncWrite> tokio::io::AsyncWrite for $name<W> {
             fn poll_write(
                 self: std::pin::Pin<&mut Self>,
                 cx: &mut std::task::Context<'_>,

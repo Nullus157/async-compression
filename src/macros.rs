@@ -88,6 +88,16 @@ macro_rules! algos {
 
             /// Creates a new encoder, using the specified compression level and parameters, which
             /// will read uncompressed data from the given stream and emit a compressed stream.
+            ///
+            /// # Panics
+            ///
+            /// Panics if this function is called with a [`CParameter::nb_workers()`] parameter and
+            /// the `zstdmt` crate feature is _not_ enabled.
+            ///
+            /// [`CParameter::nb_workers()`]: crate::zstd::CParameter
+            //
+            // TODO: remove panic note on next breaking release, along with `CParameter::nb_workers`
+            // change
             pub fn with_quality_and_params(inner: $inner, level: crate::Level, params: &[crate::zstd::CParameter]) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(

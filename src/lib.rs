@@ -121,7 +121,7 @@
 )]
 //!
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
 #![warn(
     missing_docs,
     rust_2018_idioms,
@@ -322,14 +322,18 @@ pub mod zstd {
             Self(DictIdFlag(value))
         }
 
-        /// **WARNING: Using this function requires feature `zstdmt` to be enabled,**
-        /// **otherwise it would cause panic in**
-        /// **`async_compression::tokio::write::ZstdEncoder::with_quality_and_params`.**
-        ///
         /// Number of threads to spawn.
         ///
         /// If set to 0, compression functions will block; if set to 1 or more, compression will
         /// run in background threads and `flush` pushes bytes through the compressor.
+        ///
+        /// # Panics
+        ///
+        /// This parameter requires feature `zstdmt` to be enabled, otherwise it will cause a panic
+        /// when used in `ZstdEncoder::with_quality_and_params()` calls.
+        //
+        // TODO: make this a normal feature guarded fn on next breaking release
+        #[cfg_attr(docsrs, doc(cfg(feature = "zstdmt")))]
         pub fn nb_workers(value: u32) -> Self {
             Self(NbWorkers(value))
         }

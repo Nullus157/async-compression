@@ -86,6 +86,10 @@ required-features = ["zlib"]
 name = "zstd"
 required-features = ["zstd"]
 
+[[test]]
+name = "zstd-dict"
+required-features = ["zstd", "tokio"]
+
 [[example]]
 name = "zlib_tokio_write"
 required-features = ["zlib", "tokio"]

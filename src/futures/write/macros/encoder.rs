@@ -1,5 +1,5 @@
 macro_rules! encoder {
-    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($constructor:tt)* })*) => {
+    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($inherent_methods:tt)* })*) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
             ///
@@ -17,7 +17,7 @@ macro_rules! encoder {
                 /// Creates a new encoder which will take in uncompressed data and write it
                 /// compressed to the given stream.
                 ///
-                $($constructor)*
+                $($inherent_methods)*
             )*
 
             /// Acquires a reference to the underlying writer that this encoder is wrapping.

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+- Add `Zstd{Encoder,Decoder}::with_dict()` constructors.
 - Add `zstdmt` crate feature that enables `zstd-safe/zstdmt`, allowing multi-threaded functionality to work as expected.
 
 ## 0.4.0 - 2023-05-10

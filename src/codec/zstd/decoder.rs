@@ -1,3 +1,4 @@
+use std::io;
 use std::io::Result;
 
 use crate::{codec::Decode, unshared::Unshared, util::PartialBuffer};
@@ -13,6 +14,13 @@ impl ZstdDecoder {
         Self {
             decoder: Unshared::new(Decoder::new().unwrap()),
         }
+    }
+
+    pub(crate) fn new_with_dict(dictionary: &[u8]) -> io::Result<Self> {
+        let mut decoder = Decoder::with_dictionary(dictionary)?;
+        Ok(Self {
+            decoder: Unshared::new(decoder),
+        })
     }
 }
 

@@ -1,5 +1,5 @@
 macro_rules! decoder {
-    ($(#[$attr:meta])* $name:ident) => {
+    ($(#[$attr:meta])* $name:ident $({ $($inherent_methods:tt)* })*) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
             ///
@@ -20,6 +20,8 @@ macro_rules! decoder {
                     inner: crate::futures::write::Decoder::new(read, crate::codec::$name::new()),
                 }
             }
+
+            $($($inherent_methods)*)*
 
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
             pub fn get_ref(&self) -> &W {

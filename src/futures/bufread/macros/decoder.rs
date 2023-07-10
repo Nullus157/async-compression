@@ -1,5 +1,5 @@
 macro_rules! decoder {
-    ($(#[$attr:meta])* $name:ident) => {
+    ($(#[$attr:meta])* $name:ident $({ $($inherent_methods:tt)* })*) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
             ///
@@ -20,6 +20,8 @@ macro_rules! decoder {
                     inner: crate::futures::bufread::Decoder::new(read, crate::codec::$name::new()),
                 }
             }
+
+            $($($inherent_methods)*)*
 
             /// Configure multi-member/frame decoding, if enabled this will reset the decoder state
             /// when reaching the end of a compressed member/frame and expect either EOF or another

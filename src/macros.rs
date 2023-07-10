@@ -1,5 +1,5 @@
 macro_rules! algos {
-    (@algo $algo:ident [$algo_s:expr] $decoder:ident $encoder:ident<$inner:ident>
+    (@algo $algo:ident [$algo_s:expr] $decoder:ident $encoder:ident <$inner:ident>
         { @enc $($encoder_methods:tt)* }
         { @dec $($decoder_methods:tt)* }
     ) => {
@@ -7,7 +7,7 @@ macro_rules! algos {
         decoder! {
             #[doc = concat!("A ", $algo_s, " decoder, or decompressor")]
             #[cfg(feature = $algo_s)]
-            $decoder
+            $decoder<$inner>
 
             { $($decoder_methods)* }
         }
@@ -26,8 +26,8 @@ macro_rules! algos {
         }
     };
 
-    ($($mod:ident)::+<$inner:ident>) => {
-        algos!(@algo brotli ["brotli"] BrotliDecoder BrotliEncoder<$inner>
+    ($($mod:ident)::+ <$inner:ident>) => {
+        algos!(@algo brotli ["brotli"] BrotliDecoder BrotliEncoder <$inner>
         { @enc
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
                 let params = brotli::enc::backward_references::BrotliEncoderParams::default();
@@ -42,7 +42,7 @@ macro_rules! algos {
         { @dec }
         );
 
-        algos!(@algo bzip2 ["bzip2"] BzDecoder BzEncoder<$inner>
+        algos!(@algo bzip2 ["bzip2"] BzDecoder BzEncoder <$inner>
         { @enc
 
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
@@ -57,7 +57,7 @@ macro_rules! algos {
         { @dec }
         );
 
-        algos!(@algo deflate ["deflate"] DeflateDecoder DeflateEncoder<$inner>
+        algos!(@algo deflate ["deflate"] DeflateDecoder DeflateEncoder <$inner>
         { @enc
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
                 Self {
@@ -71,7 +71,7 @@ macro_rules! algos {
         { @dec }
         );
 
-        algos!(@algo gzip ["gzip"] GzipDecoder GzipEncoder<$inner>
+        algos!(@algo gzip ["gzip"] GzipDecoder GzipEncoder <$inner>
         { @enc
 
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
@@ -86,7 +86,7 @@ macro_rules! algos {
         { @dec }
         );
 
-        algos!(@algo zlib ["zlib"] ZlibDecoder ZlibEncoder<$inner>
+        algos!(@algo zlib ["zlib"] ZlibDecoder ZlibEncoder <$inner>
         { @enc
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
                 Self {
@@ -100,7 +100,7 @@ macro_rules! algos {
         { @dec }
         );
 
-        algos!(@algo zstd ["zstd"] ZstdDecoder ZstdEncoder<$inner>
+        algos!(@algo zstd ["zstd"] ZstdDecoder ZstdEncoder <$inner>
         { @enc
 
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
@@ -175,7 +175,7 @@ macro_rules! algos {
         }
         );
 
-        algos!(@algo xz ["xz"] XzDecoder XzEncoder<$inner>
+        algos!(@algo xz ["xz"] XzDecoder XzEncoder <$inner>
         { @enc
 
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
@@ -190,7 +190,7 @@ macro_rules! algos {
         { @dec }
         );
 
-        algos!(@algo lzma ["lzma"] LzmaDecoder LzmaEncoder<$inner>
+        algos!(@algo lzma ["lzma"] LzmaDecoder LzmaEncoder <$inner>
         { @enc
 
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {

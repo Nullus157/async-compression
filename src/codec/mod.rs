@@ -31,7 +31,7 @@ pub(crate) use self::bzip2::{BzDecoder, BzEncoder};
 #[cfg(feature = "deflate")]
 pub(crate) use self::deflate::{DeflateDecoder, DeflateEncoder};
 #[cfg(feature = "deflate64")]
-pub(crate) use self::deflate64::{Deflate64Decoder};
+pub(crate) use self::deflate64::Deflate64Decoder;
 #[cfg(feature = "flate2")]
 pub(crate) use self::flate::{FlateDecoder, FlateEncoder};
 #[cfg(feature = "gzip")]

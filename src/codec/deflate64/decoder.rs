@@ -20,7 +20,9 @@ impl Deflate64Decoder {
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        let result = self.inflater.inflate(input.unwritten(), output.unwritten_mut());
+        let result = self
+            .inflater
+            .inflate(input.unwritten(), output.unwritten_mut());
 
         input.advance(result.bytes_consumed);
         output.advance(result.bytes_written);

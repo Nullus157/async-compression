@@ -26,6 +26,19 @@ macro_rules! algos {
         }
     };
 
+    (@algo $algo:ident [$algo_s:expr] $decoder:ident $encoder:ident <$inner:ident>
+        { @dec $($decoder_methods:tt)* }
+    ) => {
+        #[cfg(feature = $algo_s)]
+        decoder! {
+            #[doc = concat!("A ", $algo_s, " decoder, or decompressor")]
+            #[cfg(feature = $algo_s)]
+            $decoder<$inner>
+
+            { $($decoder_methods)* }
+        }
+    };
+
     ($($mod:ident)::+ <$inner:ident>) => {
         algos!(@algo brotli ["brotli"] BrotliDecoder BrotliEncoder <$inner>
         { @enc
@@ -68,6 +81,10 @@ macro_rules! algos {
                 }
             }
         }
+        { @dec }
+        );
+
+        algos!(@algo deflate ["deflate64"] Deflate64Decoder Deflate64Encoder <$inner>
         { @dec }
         );
 

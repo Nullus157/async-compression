@@ -119,6 +119,14 @@
     not(feature = "zstd"),
     doc = "`zstd` (*inactive*) | `ZstdEncoder`, `ZstdDecoder`"
 )]
+#![cfg_attr(
+    feature = "deflate64",
+    doc = "`deflate64` | (encoder not implemented), [`Deflate64Decoder`](?search=Deflate64Decoder)"
+)]
+#![cfg_attr(
+    not(feature = "deflate64"),
+    doc = "`deflate64` (*inactive*) | (encoder not implemented), `Deflate64Decoder`"
+)]
 //!
 
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]

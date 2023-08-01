@@ -30,7 +30,7 @@ impl Deflate64Decoder {
         if result.data_error {
             Err(Error::new(ErrorKind::InvalidData, "invalid data"))
         } else {
-            Ok(self.inflater.finished())
+            Ok(self.inflater.finished() && self.inflater.available_output() == 0)
         }
     }
 }

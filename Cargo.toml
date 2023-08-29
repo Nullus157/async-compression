@@ -19,7 +19,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 # groups
 all = ["all-implementations", "all-algorithms"]
 all-implementations = ["futures-io", "tokio"]
-all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "zstd"]
+all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "zstd", "deflate64"]
 
 # algorithms
 deflate = ["flate2"]
@@ -29,6 +29,7 @@ xz = ["xz2"]
 zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]
+deflate64 = ["dep:deflate64"]
 
 [dependencies]
 brotli = { version = "3.3", optional = true, default-features = false, features = ["std"] }
@@ -42,6 +43,7 @@ pin-project-lite = "0.2"
 tokio = { version = "1.24.2", optional = true, default-features = false }
 xz2 = { version = "0.1.6", optional = true }
 zstd-safe = { version = "6", optional = true, default-features = false }
+deflate64 = { version = "0.1.5", optional = true }
 
 [dev-dependencies]
 bytes = "1"

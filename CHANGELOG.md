@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## 0.4.2
+
 - Add top-level `brotli` module containing stable `brotli` crate wrapper types.
 - Add `BrotliEncoder::with_quality_and_params()` constructors.
 - Add `Deflate64Decoder` behind new crate feature `deflate64`.

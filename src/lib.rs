@@ -154,6 +154,7 @@ mod unshared;
 mod util;
 
 #[cfg(feature = "brotli")]
+pub mod brotli;
 #[cfg(feature = "zstd")]
 pub mod zstd;
 

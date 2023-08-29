@@ -44,10 +44,28 @@ macro_rules! algos {
         { @enc
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
                 let params = brotli::enc::backward_references::BrotliEncoderParams::default();
+
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
                         crate::codec::BrotliEncoder::new(level.into_brotli(params)),
+                    ),
+                }
+            }
+
+            /// Creates a new encoder, using the specified compression level and parameters, which
+            /// will read uncompressed data from the given stream and emit a compressed stream.
+            pub fn with_quality_and_params(
+                inner: $inner,
+                level: crate::Level,
+                params: crate::brotli::EncoderParams,
+            ) -> Self {
+                let params = level.into_brotli(params.as_brotli());
+
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::BrotliEncoder::new(params),
                     ),
                 }
             }

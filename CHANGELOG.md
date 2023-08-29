@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+- Add top-level `brotli` module containing stable `brotli` crate wrapper types.
+- Add `BrotliEncoder::with_quality_and_params()` constructors.
 - Add `Deflate64Decoder` behind new crate feature `deflate64`.
 
 ## 0.4.1 - 2023-07-10
@@ -16,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 ## 0.4.0 - 2023-05-10
 
 - `Level::Precise` variant now takes a `i32` instead of `u32`.
-- Add top level `zstd` module containing stable `zstd` crate wrapper types.
+- Add top-level `zstd` module containing stable `zstd` crate wrapper types.
 - Add `ZstdEncoder::with_quality_and_params()` constructors.
 - Update `zstd` dependency to `0.12`.
 - Remove deprecated `stream`, `futures-bufread` and `futures-write` crate features.

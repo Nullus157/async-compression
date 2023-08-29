@@ -8,15 +8,14 @@ allow = [
   "MIT",
   "Apache-2.0",
   "BSD-3-Clause",
+  "Unicode-DFS-2016",
 ]
 default = "deny"
 
 [bans]
 multiple-versions = "warn"
 skip = [
-  { name = "tokio-util", version = "0.6" },
 ]
 skip-tree = [
   { name = "proptest", version = "1.0" },
-  { name = "proptest-derive", version = "0.3" },
 ]

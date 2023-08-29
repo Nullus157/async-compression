@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+- Add `Deflate64Decoder` behind new crate feature `deflate64`.
+
 ## 0.4.1 - 2023-07-10
 
 - Add `Zstd{Encoder,Decoder}::with_dict()` constructors.

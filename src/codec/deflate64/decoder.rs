@@ -53,11 +53,11 @@ impl Decode for Deflate64Decoder {
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        self.decode(&mut PartialBuffer::new(&[][..]), output)?;
+        self.decode(&mut PartialBuffer::new([]), output)?;
 
         loop {
             let old_len = output.written().len();
-            self.decode(&mut PartialBuffer::new(&[][..]), output)?;
+            self.decode(&mut PartialBuffer::new([]), output)?;
             if output.written().len() == old_len {
                 break;
             }
@@ -70,6 +70,6 @@ impl Decode for Deflate64Decoder {
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        self.decode(&mut PartialBuffer::new(&[][..]), output)
+        self.decode(&mut PartialBuffer::new([]), output)
     }
 }

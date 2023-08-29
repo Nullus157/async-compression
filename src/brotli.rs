@@ -7,7 +7,8 @@ use brotli::enc::backward_references::{BrotliEncoderMode, BrotliEncoderParams};
 ///
 /// See the [Brotli documentation](https://www.brotli.org/encode.html#a9a8) for more information on
 /// these parameters.
-#[derive(Debug, Clone, PartialEq, Eq)]
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EncoderParams {
     window_size: i32,
     block_size: i32,

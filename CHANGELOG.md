@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## 0.4.3
+
+- Implement `Default` for `brotli::EncoderParams`.
+
 ## 0.4.2
 
 - Add top-level `brotli` module containing stable `brotli` crate wrapper types.

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+- Flush available data in decoder even when there's no incoming input.
+
 ## 0.4.5
 
 - Add `{Lzma, Xz}Decoder::with_mem_limit()` methods.

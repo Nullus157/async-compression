@@ -34,7 +34,7 @@ deflate64 = ["dep:deflate64"]
 [dependencies]
 brotli = { version = "3.3", optional = true, default-features = false, features = ["std"] }
 bzip2 = { version = "0.4.4", optional = true }
-flate2 = { version = "1.0.11", optional = true }
+flate2 = { version = "1.0.13", optional = true }
 futures-core = { version = "0.3", default-features = false }
 futures-io = { version = "0.3", default-features = false, features = ["std"], optional = true }
 libzstd = { package = "zstd", version = "0.12", optional = true, default-features = false }

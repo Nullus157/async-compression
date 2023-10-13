@@ -37,12 +37,12 @@ bzip2 = { version = "0.4.4", optional = true }
 flate2 = { version = "1.0.13", optional = true }
 futures-core = { version = "0.3", default-features = false }
 futures-io = { version = "0.3", default-features = false, features = ["std"], optional = true }
-libzstd = { package = "zstd", version = "0.12", optional = true, default-features = false }
+libzstd = { package = "zstd", version = "0.13", optional = true, default-features = false }
 memchr = "2"
 pin-project-lite = "0.2"
 tokio = { version = "1.24.2", optional = true, default-features = false }
 xz2 = { version = "0.1.6", optional = true }
-zstd-safe = { version = "6", optional = true, default-features = false }
+zstd-safe = { version = "7", optional = true, default-features = false }
 deflate64 = { version = "0.1.5", optional = true }
 
 [dev-dependencies]

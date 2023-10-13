@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## 0.4.4
+
 - Update `zstd` dependency to `0.13`.
 
 ## 0.4.3

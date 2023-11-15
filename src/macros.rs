@@ -223,10 +223,12 @@ macro_rules! algos {
             }
         }
         { @dec
-            /// Creates a new decoder, using the specified limit of memory. `Err(Custom { kind:
-            /// Other, error: MemLimit })` can be returned during decoding if the specified limit
-            /// is too small.
-            pub fn with_memlimit(read: $inner, memlimit: u64) -> Self {
+            /// Creates a new decoder with the specified limit of memory.
+            ///
+            /// # Errors
+            ///
+            /// An IO error may be returned during decoding if the specified limit is too small.
+            pub fn with_mem_limit(read: $inner, memlimit: u64) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,
@@ -250,10 +252,12 @@ macro_rules! algos {
             }
         }
         { @dec
-            /// Creates a new decoder, using the specified limit of memory. `Err(Custom { kind:
-            /// Other, error: MemLimit })` can be returned during decoding if the specified limit
-            /// is too small.
-            pub fn with_memlimit(read: $inner, memlimit: u64) -> Self {
+            /// Creates a new decoder with the specified limit of memory.
+            ///
+            /// # Errors
+            ///
+            /// An IO error may be returned during decoding if the specified limit is too small.
+            pub fn with_mem_limit(read: $inner, memlimit: u64) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,

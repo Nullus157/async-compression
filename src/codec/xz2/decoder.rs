@@ -1,16 +1,16 @@
-use crate::{codec::Decode, util::PartialBuffer};
+use std::{fmt, io};
 
-use std::fmt::{Debug, Formatter, Result as FmtResult};
-use std::io::Result;
 use xz2::stream::{Action, Status, Stream};
+
+use crate::{codec::Decode, util::PartialBuffer};
 
 pub struct Xz2Decoder {
     stream: Stream,
 }
 
-impl Debug for Xz2Decoder {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "LzmaDecoder")
+impl fmt::Debug for Xz2Decoder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Xz2Decoder").finish_non_exhaustive()
     }
 }
 
@@ -23,7 +23,7 @@ impl Xz2Decoder {
 }
 
 impl Decode for Xz2Decoder {
-    fn reinit(&mut self) -> Result<()> {
+    fn reinit(&mut self) -> io::Result<()> {
         *self = Self::new(self.stream.memlimit());
         Ok(())
     }
@@ -32,7 +32,7 @@ impl Decode for Xz2Decoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         let previous_in = self.stream.total_in() as usize;
         let previous_out = self.stream.total_out() as usize;
 
@@ -57,7 +57,7 @@ impl Decode for Xz2Decoder {
     fn flush(
         &mut self,
         _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         // While decoding flush is a noop
         Ok(true)
     }
@@ -65,7 +65,7 @@ impl Decode for Xz2Decoder {
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         let previous_out = self.stream.total_out() as usize;
 
         let status = self

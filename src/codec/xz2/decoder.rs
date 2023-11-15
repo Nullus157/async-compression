@@ -15,16 +15,16 @@ impl Debug for Xz2Decoder {
 }
 
 impl Xz2Decoder {
-    pub fn new() -> Self {
+    pub fn new(mem_limit: u64) -> Self {
         Self {
-            stream: Stream::new_auto_decoder(u64::max_value(), 0).unwrap(),
+            stream: Stream::new_auto_decoder(mem_limit, 0).unwrap(),
         }
     }
 }
 
 impl Decode for Xz2Decoder {
     fn reinit(&mut self) -> Result<()> {
-        *self = Self::new();
+        *self = Self::new(self.stream.memlimit());
         Ok(())
     }
 

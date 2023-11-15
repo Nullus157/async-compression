@@ -10,7 +10,13 @@ pub struct LzmaDecoder {
 impl LzmaDecoder {
     pub fn new() -> Self {
         Self {
-            inner: crate::codec::Xz2Decoder::new(),
+            inner: crate::codec::Xz2Decoder::new(u64::max_value()),
+        }
+    }
+
+    pub fn with_memlimit(memlimit: u64) -> Self {
+        Self {
+            inner: crate::codec::Xz2Decoder::new(memlimit),
         }
     }
 }

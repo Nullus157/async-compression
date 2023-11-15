@@ -1,17 +1,19 @@
-use crate::codec::Xz2FileFormat;
-use crate::{codec::Encode, util::PartialBuffer};
+use std::{fmt, io};
 
-use std::fmt::{Debug, Formatter, Result as FmtResult};
-use std::io::Result;
 use xz2::stream::{Action, Check, LzmaOptions, Status, Stream};
+
+use crate::{
+    codec::{Encode, Xz2FileFormat},
+    util::PartialBuffer,
+};
 
 pub struct Xz2Encoder {
     stream: Stream,
 }
 
-impl Debug for Xz2Encoder {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "Xz2Encoder")
+impl fmt::Debug for Xz2Encoder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Xz2Encoder").finish_non_exhaustive()
     }
 }
 
@@ -33,7 +35,7 @@ impl Encode for Xz2Encoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<()> {
+    ) -> io::Result<()> {
         let previous_in = self.stream.total_in() as usize;
         let previous_out = self.stream.total_out() as usize;
 
@@ -57,7 +59,7 @@ impl Encode for Xz2Encoder {
     fn flush(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         let previous_out = self.stream.total_out() as usize;
 
         let status = self
@@ -80,7 +82,7 @@ impl Encode for Xz2Encoder {
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         let previous_out = self.stream.total_out() as usize;
 
         let status = self

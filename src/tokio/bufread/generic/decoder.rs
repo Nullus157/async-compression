@@ -79,11 +79,7 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                         let done = this.decoder.decode(&mut input, output)?;
                         let len = input.written().len();
                         this.reader.as_mut().consume(len);
-                        if done {
-                            State::Flushing
-                        } else {
-                            State::Decoding
-                        }
+                        State::Decoding
                     }
                 }
 

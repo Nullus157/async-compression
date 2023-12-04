@@ -2,7 +2,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::Result;
+use std::io::{Error, ErrorKind, Result};
 
 use crate::{
     codec::Encode,

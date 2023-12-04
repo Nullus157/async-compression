@@ -1,4 +1,5 @@
-use std::{fmt, io};
+use std::fmt;
+use std::io::{Error, ErrorKind, Result};
 
 use xz2::stream::{Action, Check, LzmaOptions, Status, Stream};
 
@@ -35,7 +36,7 @@ impl Encode for Xz2Encoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<()> {
+    ) -> Result<()> {
         let previous_in = self.stream.total_in() as usize;
         let previous_out = self.stream.total_out() as usize;
 
@@ -48,18 +49,18 @@ impl Encode for Xz2Encoder {
 
         match status {
             Status::Ok | Status::StreamEnd => Ok(()),
-            Status::GetCheck => panic!("Unexpected lzma integrity check"),
-            Status::MemNeeded => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "out of memory",
+            Status::GetCheck => Err(Error::new(
+                ErrorKind::Other,
+                "Unexpected lzma integrity check",
             )),
+            Status::MemNeeded => Err(Error::new(ErrorKind::Other, "out of memory")),
         }
     }
 
     fn flush(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<bool> {
+    ) -> Result<bool> {
         let previous_out = self.stream.total_out() as usize;
 
         let status = self
@@ -71,18 +72,18 @@ impl Encode for Xz2Encoder {
         match status {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
-            Status::GetCheck => panic!("Unexpected lzma integrity check"),
-            Status::MemNeeded => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "out of memory",
+            Status::GetCheck => Err(Error::new(
+                ErrorKind::Other,
+                "Unexpected lzma integrity check",
             )),
+            Status::MemNeeded => Err(Error::new(ErrorKind::Other, "out of memory")),
         }
     }
 
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<bool> {
+    ) -> Result<bool> {
         let previous_out = self.stream.total_out() as usize;
 
         let status = self
@@ -94,11 +95,11 @@ impl Encode for Xz2Encoder {
         match status {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
-            Status::GetCheck => panic!("Unexpected lzma integrity check"),
-            Status::MemNeeded => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "out of memory",
+            Status::GetCheck => Err(Error::new(
+                ErrorKind::Other,
+                "Unexpected lzma integrity check",
             )),
+            Status::MemNeeded => Err(Error::new(ErrorKind::Other, "out of memory")),
         }
     }
 }

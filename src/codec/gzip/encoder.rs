@@ -1,5 +1,5 @@
 use crate::{codec::Encode, util::PartialBuffer};
-use std::io::Result;
+use std::io::{Error, ErrorKind, Result};
 
 use flate2::{Compression, Crc};
 
@@ -71,7 +71,9 @@ impl Encode for GzipEncoder {
                     self.crc.update(&input.written()[prior_written..]);
                 }
 
-                State::Footer(_) | State::Done => panic!("encode after complete"),
+                State::Footer(_) | State::Done => {
+                    return Err(Error::new(ErrorKind::Other, "encode after complete"));
+                }
             };
 
             if input.unwritten().is_empty() || output.unwritten().is_empty() {

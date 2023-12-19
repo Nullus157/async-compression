@@ -83,7 +83,12 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
                     }
                 }
 
-                State::Done => panic!("Write after end of stream"),
+                State::Done => {
+                    return Poll::Ready(Err(Error::new(
+                        ErrorKind::Other,
+                        "Write after end of stream",
+                    )))
+                }
             };
 
             let produced = output.written().len();

@@ -153,7 +153,10 @@ impl Parser {
                 }
 
                 State::Done => {
-                    panic!("parser used after done");
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "parser used after done",
+                    ));
                 }
             };
         }

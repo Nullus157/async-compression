@@ -2,7 +2,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::Result;
+use std::io::{Error, ErrorKind, Result};
 
 use crate::{
     codec::Encode,
@@ -72,7 +72,9 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
                     State::Encoding
                 }
 
-                State::Finishing | State::Done => panic!("Write after close"),
+                State::Finishing | State::Done => {
+                    return Poll::Ready(Err(Error::new(ErrorKind::Other, "Write after close")))
+                }
             };
 
             let produced = output.written().len();
@@ -94,7 +96,9 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
             let done = match this.state {
                 State::Encoding => this.encoder.flush(&mut output)?,
 
-                State::Finishing | State::Done => panic!("Flush after close"),
+                State::Finishing | State::Done => {
+                    return Poll::Ready(Err(Error::new(ErrorKind::Other, "Flush after close")))
+                }
             };
 
             let produced = output.written().len();

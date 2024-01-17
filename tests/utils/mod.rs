@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_macros)] // Different tests use a different subset of functions
+#![allow(dead_code, unused_imports, unused_macros)] // Different tests use a different subset of functions
 
 mod input_stream;
 #[cfg(feature = "tokio")]

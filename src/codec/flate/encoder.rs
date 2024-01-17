@@ -1,5 +1,5 @@
 use crate::{codec::Encode, util::PartialBuffer};
-use std::io::{Error, ErrorKind, Result};
+use std::io;
 
 use flate2::{Compress, Compression, FlushCompress, Status};
 
@@ -22,7 +22,7 @@ impl FlateEncoder {
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
         flush: FlushCompress,
-    ) -> Result<Status> {
+    ) -> io::Result<Status> {
         let prior_in = self.compress.total_in();
         let prior_out = self.compress.total_out();
 
@@ -42,19 +42,19 @@ impl Encode for FlateEncoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<()> {
+    ) -> io::Result<()> {
         self.flushed = false;
         match self.encode(input, output, FlushCompress::None)? {
             Status::Ok => Ok(()),
             Status::StreamEnd => unreachable!(),
-            Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
+            Status::BufError => Err(io::Error::new(io::ErrorKind::Other, "unexpected BufError")),
         }
     }
 
     fn flush(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         // We need to keep track of whether we've already flushed otherwise we'll just keep writing
         // out sync blocks continuously and probably never complete flushing.
         if self.flushed {
@@ -86,7 +86,7 @@ impl Encode for FlateEncoder {
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         self.flushed = false;
         match self.encode(
             &mut PartialBuffer::new(&[][..]),
@@ -95,7 +95,7 @@ impl Encode for FlateEncoder {
         )? {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
-            Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
+            Status::BufError => Err(io::Error::new(io::ErrorKind::Other, "unexpected BufError")),
         }
     }
 }

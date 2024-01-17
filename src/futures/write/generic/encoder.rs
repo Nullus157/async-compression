@@ -1,8 +1,8 @@
-use core::{
+use std::{
+    io,
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::{Error, ErrorKind, Result};
 
 use crate::{
     codec::Encode,
@@ -59,7 +59,7 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         input: &mut PartialBuffer<&[u8]>,
-    ) -> Poll<Result<()>> {
+    ) -> Poll<io::Result<()>> {
         let mut this = self.project();
 
         loop {
@@ -73,7 +73,10 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
                 }
 
                 State::Finishing | State::Done => {
-                    return Poll::Ready(Err(Error::new(ErrorKind::Other, "Write after close")))
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        "Write after close",
+                    )))
                 }
             };
 
@@ -86,7 +89,7 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
         }
     }
 
-    fn do_poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+    fn do_poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut this = self.project();
 
         loop {
@@ -97,7 +100,10 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
                 State::Encoding => this.encoder.flush(&mut output)?,
 
                 State::Finishing | State::Done => {
-                    return Poll::Ready(Err(Error::new(ErrorKind::Other, "Flush after close")))
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        "Flush after close",
+                    )))
                 }
             };
 
@@ -110,7 +116,7 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
         }
     }
 
-    fn do_poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+    fn do_poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut this = self.project();
 
         loop {
@@ -140,7 +146,11 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
 }
 
 impl<W: AsyncWrite, E: Encode> AsyncWrite for Encoder<W, E> {
-    fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<Result<usize>> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
         if buf.is_empty() {
             return Poll::Ready(Ok(0));
         }
@@ -153,13 +163,13 @@ impl<W: AsyncWrite, E: Encode> AsyncWrite for Encoder<W, E> {
         }
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         ready!(self.as_mut().do_poll_flush(cx))?;
         ready!(self.project().writer.as_mut().poll_flush(cx))?;
         Poll::Ready(Ok(()))
     }
 
-    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         ready!(self.as_mut().do_poll_close(cx))?;
         ready!(self.project().writer.as_mut().poll_close(cx))?;
         Poll::Ready(Ok(()))

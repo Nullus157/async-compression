@@ -1,8 +1,5 @@
 use crate::{codec::Encode, util::PartialBuffer};
-use std::{
-    fmt,
-    io::{Error, ErrorKind, Result},
-};
+use std::{fmt, io};
 
 use brotli::enc::{
     backward_references::BrotliEncoderParams,
@@ -29,7 +26,7 @@ impl BrotliEncoder {
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
         op: BrotliEncoderOperation,
-    ) -> Result<()> {
+    ) -> io::Result<()> {
         let in_buf = input.unwritten();
         let mut out_buf = output.unwritten_mut();
 
@@ -49,7 +46,7 @@ impl BrotliEncoder {
             &mut |_, _, _, _| (),
         ) <= 0
         {
-            return Err(Error::new(ErrorKind::Other, "brotli error"));
+            return Err(io::Error::new(io::ErrorKind::Other, "brotli error"));
         }
 
         input.advance(input_len);
@@ -64,7 +61,7 @@ impl Encode for BrotliEncoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<()> {
+    ) -> io::Result<()> {
         self.encode(
             input,
             output,
@@ -75,7 +72,7 @@ impl Encode for BrotliEncoder {
     fn flush(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         self.encode(
             &mut PartialBuffer::new(&[][..]),
             output,
@@ -88,7 +85,7 @@ impl Encode for BrotliEncoder {
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         self.encode(
             &mut PartialBuffer::new(&[][..]),
             output,

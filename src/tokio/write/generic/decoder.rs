@@ -1,8 +1,8 @@
-use core::{
+use std::{
+    io,
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::{Error, ErrorKind, Result};
 
 use crate::{
     codec::Decode,
@@ -59,7 +59,7 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         input: &mut PartialBuffer<&[u8]>,
-    ) -> Poll<Result<()>> {
+    ) -> Poll<io::Result<()>> {
         let mut this = self.project();
 
         loop {
@@ -84,8 +84,8 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
                 }
 
                 State::Done => {
-                    return Poll::Ready(Err(Error::new(
-                        ErrorKind::Other,
+                    return Poll::Ready(Err(io::Error::new(
+                        io::ErrorKind::Other,
                         "Write after end of stream",
                     )))
                 }
@@ -104,7 +104,7 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
         }
     }
 
-    fn do_poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+    fn do_poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut this = self.project();
 
         loop {
@@ -141,7 +141,11 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
 }
 
 impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
-    fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<Result<usize>> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
         if buf.is_empty() {
             return Poll::Ready(Ok(0));
         }
@@ -154,13 +158,13 @@ impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
         }
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         ready!(self.as_mut().do_poll_flush(cx))?;
         ready!(self.project().writer.as_mut().poll_flush(cx))?;
         Poll::Ready(Ok(()))
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         if let State::Decoding = self.as_mut().project().state {
             *self.as_mut().project().state = State::Finishing;
         }
@@ -171,8 +175,8 @@ impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
             ready!(self.as_mut().project().writer.as_mut().poll_shutdown(cx))?;
             Poll::Ready(Ok(()))
         } else {
-            Poll::Ready(Err(Error::new(
-                ErrorKind::Other,
+            Poll::Ready(Err(io::Error::new(
+                io::ErrorKind::Other,
                 "Attempt to shutdown before finishing input",
             )))
         }

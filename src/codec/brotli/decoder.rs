@@ -1,8 +1,5 @@
 use crate::{codec::Decode, util::PartialBuffer};
-use std::{
-    fmt,
-    io::{Error, ErrorKind, Result},
-};
+use std::{fmt, io};
 
 use brotli::{enc::StandardAlloc, BrotliDecompressStream, BrotliResult, BrotliState};
 
@@ -26,7 +23,7 @@ impl BrotliDecoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<BrotliResult> {
+    ) -> io::Result<BrotliResult> {
         let in_buf = input.unwritten();
         let mut out_buf = output.unwritten_mut();
 
@@ -44,7 +41,7 @@ impl BrotliDecoder {
             &mut self.state,
         ) {
             BrotliResult::ResultFailure => {
-                return Err(Error::new(ErrorKind::Other, "brotli error"))
+                return Err(io::Error::new(io::ErrorKind::Other, "brotli error"))
             }
             status => status,
         };
@@ -57,7 +54,7 @@ impl BrotliDecoder {
 }
 
 impl Decode for BrotliDecoder {
-    fn reinit(&mut self) -> Result<()> {
+    fn reinit(&mut self) -> io::Result<()> {
         self.state = Box::new(BrotliState::new(
             StandardAlloc::default(),
             StandardAlloc::default(),
@@ -70,7 +67,7 @@ impl Decode for BrotliDecoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         match self.decode(input, output)? {
             BrotliResult::ResultSuccess => Ok(true),
             BrotliResult::NeedsMoreOutput | BrotliResult::NeedsMoreInput => Ok(false),
@@ -81,7 +78,7 @@ impl Decode for BrotliDecoder {
     fn flush(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
             BrotliResult::ResultSuccess | BrotliResult::NeedsMoreInput => Ok(true),
             BrotliResult::NeedsMoreOutput => Ok(false),
@@ -92,12 +89,12 @@ impl Decode for BrotliDecoder {
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
             BrotliResult::ResultSuccess => Ok(true),
             BrotliResult::NeedsMoreOutput => Ok(false),
-            BrotliResult::NeedsMoreInput => Err(Error::new(
-                ErrorKind::UnexpectedEof,
+            BrotliResult::NeedsMoreInput => Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
                 "reached unexpected EOF",
             )),
             BrotliResult::ResultFailure => unreachable!(),

@@ -1,6 +1,5 @@
 use crate::{codec::Encode, util::PartialBuffer};
-use std::fmt;
-use std::io::{Error, ErrorKind, Result};
+use std::{fmt, io};
 
 use bzip2::{Action, Compress, Compression, Status};
 
@@ -51,14 +50,14 @@ impl BzEncoder {
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
         action: Action,
-    ) -> Result<Status> {
+    ) -> io::Result<Status> {
         let prior_in = self.compress.total_in();
         let prior_out = self.compress.total_out();
 
         let status = self
             .compress
             .compress(input.unwritten(), output.unwritten_mut(), action)
-            .map_err(|e| Error::new(ErrorKind::Other, e))?;
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
         input.advance((self.compress.total_in() - prior_in) as usize);
         output.advance((self.compress.total_out() - prior_out) as usize);
@@ -72,7 +71,7 @@ impl Encode for BzEncoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<()> {
+    ) -> io::Result<()> {
         match self.encode(input, output, Action::Run)? {
             // Decompression went fine, nothing much to report.
             Status::Ok => Ok(()),
@@ -91,14 +90,14 @@ impl Encode for BzEncoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(Error::new(ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
         }
     }
 
     fn flush(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         match self.encode(&mut PartialBuffer::new(&[][..]), output, Action::Flush)? {
             // Decompression went fine, nothing much to report.
             Status::Ok => unreachable!(),
@@ -117,14 +116,14 @@ impl Encode for BzEncoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(Error::new(ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
         }
     }
 
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         match self.encode(&mut PartialBuffer::new(&[][..]), output, Action::Finish)? {
             // Decompression went fine, nothing much to report.
             Status::Ok => Ok(false),
@@ -143,7 +142,7 @@ impl Encode for BzEncoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(Error::new(ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
         }
     }
 }

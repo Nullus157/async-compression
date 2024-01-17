@@ -1,5 +1,5 @@
 use crate::util::PartialBuffer;
-use std::io::{Error, ErrorKind, Result};
+use std::io;
 
 #[derive(Debug, Default)]
 struct Flags {
@@ -39,9 +39,12 @@ pub(super) struct Parser {
 }
 
 impl Header {
-    fn parse(input: &[u8; 10]) -> Result<Self> {
+    fn parse(input: &[u8; 10]) -> io::Result<Self> {
         if input[0..3] != [0x1f, 0x8b, 0x08] {
-            return Err(Error::new(ErrorKind::InvalidData, "Invalid gzip header"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid gzip header",
+            ));
         }
 
         let flag = input[3];
@@ -62,7 +65,7 @@ impl Parser {
     pub(super) fn input(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
-    ) -> Result<Option<Header>> {
+    ) -> io::Result<Option<Header>> {
         loop {
             match &mut self.state {
                 State::Fixed(data) => {
@@ -153,8 +156,8 @@ impl Parser {
                 }
 
                 State::Done => {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    return Err(io::Error::new(
+                        io::ErrorKind::Other,
                         "parser used after done",
                     ));
                 }

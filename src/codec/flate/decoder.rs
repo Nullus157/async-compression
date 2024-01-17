@@ -1,5 +1,5 @@
 use crate::{codec::Decode, util::PartialBuffer};
-use std::io::{Error, ErrorKind, Result};
+use std::io;
 
 use flate2::{Decompress, FlushDecompress, Status};
 
@@ -22,7 +22,7 @@ impl FlateDecoder {
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
         flush: FlushDecompress,
-    ) -> Result<Status> {
+    ) -> io::Result<Status> {
         let prior_in = self.decompress.total_in();
         let prior_out = self.decompress.total_out();
 
@@ -38,7 +38,7 @@ impl FlateDecoder {
 }
 
 impl Decode for FlateDecoder {
-    fn reinit(&mut self) -> Result<()> {
+    fn reinit(&mut self) -> io::Result<()> {
         self.decompress.reset(self.zlib_header);
         Ok(())
     }
@@ -47,18 +47,18 @@ impl Decode for FlateDecoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         match self.decode(input, output, FlushDecompress::None)? {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
-            Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
+            Status::BufError => Err(io::Error::new(io::ErrorKind::Other, "unexpected BufError")),
         }
     }
 
     fn flush(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         self.decode(
             &mut PartialBuffer::new(&[][..]),
             output,
@@ -83,7 +83,7 @@ impl Decode for FlateDecoder {
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         match self.decode(
             &mut PartialBuffer::new(&[][..]),
             output,
@@ -91,7 +91,7 @@ impl Decode for FlateDecoder {
         )? {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
-            Status::BufError => Err(Error::new(ErrorKind::Other, "unexpected BufError")),
+            Status::BufError => Err(io::Error::new(io::ErrorKind::Other, "unexpected BufError")),
         }
     }
 }

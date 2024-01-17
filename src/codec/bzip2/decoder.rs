@@ -1,6 +1,5 @@
 use crate::{codec::Decode, util::PartialBuffer};
-use std::fmt;
-use std::io::{Error, ErrorKind, Result};
+use std::{fmt, io};
 
 use bzip2::{Decompress, Status};
 
@@ -30,14 +29,14 @@ impl BzDecoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<Status> {
+    ) -> io::Result<Status> {
         let prior_in = self.decompress.total_in();
         let prior_out = self.decompress.total_out();
 
         let status = self
             .decompress
             .decompress(input.unwritten(), output.unwritten_mut())
-            .map_err(|e| Error::new(ErrorKind::Other, e))?;
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
         input.advance((self.decompress.total_in() - prior_in) as usize);
         output.advance((self.decompress.total_out() - prior_out) as usize);
@@ -47,7 +46,7 @@ impl BzDecoder {
 }
 
 impl Decode for BzDecoder {
-    fn reinit(&mut self) -> Result<()> {
+    fn reinit(&mut self) -> io::Result<()> {
         self.decompress = Decompress::new(false);
         Ok(())
     }
@@ -56,7 +55,7 @@ impl Decode for BzDecoder {
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         match self.decode(input, output)? {
             // Decompression went fine, nothing much to report.
             Status::Ok => Ok(false),
@@ -75,14 +74,14 @@ impl Decode for BzDecoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(Error::new(ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
         }
     }
 
     fn flush(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         self.decode(&mut PartialBuffer::new(&[][..]), output)?;
 
         loop {
@@ -99,7 +98,7 @@ impl Decode for BzDecoder {
     fn finish(
         &mut self,
         _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    ) -> io::Result<bool> {
         Ok(true)
     }
 }

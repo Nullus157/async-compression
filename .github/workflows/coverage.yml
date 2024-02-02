@@ -13,7 +13,9 @@ jobs:
     - uses: taiki-e/install-action@v2
       with: { tool: cargo-tarpaulin }
     - run: cargo --locked tarpaulin --all-features -- --skip 'proptest::'
-    - uses: codecov/codecov-action@v3
+    - uses: codecov/codecov-action@v4
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 on:
   push:

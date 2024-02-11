@@ -67,18 +67,6 @@ impl Encode for FlateEncoder {
             FlushCompress::Sync,
         )?;
 
-        loop {
-            let old_len = output.written().len();
-            self.encode(
-                &mut PartialBuffer::new(&[][..]),
-                output,
-                FlushCompress::None,
-            )?;
-            if output.written().len() == old_len {
-                break;
-            }
-        }
-
         self.flushed = true;
         Ok(!output.unwritten().is_empty())
     }

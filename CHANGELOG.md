@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## 0.4.8
+
+ - bump dep brotli from 3.3 to 4.0
+
 ## 0.4.7
 
 - Flush available data in decoder even when there's no incoming input.

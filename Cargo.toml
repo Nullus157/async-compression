@@ -32,7 +32,7 @@ zstdmt = ["zstd", "zstd-safe/zstdmt"]
 deflate64 = ["dep:deflate64"]
 
 [dependencies]
-brotli = { version = "4.0", optional = true, default-features = false, features = ["std"] }
+brotli = { version = "5.0", optional = true }
 bzip2 = { version = "0.4.4", optional = true }
 flate2 = { version = "1.0.13", optional = true }
 futures-core = { version = "0.3", default-features = false }

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## 0.4.9
+
+ - bump dep brotli from 4.0 to 5.0
+
 ## 0.4.8
 
  - bump dep brotli from 3.3 to 4.0

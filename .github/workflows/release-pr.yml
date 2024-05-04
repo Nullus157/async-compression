@@ -1,4 +1,4 @@
-name: Release-plz
+name: Open release pr
 
 permissions:
   pull-requests: write

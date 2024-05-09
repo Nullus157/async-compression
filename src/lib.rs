@@ -29,6 +29,8 @@
 //! ---------|------
 // TODO: Kill rustfmt on this section, `#![rustfmt::skip::attributes(cfg_attr)]` should do it, but
 // that's unstable
+#![warn(unexpected_cfgs)]
+
 #![cfg_attr(
     feature = "futures-io",
     doc = "[`futures-io`](crate::futures) | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead), [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"

@@ -136,7 +136,7 @@
     missing_copy_implementations,
     missing_debug_implementations
 )]
-#![cfg_attr(not(all), allow(unused))]
+#![cfg_attr(not(featuee = "all"), allow(unused))]
 
 #[cfg(any(feature = "bzip2", feature = "flate2", feature = "xz2"))]
 use std::convert::TryInto;

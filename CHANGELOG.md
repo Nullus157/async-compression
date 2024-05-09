@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.10](https://github.com/Nullus157/async-compression/compare/v0.4.9...v0.4.10) - 2024-05-09
+
+### Other
+- *(deps)* update brotli requirement from 5.0 to 6.0 ([#274](https://github.com/Nullus157/async-compression/pull/274))
+- Fix pipeline doc: Warn on unexpected cfgs instead of error ([#276](https://github.com/Nullus157/async-compression/pull/276))
+- Update name of release-pr.yml
+- Create release.yml
+- Create release-pr.yml
+
 ## 0.4.9
 
  - bump dep brotli from 4.0 to 5.0

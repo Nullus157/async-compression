@@ -17,6 +17,10 @@ impl FlateEncoder {
         }
     }
 
+    pub(crate) fn get_ref(&self) -> &Compress {
+        &self.compress
+    }
+
     fn encode(
         &mut self,
         input: &mut PartialBuffer<impl AsRef<[u8]>>,

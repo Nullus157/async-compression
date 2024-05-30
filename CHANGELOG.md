@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.11](https://github.com/Nullus157/async-compression/compare/v0.4.10...v0.4.11) - 2024-05-30
+
+### Other
+- Expose total_in/total_out from underlying flate2 encoder types.
+
 ## [0.4.10](https://github.com/Nullus157/async-compression/compare/v0.4.9...v0.4.10) - 2024-05-09
 
 ### Other

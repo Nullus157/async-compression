@@ -11,7 +11,7 @@ pub struct XzDecoder {
 impl XzDecoder {
     pub fn new() -> Self {
         Self {
-            inner: crate::codec::Xz2Decoder::new(u64::max_value()),
+            inner: crate::codec::Xz2Decoder::new(u64::MAX),
             skip_padding: None,
         }
     }

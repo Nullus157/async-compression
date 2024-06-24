@@ -202,7 +202,7 @@ algos! {
 
                 to_vec(XzDecoder::new_stream(
                     bytes,
-                    Stream::new_lzma_decoder(u64::max_value()).unwrap(),
+                    Stream::new_lzma_decoder(u64::MAX).unwrap(),
                 ))
             }
         }

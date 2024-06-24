@@ -102,7 +102,7 @@ macro_rules! io_test_cases {
                     fn with_level_max() {
                         let encoder = bufread::Encoder::with_quality(
                             bufread::from(&one_to_six_stream()),
-                            Level::Precise(i32::max_value()),
+                            Level::Precise(i32::MAX),
                         );
                         let compressed = read::to_vec(encoder);
                         let output = sync::decompress(&compressed);
@@ -354,7 +354,7 @@ macro_rules! io_test_cases {
                             |input| {
                                 Box::pin(write::Encoder::with_quality(
                                     input,
-                                    Level::Precise(i32::max_value()),
+                                    Level::Precise(i32::MAX),
                                 ))
                             },
                             65_536,

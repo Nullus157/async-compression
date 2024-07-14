@@ -1,6 +1,7 @@
 //! This module contains zstd-specific types for async-compression.
 
 use libzstd::stream::raw::CParameter::*;
+use libzstd::stream::raw::DParameter::*;
 
 /// A compression parameter for zstd. This is a stable wrapper around zstd's own `CParameter`
 /// type, to abstract over different versions of the zstd library.
@@ -107,6 +108,25 @@ impl CParameter {
     }
 
     pub(crate) fn as_zstd(&self) -> libzstd::stream::raw::CParameter {
+        self.0
+    }
+}
+
+/// A decompression parameter for zstd. This is a stable wrapper around zstd's own `DParameter`
+/// type, to abstract over different versions of the zstd library.
+///
+/// See the [zstd documentation](https://facebook.github.io/zstd/zstd_manual.html) for more
+/// information on these parameters.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct DParameter(libzstd::stream::raw::DParameter);
+
+impl DParameter {
+    /// Maximum window size in bytes (as a power of two)
+    pub fn window_log_max(value: u32) -> Self {
+        Self(WindowLogMax(value))
+    }
+
+    pub(crate) fn as_zstd(&self) -> libzstd::stream::raw::DParameter {
         self.0
     }
 }

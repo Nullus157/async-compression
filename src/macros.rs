@@ -198,6 +198,17 @@ macro_rules! algos {
             }
         }
         { @dec
+            /// Creates a new decoder, using the specified parameters, which will read compressed
+            /// data from the given stream and emit a decompressed stream.
+            pub fn with_params(inner: $inner, params: &[crate::zstd::DParameter]) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Decoder::new(
+                        inner,
+                        crate::codec::ZstdDecoder::new_with_params(params),
+                    ),
+                }
+            }
+
             /// Creates a new decoder, using the specified compression level and pre-trained
             /// dictionary, which will read compressed data from the given stream and emit an
             /// uncompressed stream.

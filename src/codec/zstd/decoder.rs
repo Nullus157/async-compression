@@ -16,6 +16,16 @@ impl ZstdDecoder {
         }
     }
 
+    pub(crate) fn new_with_params(params: &[crate::zstd::DParameter]) -> Self {
+        let mut decoder = Decoder::new().unwrap();
+        for param in params {
+            decoder.set_parameter(param.as_zstd()).unwrap();
+        }
+        Self {
+            decoder: Unshared::new(decoder),
+        }
+    }
+
     pub(crate) fn new_with_dict(dictionary: &[u8]) -> io::Result<Self> {
         let mut decoder = Decoder::with_dictionary(dictionary)?;
         Ok(Self {

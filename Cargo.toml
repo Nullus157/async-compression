@@ -37,7 +37,7 @@ bzip2 = { version = "0.4.4", optional = true }
 flate2 = { version = "1.0.13", optional = true }
 futures-core = { version = "0.3", default-features = false }
 futures-io = { version = "0.3", default-features = false, features = ["std"], optional = true }
-libzstd = { package = "zstd", version = "0.13", optional = true, default-features = false }
+libzstd = { package = "zstd", version = "0.13.1", optional = true, default-features = false }
 memchr = "2"
 pin-project-lite = "0.2"
 tokio = { version = "1.24.2", optional = true, default-features = false }
@@ -90,6 +90,10 @@ required-features = ["zstd"]
 
 [[test]]
 name = "zstd-dict"
+required-features = ["zstd", "tokio"]
+
+[[test]]
+name = "zstd-window-size"
 required-features = ["zstd", "tokio"]
 
 [[example]]

@@ -3,14 +3,12 @@ ignore = [
 ]
 
 [licenses]
-unlicensed = "deny"
 allow = [
   "MIT",
   "Apache-2.0",
   "BSD-3-Clause",
   "Unicode-DFS-2016",
 ]
-default = "deny"
 
 [bans]
 multiple-versions = "warn"

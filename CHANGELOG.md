@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.13](https://github.com/Nullus157/async-compression/compare/v0.4.12...v0.4.13) - 2024-08-02
+
+### Other
+- Fix deny.toml: Remove deprecated keys
+- *(deps)* bump EmbarkStudios/cargo-deny-action from 1 to 2
+- Use explicit paths rather than glob imports for zstd wrapper types.
+
 ## [0.4.12](https://github.com/Nullus157/async-compression/compare/v0.4.11...v0.4.12) - 2024-07-21
 
 ### Feature

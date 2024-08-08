@@ -169,13 +169,21 @@ algos! {
             pub use crate::utils::impls::sync::to_vec;
 
             pub fn compress(bytes: &[u8]) -> Vec<u8> {
+                #[cfg(not(async_compression_unstable_liblzma_fork))]
                 use xz2::bufread::XzEncoder;
+
+                #[cfg(async_compression_unstable_liblzma_fork)]
+                use liblzma::bufread::XzEncoder;
 
                 to_vec(XzEncoder::new(bytes, 0))
             }
 
             pub fn decompress(bytes: &[u8]) -> Vec<u8> {
+                #[cfg(not(async_compression_unstable_liblzma_fork))]
                 use xz2::bufread::XzDecoder;
+
+                #[cfg(async_compression_unstable_liblzma_fork)]
+                use liblzma::bufread::XzDecoder;
 
                 to_vec(XzDecoder::new(bytes))
             }
@@ -187,8 +195,17 @@ algos! {
             pub use crate::utils::impls::sync::to_vec;
 
             pub fn compress(bytes: &[u8]) -> Vec<u8> {
-                use xz2::bufread::XzEncoder;
-                use xz2::stream::{LzmaOptions, Stream};
+                #[cfg(not(async_compression_unstable_liblzma_fork))]
+                use xz2::{
+                    bufread::XzEncoder,
+                    stream::{LzmaOptions, Stream},
+                };
+
+                #[cfg(async_compression_unstable_liblzma_fork)]
+                use liblzma::{
+                    bufread::XzEncoder,
+                    stream::{LzmaOptions, Stream},
+                };
 
                 to_vec(XzEncoder::new_stream(
                     bytes,
@@ -197,8 +214,17 @@ algos! {
             }
 
             pub fn decompress(bytes: &[u8]) -> Vec<u8> {
-                use xz2::bufread::XzDecoder;
-                use xz2::stream::Stream;
+                #[cfg(not(async_compression_unstable_liblzma_fork))]
+                use xz2::{
+                    bufread::XzDecoder,
+                    stream::Stream,
+                };
+
+                #[cfg(async_compression_unstable_liblzma_fork)]
+                use liblzma::{
+                    bufread::XzDecoder,
+                    stream::Stream,
+                };
 
                 to_vec(XzDecoder::new_stream(
                     bytes,

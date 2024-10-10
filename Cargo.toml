@@ -41,9 +41,13 @@ libzstd = { package = "zstd", version = "0.13.1", optional = true, default-featu
 memchr = "2"
 pin-project-lite = "0.2"
 tokio = { version = "1.24.2", optional = true, default-features = false }
-xz2 = { version = "0.1.6", optional = true }
 zstd-safe = { version = "7", optional = true, default-features = false }
 deflate64 = { version = "0.1.5", optional = true }
+
+[target.'cfg(not(async_compression_unstable_liblzma_fork))'.dependencies]
+xz2 = { version = "0.1.6", optional = true }
+[target.'cfg(async_compression_unstable_liblzma_fork)'.dependencies]
+xz2 = { package = "liblzma", version = "0.3.2", optional = true }
 
 [dev-dependencies]
 bytes = "1"
@@ -103,3 +107,6 @@ required-features = ["zlib", "tokio"]
 [[example]]
 name = "zstd_gzip"
 required-features = ["zstd", "gzip", "tokio"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(async_compression_unstable_liblzma_fork)'] }

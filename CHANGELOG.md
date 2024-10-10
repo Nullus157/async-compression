@@ -9,8 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 ## [0.4.14](https://github.com/Nullus157/async-compression/compare/v0.4.13...v0.4.14) - 2024-10-10
 
 ### Fixed
-
-- *(tokio)* attempt to decode from internal state even if nothing was read
+- In Tokio-based decoders, attempt to decode from internal state even if nothing was read.
 
 ## [0.4.13](https://github.com/Nullus157/async-compression/compare/v0.4.12...v0.4.13) - 2024-10-02
 

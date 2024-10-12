@@ -86,7 +86,8 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                         let mut input = PartialBuffer::new(input);
                         let done = match this.decoder.decode(&mut input, output) {
                             Ok(done) => {
-                                this.reader.as_mut().consume(input.written().len());
+                                let consumed = input.written().len();
+                                this.reader.as_mut().consume(consumed);
                                 done
                             }
                             // ignore the first error, occurs when input is empty

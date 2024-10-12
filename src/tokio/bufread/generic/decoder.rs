@@ -2,12 +2,12 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::Result;
+use std::io::{IoSlice, Result};
 
 use crate::{codec::Decode, util::PartialBuffer};
 use futures_core::ready;
 use pin_project_lite::pin_project;
-use tokio::io::{AsyncBufRead, AsyncRead, ReadBuf};
+use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};
 
 #[derive(Debug)]
 enum State {
@@ -19,7 +19,7 @@ enum State {
 
 pin_project! {
     #[derive(Debug)]
-    pub struct Decoder<R, D: Decode> {
+    pub struct Decoder<R, D> {
         #[pin]
         reader: R,
         decoder: D,
@@ -28,16 +28,7 @@ pin_project! {
     }
 }
 
-impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
-    pub fn new(reader: R, decoder: D) -> Self {
-        Self {
-            reader,
-            decoder,
-            state: State::Decoding,
-            multiple_members: false,
-        }
-    }
-
+impl<R, D> Decoder<R, D> {
     pub fn get_ref(&self) -> &R {
         &self.reader
     }
@@ -56,6 +47,17 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
 
     pub fn multiple_members(&mut self, enabled: bool) {
         self.multiple_members = enabled;
+    }
+}
+
+impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
+    pub fn new(reader: R, decoder: D) -> Self {
+        Self {
+            reader,
+            decoder,
+            state: State::Decoding,
+            multiple_members: false,
+        }
     }
 
     fn do_poll_read(
@@ -160,5 +162,35 @@ impl<R: AsyncBufRead, D: Decode> AsyncRead for Decoder<R, D> {
                 Poll::Ready(Ok(()))
             }
         }
+    }
+}
+
+impl<R: AsyncWrite, D: Decode> AsyncWrite for Decoder<R, D> {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<Result<usize>> {
+        self.get_pin_mut().poll_write(cx, buf)
+    }
+
+    fn poll_write_vectored(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        mut bufs: &[IoSlice<'_>],
+    ) -> Poll<Result<usize>> {
+        self.get_pin_mut().poll_write_vectored(cx, bufs)
+    }
+
+    fn is_write_vectored(&self) -> bool {
+        self.get_ref().is_write_vectored()
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+        self.get_pin_mut().poll_flush(cx)
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+        self.get_pin_mut().poll_shutdown(cx)
     }
 }

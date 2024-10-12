@@ -12,17 +12,7 @@ macro_rules! decoder {
             }
         }
 
-        impl<$inner: futures_io::AsyncWrite> $name<$inner> {
-            /// Creates a new decoder which will take in compressed data and write it uncompressed
-            /// to the given stream.
-            pub fn new(read: $inner) -> $name<$inner> {
-                $name {
-                    inner: crate::futures::write::Decoder::new(read, crate::codec::$name::new()),
-                }
-            }
-
-            $($($inherent_methods)*)*
-
+        impl<$inner> $name<$inner> {
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
             pub fn get_ref(&self) -> &$inner {
                 self.inner.get_ref()
@@ -55,6 +45,18 @@ macro_rules! decoder {
             }
         }
 
+        impl<$inner: futures_io::AsyncWrite> $name<$inner> {
+            /// Creates a new decoder which will take in compressed data and write it uncompressed
+            /// to the given stream.
+            pub fn new(read: $inner) -> $name<$inner> {
+                $name {
+                    inner: crate::futures::write::Decoder::new(read, crate::codec::$name::new()),
+                }
+            }
+
+            $($($inherent_methods)*)*
+        }
+
         impl<$inner: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<$inner> {
             fn poll_write(
                 self: std::pin::Pin<&mut Self>,
@@ -76,6 +78,24 @@ macro_rules! decoder {
                 cx: &mut std::task::Context<'_>,
             ) -> std::task::Poll<std::io::Result<()>> {
                 self.project().inner.poll_close(cx)
+            }
+        }
+
+        impl<$inner: futures_io::AsyncRead> futures_io::AsyncRead for $name<$inner> {
+            fn poll_read(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                buf: &mut [u8]
+            ) -> std::task::Poll<std::io::Result<usize>> {
+                self.get_pin_mut().poll_read(cx, buf)
+            }
+
+            fn poll_read_vectored(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                bufs: &mut [futures_io::IoSliceMut<'_>]
+            ) -> std::task::Poll<std::io::Result<usize>> {
+                self.get_pin_mut().poll_read_vectored(cx, bufs)
             }
         }
 

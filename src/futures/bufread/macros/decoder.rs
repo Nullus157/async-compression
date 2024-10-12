@@ -22,7 +22,9 @@ macro_rules! decoder {
             }
 
             $($($inherent_methods)*)*
+        }
 
+        impl<$inner> $name<$inner> {
             /// Configure multi-member/frame decoding, if enabled this will reset the decoder state
             /// when reaching the end of a compressed member/frame and expect either EOF or another
             /// compressed member/frame to follow it in the stream.
@@ -69,6 +71,38 @@ macro_rules! decoder {
                 buf: &mut [u8],
             ) -> std::task::Poll<std::io::Result<usize>> {
                 self.project().inner.poll_read(cx, buf)
+            }
+        }
+
+        impl<$inner: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<$inner> {
+            fn poll_write(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                buf: &[u8],
+            ) -> std::task::Poll<std::io::Result<usize>> {
+                self.get_pin_mut().poll_write(cx, buf)
+            }
+
+            fn poll_flush(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.get_pin_mut().poll_flush(cx)
+            }
+
+            fn poll_close(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.get_pin_mut().poll_close(cx)
+            }
+
+            fn poll_write_vectored(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                bufs: &[std::io::IoSlice<'_>]
+            ) -> std::task::Poll<std::io::Result<usize>> {
+                self.get_pin_mut().poll_write_vectored(cx, bufs)
             }
         }
 

@@ -10,7 +10,7 @@ use crate::{
     util::PartialBuffer,
 };
 use futures_core::ready;
-use futures_io::AsyncWrite;
+use futures_io::{AsyncRead, AsyncWrite, IoSliceMut};
 use pin_project_lite::pin_project;
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ enum State {
 
 pin_project! {
     #[derive(Debug)]
-    pub struct Decoder<W, D: Decode> {
+    pub struct Decoder<W, D> {
         #[pin]
         writer: BufWriter<W>,
         decoder: D,
@@ -30,15 +30,7 @@ pin_project! {
     }
 }
 
-impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
-    pub fn new(writer: W, decoder: D) -> Self {
-        Self {
-            writer: BufWriter::new(writer),
-            decoder,
-            state: State::Decoding,
-        }
-    }
-
+impl<W, D> Decoder<W, D> {
     pub fn get_ref(&self) -> &W {
         self.writer.get_ref()
     }
@@ -53,6 +45,16 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
 
     pub fn into_inner(self) -> W {
         self.writer.into_inner()
+    }
+}
+
+impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
+    pub fn new(writer: W, decoder: D) -> Self {
+        Self {
+            writer: BufWriter::new(writer),
+            decoder,
+            state: State::Decoding,
+        }
     }
 
     fn do_poll_write(
@@ -180,5 +182,23 @@ impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
                 "Attempt to close before finishing input",
             )))
         }
+    }
+}
+
+impl<W: AsyncRead, D> AsyncRead for Decoder<W, D> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<io::Result<usize>> {
+        self.get_pin_mut().poll_read(cx, buf)
+    }
+
+    fn poll_read_vectored(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &mut [IoSliceMut<'_>],
+    ) -> Poll<io::Result<usize>> {
+        self.get_pin_mut().poll_read_vectored(cx, bufs)
     }
 }

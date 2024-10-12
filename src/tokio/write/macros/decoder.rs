@@ -22,7 +22,9 @@ macro_rules! decoder {
             }
 
             $($($inherent_methods)*)*
+        }
 
+        impl<$inner> $name<$inner> {
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
             pub fn get_ref(&self) -> &$inner {
                 self.inner.get_ref()
@@ -76,6 +78,16 @@ macro_rules! decoder {
                 cx: &mut std::task::Context<'_>,
             ) -> std::task::Poll<std::io::Result<()>> {
                 self.project().inner.poll_shutdown(cx)
+            }
+        }
+
+        impl<$inner: tokio::io::AsyncRead> tokio::io::AsyncRead for $name<$inner> {
+            fn poll_read(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                buf: &mut tokio::io::ReadBuf<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.get_pin_mut().poll_read(cx, buf)
             }
         }
 

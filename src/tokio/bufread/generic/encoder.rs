@@ -2,12 +2,12 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::Result;
+use std::io::{IoSlice, Result};
 
 use crate::{codec::Encode, util::PartialBuffer};
 use futures_core::ready;
 use pin_project_lite::pin_project;
-use tokio::io::{AsyncBufRead, AsyncRead, ReadBuf};
+use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};
 
 #[derive(Debug)]
 enum State {
@@ -18,7 +18,7 @@ enum State {
 
 pin_project! {
     #[derive(Debug)]
-    pub struct Encoder<R, E: Encode> {
+    pub struct Encoder<R, E> {
         #[pin]
         reader: R,
         encoder: E,
@@ -26,15 +26,7 @@ pin_project! {
     }
 }
 
-impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
-    pub fn new(reader: R, encoder: E) -> Self {
-        Self {
-            reader,
-            encoder,
-            state: State::Encoding,
-        }
-    }
-
+impl<R, E> Encoder<R, E> {
     pub fn get_ref(&self) -> &R {
         &self.reader
     }
@@ -53,6 +45,16 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
 
     pub fn into_inner(self) -> R {
         self.reader
+    }
+}
+
+impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
+    pub fn new(reader: R, encoder: E) -> Self {
+        Self {
+            reader,
+            encoder,
+            state: State::Encoding,
+        }
     }
 
     fn do_poll_read(
@@ -117,5 +119,35 @@ impl<R: AsyncBufRead, E: Encode> AsyncRead for Encoder<R, E> {
                 Poll::Ready(Ok(()))
             }
         }
+    }
+}
+
+impl<R: AsyncWrite, E> AsyncWrite for Encoder<R, E> {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<Result<usize>> {
+        self.get_pin_mut().poll_write(cx, buf)
+    }
+
+    fn poll_write_vectored(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        mut bufs: &[IoSlice<'_>],
+    ) -> Poll<Result<usize>> {
+        self.get_pin_mut().poll_write_vectored(cx, bufs)
+    }
+
+    fn is_write_vectored(&self) -> bool {
+        self.get_ref().is_write_vectored()
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+        self.get_pin_mut().poll_flush(cx)
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<()>> {
+        self.get_pin_mut().poll_shutdown(cx)
     }
 }

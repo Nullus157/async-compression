@@ -89,8 +89,10 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                                 this.reader.as_mut().consume(input.written().len());
                                 done
                             }
+                            // ignore the first error, occurs when input is empty
+                            // but we need to run decode to flush
                             Err(err) if first => false,
-                            Err(err) => return Err(err),
+                            Err(err) => return Poll::Ready(Err(err)),
                         };
 
                         first = false;

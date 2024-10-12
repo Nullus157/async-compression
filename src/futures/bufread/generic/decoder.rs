@@ -84,20 +84,17 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                         State::Flushing
                     } else {
                         let mut input = PartialBuffer::new(input);
-                        let done = this.decoder.decode(&mut input, output).or_else(|err| {
-                            // ignore the first error, occurs when input is empty
-                            // but we need to run decode to flush
-                            if first {
-                                Ok(false)
-                            } else {
-                                Err(err)
+                        let done = match this.decoder.decode(&mut input, output) {
+                            Ok(done) => {
+                                this.reader.as_mut().consume(input.written().len());
+                                done
                             }
-                        })?;
+                            Err(err) if first => false,
+                            Err(err) => return Err(err),
+                        };
 
                         first = false;
 
-                        let len = input.written().len();
-                        this.reader.as_mut().consume(len);
                         if done {
                             State::Flushing
                         } else {

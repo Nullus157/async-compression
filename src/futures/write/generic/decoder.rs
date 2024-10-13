@@ -30,6 +30,16 @@ pin_project! {
     }
 }
 
+impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
+    pub fn new(writer: W, decoder: D) -> Self {
+        Self {
+            writer: BufWriter::new(writer),
+            decoder,
+            state: State::Decoding,
+        }
+    }
+}
+
 impl<W, D> Decoder<W, D> {
     pub fn get_ref(&self) -> &W {
         self.writer.get_ref()
@@ -49,14 +59,6 @@ impl<W, D> Decoder<W, D> {
 }
 
 impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
-    pub fn new(writer: W, decoder: D) -> Self {
-        Self {
-            writer: BufWriter::new(writer),
-            decoder,
-            state: State::Decoding,
-        }
-    }
-
     fn do_poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

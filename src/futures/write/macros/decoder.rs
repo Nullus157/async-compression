@@ -12,6 +12,18 @@ macro_rules! decoder {
             }
         }
 
+        impl<$inner: futures_io::AsyncWrite> $name<$inner> {
+            /// Creates a new decoder which will take in compressed data and write it uncompressed
+            /// to the given stream.
+            pub fn new(read: $inner) -> $name<$inner> {
+                $name {
+                    inner: crate::futures::write::Decoder::new(read, crate::codec::$name::new()),
+                }
+            }
+
+            $($($inherent_methods)*)*
+        }
+
         impl<$inner> $name<$inner> {
             /// Acquires a reference to the underlying reader that this decoder is wrapping.
             pub fn get_ref(&self) -> &$inner {
@@ -43,18 +55,6 @@ macro_rules! decoder {
             pub fn into_inner(self) -> $inner {
                 self.inner.into_inner()
             }
-        }
-
-        impl<$inner: futures_io::AsyncWrite> $name<$inner> {
-            /// Creates a new decoder which will take in compressed data and write it uncompressed
-            /// to the given stream.
-            pub fn new(read: $inner) -> $name<$inner> {
-                $name {
-                    inner: crate::futures::write::Decoder::new(read, crate::codec::$name::new()),
-                }
-            }
-
-            $($($inherent_methods)*)*
         }
 
         impl<$inner: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<$inner> {

@@ -28,6 +28,17 @@ pin_project! {
     }
 }
 
+impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
+    pub fn new(reader: R, decoder: D) -> Self {
+        Self {
+            reader,
+            decoder,
+            state: State::Decoding,
+            multiple_members: false,
+        }
+    }
+}
+
 impl<R, D> Decoder<R, D> {
     pub fn get_ref(&self) -> &R {
         &self.reader
@@ -51,15 +62,6 @@ impl<R, D> Decoder<R, D> {
 }
 
 impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
-    pub fn new(reader: R, decoder: D) -> Self {
-        Self {
-            reader,
-            decoder,
-            state: State::Decoding,
-            multiple_members: false,
-        }
-    }
-
     fn do_poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

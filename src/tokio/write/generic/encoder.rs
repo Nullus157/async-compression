@@ -30,6 +30,16 @@ pin_project! {
     }
 }
 
+impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
+    pub fn new(writer: W, encoder: E) -> Self {
+        Self {
+            writer: BufWriter::new(writer),
+            encoder,
+            state: State::Encoding,
+        }
+    }
+}
+
 impl<W, E> Encoder<W, E> {
     pub fn get_ref(&self) -> &W {
         self.writer.get_ref()
@@ -53,14 +63,6 @@ impl<W, E> Encoder<W, E> {
 }
 
 impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
-    pub fn new(writer: W, encoder: E) -> Self {
-        Self {
-            writer: BufWriter::new(writer),
-            encoder,
-            state: State::Encoding,
-        }
-    }
-
     fn do_poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

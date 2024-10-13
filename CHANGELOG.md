@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.15](https://github.com/Nullus157/async-compression/compare/v0.4.14...v0.4.15) - 2024-10-13
+
+### Other
+
+- Merge pull request [#297](https://github.com/Nullus157/async-compression/pull/297) from link2xt/link2xt/passthrough-traits
+- Pass through `AsyncRead` and `AsyncWrite` traits
+- Fix tokio::bufread
+- Fix lifetime in futures::bufread
+- Fix typing error in futures::bufread
+- Fix typing error in tokio::bufread
+- Fix futures::bufread::generic::Decoder::do_poll_read impl
+- Fix tokio::bufread::generic::Decoder::do_poll_read impl
+
 ## [0.4.14](https://github.com/Nullus157/async-compression/compare/v0.4.13...v0.4.14) - 2024-10-10
 
 ### Fixed

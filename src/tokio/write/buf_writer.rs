@@ -113,7 +113,9 @@ impl<W: AsyncWrite> BufWriter<W> {
         *this.written = 0;
         Poll::Ready(ret)
     }
+}
 
+impl<W> BufWriter<W> {
     /// Gets a reference to the underlying writer.
     pub fn get_ref(&self) -> &W {
         &self.inner

@@ -11,7 +11,7 @@ use crate::{
 };
 use futures_core::ready;
 use pin_project_lite::pin_project;
-use tokio::io::AsyncWrite;
+use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
 #[derive(Debug)]
 enum State {
@@ -22,7 +22,7 @@ enum State {
 
 pin_project! {
     #[derive(Debug)]
-    pub struct Encoder<W, E: Encode> {
+    pub struct Encoder<W, E> {
         #[pin]
         writer: BufWriter<W>,
         encoder: E,
@@ -30,15 +30,7 @@ pin_project! {
     }
 }
 
-impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
-    pub fn new(writer: W, encoder: E) -> Self {
-        Self {
-            writer: BufWriter::new(writer),
-            encoder,
-            state: State::Encoding,
-        }
-    }
-
+impl<W, E> Encoder<W, E> {
     pub fn get_ref(&self) -> &W {
         self.writer.get_ref()
     }
@@ -57,6 +49,16 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
 
     pub fn into_inner(self) -> W {
         self.writer.into_inner()
+    }
+}
+
+impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
+    pub fn new(writer: W, encoder: E) -> Self {
+        Self {
+            writer: BufWriter::new(writer),
+            encoder,
+            state: State::Encoding,
+        }
     }
 
     fn do_poll_write(
@@ -177,5 +179,15 @@ impl<W: AsyncWrite, E: Encode> AsyncWrite for Encoder<W, E> {
         ready!(self.as_mut().do_poll_shutdown(cx))?;
         ready!(self.project().writer.as_mut().poll_shutdown(cx))?;
         Poll::Ready(Ok(()))
+    }
+}
+
+impl<W: AsyncRead, E> AsyncRead for Encoder<W, E> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        self.get_pin_mut().poll_read(cx, buf)
     }
 }

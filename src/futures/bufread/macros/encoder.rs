@@ -62,6 +62,38 @@ macro_rules! encoder {
             }
         }
 
+        impl<$inner: futures_io::AsyncWrite> futures_io::AsyncWrite for $name<$inner> {
+            fn poll_write(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                buf: &[u8],
+            ) -> std::task::Poll<std::io::Result<usize>> {
+                self.project().inner.poll_write(cx, buf)
+            }
+
+            fn poll_flush(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.project().inner.poll_flush(cx)
+            }
+
+            fn poll_close(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.project().inner.poll_close(cx)
+            }
+
+            fn poll_write_vectored(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                bufs: &[std::io::IoSlice<'_>]
+            ) -> std::task::Poll<std::io::Result<usize>> {
+                self.project().inner.poll_write_vectored(cx, bufs)
+            }
+        }
+
         const _: () = {
             fn _assert() {
                 use crate::util::{_assert_send, _assert_sync};

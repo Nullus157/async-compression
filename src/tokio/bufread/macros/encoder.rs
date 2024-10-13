@@ -19,7 +19,9 @@ macro_rules! encoder {
                 ///
                 $($inherent_methods)*
             )*
+        }
 
+        impl<$inner> $name<$inner> {
             /// Acquires a reference to the underlying reader that this encoder is wrapping.
             pub fn get_ref(&self) -> &$inner {
                 self.inner.get_ref()
@@ -59,6 +61,42 @@ macro_rules! encoder {
                 buf: &mut tokio::io::ReadBuf<'_>,
             ) -> std::task::Poll<std::io::Result<()>> {
                 self.project().inner.poll_read(cx, buf)
+            }
+        }
+
+        impl<$inner: tokio::io::AsyncWrite> tokio::io::AsyncWrite for $name<$inner> {
+            fn poll_write(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                buf: &[u8],
+            ) -> std::task::Poll<std::io::Result<usize>> {
+                self.get_pin_mut().poll_write(cx, buf)
+            }
+
+            fn poll_flush(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.get_pin_mut().poll_flush(cx)
+            }
+
+            fn poll_shutdown(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+            ) -> std::task::Poll<std::io::Result<()>> {
+                self.get_pin_mut().poll_shutdown(cx)
+            }
+
+            fn poll_write_vectored(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>,
+                bufs: &[std::io::IoSlice<'_>],
+            ) -> std::task::Poll<std::io::Result<usize>> {
+                self.get_pin_mut().poll_write_vectored(cx, bufs)
+            }
+
+            fn is_write_vectored(&self) -> bool {
+                self.get_ref().is_write_vectored()
             }
         }
 

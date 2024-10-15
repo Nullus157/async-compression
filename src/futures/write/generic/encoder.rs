@@ -10,7 +10,7 @@ use crate::{
     util::PartialBuffer,
 };
 use futures_core::ready;
-use futures_io::{AsyncRead, AsyncWrite, IoSliceMut};
+use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite, IoSliceMut};
 use pin_project_lite::pin_project;
 
 #[derive(Debug)]
@@ -197,5 +197,15 @@ impl<W: AsyncRead, E> AsyncRead for Encoder<W, E> {
         bufs: &mut [IoSliceMut<'_>],
     ) -> Poll<io::Result<usize>> {
         self.get_pin_mut().poll_read_vectored(cx, bufs)
+    }
+}
+
+impl<W: AsyncBufRead, E> AsyncBufRead for Encoder<W, E> {
+    fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+        self.get_pin_mut().poll_fill_buf(cx)
+    }
+
+    fn consume(self: Pin<&mut Self>, amt: usize) {
+        self.get_pin_mut().consume(amt)
     }
 }

@@ -98,10 +98,12 @@ impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
                             }
                         });
 
-                        first = false;
+                        if !first {
+                            let len = input.written().len();
+                            this.reader.as_mut().consume(len);
+                        }
 
-                        let len = input.written().len();
-                        this.reader.as_mut().consume(len);
+                        first = false;
 
                         if res? {
                             State::Flushing

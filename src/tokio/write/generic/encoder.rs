@@ -11,7 +11,7 @@ use crate::{
 };
 use futures_core::ready;
 use pin_project_lite::pin_project;
-use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};
 
 #[derive(Debug)]
 enum State {
@@ -191,5 +191,15 @@ impl<W: AsyncRead, E> AsyncRead for Encoder<W, E> {
         buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<()>> {
         self.get_pin_mut().poll_read(cx, buf)
+    }
+}
+
+impl<W: AsyncBufRead, E> AsyncBufRead for Encoder<W, E> {
+    fn poll_fill_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<&[u8]>> {
+        self.get_pin_mut().poll_fill_buf(cx)
+    }
+
+    fn consume(self: Pin<&mut Self>, amt: usize) {
+        self.get_pin_mut().consume(amt)
     }
 }

@@ -88,6 +88,19 @@ macro_rules! encoder {
             }
         }
 
+        impl<$inner: tokio::io::AsyncBufRead> tokio::io::AsyncBufRead for $name<$inner> {
+            fn poll_fill_buf(
+                self: std::pin::Pin<&mut Self>,
+                cx: &mut std::task::Context<'_>
+            ) -> std::task::Poll<std::io::Result<&[u8]>> {
+                self.get_pin_mut().poll_fill_buf(cx)
+            }
+
+            fn consume(self: std::pin::Pin<&mut Self>, amt: usize) {
+                self.get_pin_mut().consume(amt)
+            }
+        }
+
         const _: () = {
             fn _assert() {
                 use crate::util::{_assert_send, _assert_sync};

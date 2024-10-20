@@ -1,5 +1,8 @@
 use std::{fmt, io};
 
+#[cfg(async_compression_unstable_liblzma_fork)]
+use liblzma::stream::{Action, Status, Stream};
+#[cfg(not(async_compression_unstable_liblzma_fork))]
 use xz2::stream::{Action, Status, Stream};
 
 use crate::{codec::Decode, util::PartialBuffer};

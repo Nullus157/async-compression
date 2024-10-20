@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.17](https://github.com/Nullus157/async-compression/compare/v0.4.16...v0.4.17) - 2024-10-20
+
+### Fixed
+
+- Fix occasional panics when consuming from pending buffers.
+
 ## [0.4.16](https://github.com/Nullus157/async-compression/compare/v0.4.15...v0.4.16) - 2024-10-16
 
 ### Other

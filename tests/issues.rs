@@ -10,9 +10,21 @@ use async_compression::tokio::write::ZstdEncoder;
 use tokio::io::{AsyncWrite, AsyncWriteExt as _};
 use tracing_subscriber::fmt::format::FmtSpan;
 
+/// This issue covers our state machine being invalid when using adapters
+/// like [`tokio_util::codec`].
+///
+/// After the first [`poll_shutdown`] call,
+/// we must expect any number of [`poll_flush`] and [`poll_shutdown`] calls,
+/// until [`poll_shutdown`] returns [`Poll::Ready`],
+/// according to the documentation on [`AsyncWrite`].
+///
 /// <https://github.com/Nullus157/async-compression/issues/246>
-#[tokio::test]
-async fn issue_246() {
+///
+/// [`tokio_util::codec`](https://docs.rs/tokio-util/latest/tokio_util/codec)
+/// [`poll_shutdown`](AsyncWrite::poll_shutdown)
+/// [`poll_flush`](AsyncWrite::poll_flush)
+#[test]
+fn issue_246() {
     tracing_subscriber::fmt()
         .without_time()
         .with_ansi(false)
@@ -23,7 +35,7 @@ async fn issue_246() {
         .init();
     let mut zstd_encoder =
         Transparent::new(Trace::new(ZstdEncoder::new(DelayedShutdown::default())));
-    zstd_encoder.shutdown().await.unwrap();
+    futures::executor::block_on(zstd_encoder.shutdown()).unwrap();
 }
 
 pin_project_lite::pin_project! {

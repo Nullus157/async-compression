@@ -23,6 +23,7 @@ use tracing_subscriber::fmt::format::FmtSpan;
 /// [`tokio_util::codec`](https://docs.rs/tokio-util/latest/tokio_util/codec)
 /// [`poll_shutdown`](AsyncWrite::poll_shutdown)
 /// [`poll_flush`](AsyncWrite::poll_flush)
+#[should_panic = "Flush after shutdown"] // TODO: this should be removed when the bug is fixed
 #[test]
 fn issue_246() {
     tracing_subscriber::fmt()

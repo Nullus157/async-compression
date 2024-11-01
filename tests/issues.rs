@@ -23,7 +23,6 @@ use tracing_subscriber::fmt::format::FmtSpan;
 /// [`tokio_util::codec`](https://docs.rs/tokio-util/latest/tokio_util/codec)
 /// [`poll_shutdown`](AsyncWrite::poll_shutdown)
 /// [`poll_flush`](AsyncWrite::poll_flush)
-#[should_panic = "Flush after shutdown"] // TODO: this should be removed when the bug is fixed
 #[test]
 fn issue_246() {
     tracing_subscriber::fmt()
@@ -34,26 +33,26 @@ fn issue_246() {
         .with_target(false)
         .with_span_events(FmtSpan::NEW)
         .init();
-    let mut zstd_encoder =
-        Transparent::new(Trace::new(ZstdEncoder::new(DelayedShutdown::default())));
+    let mut zstd_encoder = Wrapper::new(Trace::new(ZstdEncoder::new(DelayedShutdown::default())));
     futures::executor::block_on(zstd_encoder.shutdown()).unwrap();
 }
 
 pin_project_lite::pin_project! {
     /// A simple wrapper struct that follows the [`AsyncWrite`] protocol.
-    struct Transparent<T> {
+    /// This is a stand-in for combinators like `tokio_util::codec`s
+    struct Wrapper<T> {
         #[pin] inner: T
     }
 }
 
-impl<T> Transparent<T> {
+impl<T> Wrapper<T> {
     fn new(inner: T) -> Self {
         Self { inner }
     }
 }
 
-impl<T: AsyncWrite> AsyncWrite for Transparent<T> {
-    #[tracing::instrument(name = "Transparent::poll_write", skip_all, ret)]
+impl<T: AsyncWrite> AsyncWrite for Wrapper<T> {
+    #[tracing::instrument(name = "Wrapper::poll_write", skip_all, ret)]
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -62,7 +61,7 @@ impl<T: AsyncWrite> AsyncWrite for Transparent<T> {
         self.project().inner.poll_write(cx, buf)
     }
 
-    #[tracing::instrument(name = "Transparent::poll_flush", skip_all, ret)]
+    #[tracing::instrument(name = "Wrapper::poll_flush", skip_all, ret)]
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
         self.project().inner.poll_flush(cx)
     }
@@ -72,7 +71,7 @@ impl<T: AsyncWrite> AsyncWrite for Transparent<T> {
     /// > Once this method returns Ready it implies that a flush successfully happened before the shutdown happened.
     /// > That is, callers don't need to call flush before calling shutdown.
     /// > They can rely that by calling shutdown any pending buffered data will be written out.
-    #[tracing::instrument(name = "Transparent::poll_shutdown", skip_all, ret)]
+    #[tracing::instrument(name = "Wrapper::poll_shutdown", skip_all, ret)]
     fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
         let mut this = self.project();
         ready!(this.inner.as_mut().poll_flush(cx))?;

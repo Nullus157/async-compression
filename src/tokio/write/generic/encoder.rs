@@ -13,20 +13,13 @@ use futures_core::ready;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};
 
-#[derive(Debug)]
-enum State {
-    Encoding,
-    Finishing,
-    Done,
-}
-
 pin_project! {
     #[derive(Debug)]
     pub struct Encoder<W, E> {
         #[pin]
         writer: BufWriter<W>,
         encoder: E,
-        state: State,
+        finished: bool
     }
 }
 
@@ -35,7 +28,7 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
         Self {
             writer: BufWriter::new(writer),
             encoder,
-            state: State::Encoding,
+            finished: false,
         }
     }
 }
@@ -62,97 +55,6 @@ impl<W, E> Encoder<W, E> {
     }
 }
 
-impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
-    fn do_poll_write(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        input: &mut PartialBuffer<&[u8]>,
-    ) -> Poll<io::Result<()>> {
-        let mut this = self.project();
-
-        loop {
-            let output = ready!(this.writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = PartialBuffer::new(output);
-
-            *this.state = match this.state {
-                State::Encoding => {
-                    this.encoder.encode(input, &mut output)?;
-                    State::Encoding
-                }
-
-                State::Finishing | State::Done => {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Write after shutdown",
-                    )))
-                }
-            };
-
-            let produced = output.written().len();
-            this.writer.as_mut().produce(produced);
-
-            if input.unwritten().is_empty() {
-                return Poll::Ready(Ok(()));
-            }
-        }
-    }
-
-    fn do_poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let mut this = self.project();
-
-        loop {
-            let output = ready!(this.writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = PartialBuffer::new(output);
-
-            let done = match this.state {
-                State::Encoding => this.encoder.flush(&mut output)?,
-
-                State::Finishing | State::Done => {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Flush after shutdown",
-                    )))
-                }
-            };
-
-            let produced = output.written().len();
-            this.writer.as_mut().produce(produced);
-
-            if done {
-                return Poll::Ready(Ok(()));
-            }
-        }
-    }
-
-    fn do_poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let mut this = self.project();
-
-        loop {
-            let output = ready!(this.writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = PartialBuffer::new(output);
-
-            *this.state = match this.state {
-                State::Encoding | State::Finishing => {
-                    if this.encoder.finish(&mut output)? {
-                        State::Done
-                    } else {
-                        State::Finishing
-                    }
-                }
-
-                State::Done => State::Done,
-            };
-
-            let produced = output.written().len();
-            this.writer.as_mut().produce(produced);
-
-            if let State::Done = this.state {
-                return Poll::Ready(Ok(()));
-            }
-        }
-    }
-}
-
 impl<W: AsyncWrite, E: Encode> AsyncWrite for Encoder<W, E> {
     fn poll_write(
         self: Pin<&mut Self>,
@@ -163,24 +65,55 @@ impl<W: AsyncWrite, E: Encode> AsyncWrite for Encoder<W, E> {
             return Poll::Ready(Ok(0));
         }
 
-        let mut input = PartialBuffer::new(buf);
+        let mut this = self.project();
 
-        match self.do_poll_write(cx, &mut input)? {
-            Poll::Pending if input.written().is_empty() => Poll::Pending,
-            _ => Poll::Ready(Ok(input.written().len())),
+        let mut encodeme = PartialBuffer::new(buf);
+
+        loop {
+            let mut space =
+                PartialBuffer::new(ready!(this.writer.as_mut().poll_partial_flush_buf(cx))?);
+            this.encoder.encode(&mut encodeme, &mut space)?;
+            let bytes_encoded = space.written().len();
+            this.writer.as_mut().produce(bytes_encoded);
+            if encodeme.unwritten().is_empty() {
+                break;
+            }
         }
+
+        Poll::Ready(Ok(encodeme.written().len()))
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        ready!(self.as_mut().do_poll_flush(cx))?;
-        ready!(self.project().writer.as_mut().poll_flush(cx))?;
+        let mut this = self.project();
+        loop {
+            let mut space =
+                PartialBuffer::new(ready!(this.writer.as_mut().poll_partial_flush_buf(cx))?);
+            let flushed = this.encoder.flush(&mut space)?;
+            let bytes_encoded = space.written().len();
+            this.writer.as_mut().produce(bytes_encoded);
+            if flushed {
+                break;
+            }
+        }
         Poll::Ready(Ok(()))
     }
 
     fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        ready!(self.as_mut().do_poll_shutdown(cx))?;
-        ready!(self.project().writer.as_mut().poll_shutdown(cx))?;
-        Poll::Ready(Ok(()))
+        let mut this = self.project();
+        if !*this.finished {
+            loop {
+                let mut space =
+                    PartialBuffer::new(ready!(this.writer.as_mut().poll_partial_flush_buf(cx))?);
+                let finished = this.encoder.finish(&mut space)?;
+                let bytes_encoded = space.written().len();
+                this.writer.as_mut().produce(bytes_encoded);
+                if finished {
+                    *this.finished = true;
+                    break;
+                }
+            }
+        }
+        this.writer.poll_shutdown(cx)
     }
 }
 

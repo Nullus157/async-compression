@@ -100,18 +100,12 @@ impl<W: AsyncWrite, E: Encode> AsyncWrite for Encoder<W, E> {
 
     fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         let mut this = self.project();
-        if !*this.finished {
-            loop {
-                let mut space =
-                    PartialBuffer::new(ready!(this.writer.as_mut().poll_partial_flush_buf(cx))?);
-                let finished = this.encoder.finish(&mut space)?;
-                let bytes_encoded = space.written().len();
-                this.writer.as_mut().produce(bytes_encoded);
-                if finished {
-                    *this.finished = true;
-                    break;
-                }
-            }
+        while !*this.finished {
+            let mut space =
+                PartialBuffer::new(ready!(this.writer.as_mut().poll_partial_flush_buf(cx))?);
+            *this.finished = this.encoder.finish(&mut space)?;
+            let bytes_encoded = space.written().len();
+            this.writer.as_mut().produce(bytes_encoded);
         }
         this.writer.poll_shutdown(cx)
     }

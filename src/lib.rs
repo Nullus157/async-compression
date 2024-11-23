@@ -216,6 +216,7 @@ impl Level {
     fn into_flate2(self) -> flate2::Compression {
         let fastest = flate2::Compression::fast();
         let best = flate2::Compression::best();
+        let none = flate2::Compression::none();
 
         match self {
             Self::Fastest => fastest,
@@ -224,7 +225,7 @@ impl Level {
                 quality
                     .try_into()
                     .unwrap_or(0)
-                    .clamp(fastest.level(), best.level()),
+                    .clamp(none.level(), best.level()),
             ),
             Self::Default => flate2::Compression::default(),
         }

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.18](https://github.com/Nullus157/async-compression/compare/v0.4.17...v0.4.18) - 2024-11-23
+
+### Other
+
+- Adjust `Level::Precise` clamp range for flate2
+- *(deps)* bump codecov/codecov-action from 4 to 5
+
 ## [0.4.17](https://github.com/Nullus157/async-compression/compare/v0.4.16...v0.4.17) - 2024-10-20
 
 ### Fixed

@@ -193,7 +193,12 @@ impl<W: AsyncWrite> AsyncBufWrite for BufWriter<W> {
     }
 
     fn produce(self: Pin<&mut Self>, amt: usize) {
-        *self.project().buffered += amt;
+        let this = self.project();
+        assert!(
+            *this.buffered + amt <= this.buf.len(),
+            "produce called with amt exceeding buffer capacity"
+        );
+        *this.buffered += amt;
     }
 }
 

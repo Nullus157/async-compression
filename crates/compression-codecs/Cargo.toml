@@ -1,7 +1,15 @@
 [package]
 name = "compression-codecs"
 version = "0.1.0"
-edition = "2021"
+description = """
+Adaptors for various compression algorithms.
+"""
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["compression", "gzip", "zstd", "brotli"]
+categories = ["compression"]
 
 [dependencies]
 # Workspace dependencies.

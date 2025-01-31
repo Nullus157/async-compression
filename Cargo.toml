@@ -3,8 +3,8 @@ members = ["crates/*"]
 resolver = "2"
 
 [workspace.dependencies]
-compression-codecs = { path = "crates/compression-codecs" }
-compression-core = { path = "crates/compression-core" }
+compression-codecs = { version = "0.1.0", path = "crates/compression-codecs" }
+compression-core = { version = "0.1.0", path = "crates/compression-core" }
 
 [package]
 name = "async-compression"

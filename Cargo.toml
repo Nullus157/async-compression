@@ -30,8 +30,6 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["all"]
-
 # groups
 all = ["all-implementations", "all-algorithms"]
 all-implementations = ["futures-io", "tokio"]

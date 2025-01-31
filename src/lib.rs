@@ -144,7 +144,6 @@ use std::convert::TryInto;
 
 #[macro_use]
 mod macros;
-mod codec;
 
 #[cfg(feature = "futures-io")]
 pub mod futures;
@@ -182,8 +181,8 @@ impl Level {
     #[cfg(feature = "brotli")]
     fn into_brotli(
         self,
-        mut params: ::brotli::enc::backward_references::BrotliEncoderParams,
-    ) -> ::brotli::enc::backward_references::BrotliEncoderParams {
+        mut params: compression_codecs::brotli::brotli::enc::backward_references::BrotliEncoderParams,
+    ) -> compression_codecs::brotli::brotli::enc::backward_references::BrotliEncoderParams {
         match self {
             Self::Fastest => params.quality = 0,
             Self::Best => params.quality = 11,
@@ -195,50 +194,51 @@ impl Level {
     }
 
     #[cfg(feature = "bzip2")]
-    fn into_bzip2(self) -> bzip2::Compression {
-        let fastest = bzip2::Compression::fast();
-        let best = bzip2::Compression::best();
+    fn into_bzip2(self) -> compression_codecs::bzip2::bzip2::Compression {
+        let fastest = compression_codecs::bzip2::bzip2::Compression::fast();
+        let best = compression_codecs::bzip2::bzip2::Compression::best();
 
         match self {
             Self::Fastest => fastest,
             Self::Best => best,
-            Self::Precise(quality) => bzip2::Compression::new(
+            Self::Precise(quality) => compression_codecs::bzip2::bzip2::Compression::new(
                 quality
                     .try_into()
                     .unwrap_or(0)
                     .clamp(fastest.level(), best.level()),
             ),
-            Self::Default => bzip2::Compression::default(),
+            Self::Default => compression_codecs::bzip2::bzip2::Compression::default(),
         }
     }
 
     #[cfg(feature = "flate2")]
-    fn into_flate2(self) -> flate2::Compression {
-        let fastest = flate2::Compression::fast();
-        let best = flate2::Compression::best();
-        let none = flate2::Compression::none();
+    fn into_flate2(self) -> compression_codecs::flate::flate2::Compression {
+        let fastest = compression_codecs::flate::flate2::Compression::fast();
+        let best = compression_codecs::flate::flate2::Compression::best();
+        let none = compression_codecs::flate::flate2::Compression::none();
 
         match self {
             Self::Fastest => fastest,
             Self::Best => best,
-            Self::Precise(quality) => flate2::Compression::new(
+            Self::Precise(quality) => compression_codecs::flate::flate2::Compression::new(
                 quality
                     .try_into()
                     .unwrap_or(0)
                     .clamp(none.level(), best.level()),
             ),
-            Self::Default => flate2::Compression::default(),
+            Self::Default => compression_codecs::flate::flate2::Compression::default(),
         }
     }
 
     #[cfg(feature = "zstd")]
     fn into_zstd(self) -> i32 {
-        let (fastest, best) = libzstd::compression_level_range().into_inner();
+        let (fastest, best) =
+            compression_codecs::zstd::libzstd::compression_level_range().into_inner();
         match self {
             Self::Fastest => fastest,
             Self::Best => best,
             Self::Precise(quality) => quality.clamp(fastest, best),
-            Self::Default => libzstd::DEFAULT_COMPRESSION_LEVEL,
+            Self::Default => compression_codecs::zstd::libzstd::DEFAULT_COMPRESSION_LEVEL,
         }
     }
 

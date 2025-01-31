@@ -7,7 +7,7 @@ macro_rules! algos {
         decoder! {
             #[doc = concat!("A ", $algo_s, " decoder, or decompressor")]
             #[cfg(feature = $algo_s)]
-            $decoder<$inner>
+            $algo::$decoder<$inner>
 
             { $($decoder_methods)* }
         }
@@ -16,7 +16,7 @@ macro_rules! algos {
         encoder! {
             #[doc = concat!("A ", $algo_s, " encoder, or compressor.")]
             #[cfg(feature = $algo_s)]
-            $encoder<$inner> {
+            $algo::$encoder<$inner> {
                 pub fn new(inner: $inner) -> Self {
                     Self::with_quality(inner, crate::Level::Default)
                 }
@@ -33,7 +33,7 @@ macro_rules! algos {
         decoder! {
             #[doc = concat!("A ", $algo_s, " decoder, or decompressor")]
             #[cfg(feature = $algo_s)]
-            $decoder<$inner>
+            $algo::$decoder<$inner>
 
             { $($decoder_methods)* }
         }
@@ -43,12 +43,12 @@ macro_rules! algos {
         algos!(@algo brotli ["brotli"] BrotliDecoder BrotliEncoder <$inner>
         { @enc
             pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                let params = brotli::enc::backward_references::BrotliEncoderParams::default();
+                let params = compression_codecs::brotli::brotli::enc::BrotliEncoderParams::default();
 
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::BrotliEncoder::new(level.into_brotli(params)),
+                        compression_codecs::brotli::BrotliEncoder::new(level.into_brotli(params)),
                     ),
                 }
             }
@@ -65,7 +65,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::BrotliEncoder::new(params),
+                        compression_codecs::brotli::BrotliEncoder::new(params),
                     ),
                 }
             }
@@ -80,7 +80,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::BzEncoder::new(level.into_bzip2(), 0),
+                        compression_codecs::bzip2::BzEncoder::new(level.into_bzip2(), 0),
                     ),
                 }
             }
@@ -94,7 +94,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::DeflateEncoder::new(level.into_flate2()),
+                        compression_codecs::deflate::DeflateEncoder::new(level.into_flate2()),
                     ),
                 }
             }
@@ -102,7 +102,7 @@ macro_rules! algos {
         { @dec }
         );
 
-        algos!(@algo deflate ["deflate64"] Deflate64Decoder Deflate64Encoder <$inner>
+        algos!(@algo deflate64 ["deflate64"] Deflate64Decoder Deflate64Encoder <$inner>
         { @dec }
         );
 
@@ -113,7 +113,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::GzipEncoder::new(level.into_flate2()),
+                        compression_codecs::gzip::GzipEncoder::new(level.into_flate2()),
                     ),
                 }
             }
@@ -127,7 +127,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZlibEncoder::new(level.into_flate2()),
+                        compression_codecs::zlib::ZlibEncoder::new(level.into_flate2()),
                     ),
                 }
             }
@@ -152,7 +152,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZstdEncoder::new(level.into_zstd()),
+                        compression_codecs::zstd::ZstdEncoder::new(level.into_zstd()),
                     ),
                 }
             }
@@ -173,7 +173,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZstdEncoder::new_with_params(level.into_zstd(), params),
+                        compression_codecs::zstd::ZstdEncoder::new_with_params(level.into_zstd(), params.iter().map(|p| p.as_zstd())),
                     ),
                 }
             }
@@ -192,7 +192,7 @@ macro_rules! algos {
                 Ok(Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZstdEncoder::new_with_dict(level.into_zstd(), dictionary)?,
+                        compression_codecs::zstd::ZstdEncoder::new_with_dict(level.into_zstd(), dictionary)?,
                     ),
                 })
             }
@@ -204,7 +204,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         inner,
-                        crate::codec::ZstdDecoder::new_with_params(params),
+                        compression_codecs::zstd::ZstdDecoder::new_with_params(params.iter().map(|p| p.as_zstd())),
                     ),
                 }
             }
@@ -224,7 +224,7 @@ macro_rules! algos {
                 Ok(Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         inner,
-                        crate::codec::ZstdDecoder::new_with_dict(dictionary)?,
+                        compression_codecs::zstd::ZstdDecoder::new_with_dict(dictionary)?,
                     ),
                 })
             }
@@ -238,7 +238,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::XzEncoder::new(level.into_xz2()),
+                        compression_codecs::xz::XzEncoder::new(level.into_xz2()),
                     ),
                 }
             }
@@ -253,7 +253,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,
-                        crate::codec::XzDecoder::with_memlimit(memlimit),
+                        compression_codecs::xz::XzDecoder::with_memlimit(memlimit),
                     ),
                 }
             }
@@ -267,7 +267,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::LzmaEncoder::new(level.into_xz2()),
+                        compression_codecs::lzma::LzmaEncoder::new(level.into_xz2()),
                     ),
                 }
             }
@@ -282,7 +282,7 @@ macro_rules! algos {
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,
-                        crate::codec::LzmaDecoder::with_memlimit(memlimit),
+                        compression_codecs::lzma::LzmaDecoder::with_memlimit(memlimit),
                     ),
                 }
             }

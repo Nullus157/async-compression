@@ -4,7 +4,7 @@ use core::{
 };
 use std::io::{IoSlice, Result};
 
-use crate::{codec::Encode, util::PartialBuffer};
+use compression_codecs::{Encode, PartialBuffer};
 use futures_core::ready;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};

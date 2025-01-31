@@ -1,5 +1,5 @@
 macro_rules! encoder {
-    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($inherent_methods:tt)* })*) => {
+    ($(#[$attr:meta])* $algo:ident::$name:ident<$inner:ident> $({ $($inherent_methods:tt)* })*) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
             ///
@@ -8,7 +8,7 @@ macro_rules! encoder {
             #[derive(Debug)]
             pub struct $name<$inner> {
                 #[pin]
-                inner: crate::futures::write::Encoder<$inner, crate::codec::$name>,
+                inner: crate::futures::write::Encoder<$inner, compression_codecs::$algo::$name>,
             }
         }
 

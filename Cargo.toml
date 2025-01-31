@@ -1,3 +1,11 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.dependencies]
+compression-codecs = { path = "crates/compression-codecs" }
+compression-core = { path = "crates/compression-core" }
+
 [package]
 name = "async-compression"
 version = "0.4.18"
@@ -16,34 +24,35 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+default = ["all"]
+
 # groups
 all = ["all-implementations", "all-algorithms"]
 all-implementations = ["futures-io", "tokio"]
 all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "zstd", "deflate64"]
 
 # algorithms
-deflate = ["flate2"]
-gzip = ["flate2"]
-lzma = ["xz2"]
-xz = ["xz2"]
-zlib = ["flate2"]
-zstd = ["libzstd", "zstd-safe"]
-zstdmt = ["zstd", "zstd-safe/zstdmt"]
-deflate64 = ["dep:deflate64"]
+brotli = ["compression-codecs/brotli"]
+bzip2 = ["compression-codecs/bzip2"]
+deflate = ["compression-codecs/deflate", "flate2"]
+deflate64 = ["compression-codecs/deflate64"]
+flate2 = ["compression-codecs/flate2"]
+gzip = ["compression-codecs/gzip", "flate2"]
+lzma = ["compression-codecs/lzma", "xz2"]
+xz = ["compression-codecs/xz", "xz2"]
+xz2 = ["compression-codecs/xz2"]
+zlib = ["compression-codecs/zlib", "flate2"]
+zstd = ["compression-codecs/zstd"]
+zstdmt = ["compression-codecs/zstdmt"]
+libzstd = ["compression-codecs/libzstd"]
+zstd-safe = ["compression-codecs/zstd-safe"]
 
 [dependencies]
-brotli = { version = "7.0", optional = true }
-bzip2 = { version = "0.5.0", optional = true }
-flate2 = { version = "1.0.13", optional = true }
 futures-core = { version = "0.3", default-features = false }
 futures-io = { version = "0.3", default-features = false, features = ["std"], optional = true }
-libzstd = { package = "zstd", version = "0.13.1", optional = true, default-features = false }
-memchr = "2"
 pin-project-lite = "0.2"
 tokio = { version = "1.24.2", optional = true, default-features = false }
-xz2 = { version = "0.1.6", optional = true }
-zstd-safe = { version = "7", optional = true, default-features = false }
-deflate64 = { version = "0.1.5", optional = true }
+compression-codecs.workspace = true
 
 [dev-dependencies]
 bytes = "1"

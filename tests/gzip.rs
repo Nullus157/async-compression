@@ -11,7 +11,7 @@ use utils::algos::gzip::futures::bufread;
 
 #[allow(unused)]
 fn compress_with_header(data: &[u8]) -> Vec<u8> {
-    use flate2::{Compression, GzBuilder};
+    use compression_codecs::flate::flate2::{Compression, GzBuilder};
     use std::io::Write;
 
     let mut bytes = Vec::new();

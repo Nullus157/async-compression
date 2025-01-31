@@ -1,5 +1,7 @@
 //! This module contains zstd-specific types for async-compression.
 
+use compression_codecs::zstd::libzstd;
+
 /// A compression parameter for zstd. This is a stable wrapper around zstd's own `CParameter`
 /// type, to abstract over different versions of the zstd library.
 ///

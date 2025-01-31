@@ -1,5 +1,5 @@
 macro_rules! decoder {
-    ($(#[$attr:meta])* $name:ident<$inner:ident> $({ $($inherent_methods:tt)* })*) => {
+    ($(#[$attr:meta])* $algo:ident::$name:ident<$inner:ident> $({ $($inherent_methods:tt)* })*) => {
         pin_project_lite::pin_project! {
             $(#[$attr])*
             ///
@@ -8,7 +8,7 @@ macro_rules! decoder {
             #[derive(Debug)]
             pub struct $name<$inner> {
                 #[pin]
-                inner: crate::tokio::write::Decoder<$inner, crate::codec::$name>,
+                inner: crate::tokio::write::Decoder<$inner, compression_codecs::$algo::$name>,
             }
         }
 
@@ -17,7 +17,7 @@ macro_rules! decoder {
             /// to the given stream.
             pub fn new(read: $inner) -> $name<$inner> {
                 $name {
-                    inner: crate::tokio::write::Decoder::new(read, crate::codec::$name::new()),
+                    inner: crate::tokio::write::Decoder::new(read, compression_codecs::$algo::$name::new()),
                 }
             }
 

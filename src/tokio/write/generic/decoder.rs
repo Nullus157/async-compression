@@ -4,11 +4,8 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::{
-    codec::Decode,
-    tokio::write::{AsyncBufWrite, BufWriter},
-    util::PartialBuffer,
-};
+use crate::tokio::write::{AsyncBufWrite, BufWriter};
+use compression_codecs::{Decode, PartialBuffer};
 use futures_core::ready;
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};

@@ -1,6 +1,8 @@
 //! This module contains Brotli-specific types for async-compression.
 
-use brotli::enc::backward_references::{BrotliEncoderMode, BrotliEncoderParams};
+use compression_codecs::brotli::brotli::enc::backward_references::{
+    BrotliEncoderMode, BrotliEncoderParams,
+};
 
 /// Brotli compression parameters builder. This is a stable wrapper around Brotli's own encoder
 /// params type, to abstract over different versions of the Brotli library.

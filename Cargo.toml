@@ -3,6 +3,7 @@ name = "async-compression"
 version = "0.4.18"
 authors = ["Wim Looman <wim@nemo157.com>", "Allen Bui <fairingrey@gmail.com>"]
 edition = "2018"
+resolver = "2"
 license = "MIT OR Apache-2.0"
 keywords = ["compression", "gzip", "zstd", "brotli", "async"]
 categories = ["compression", "asynchronous"]

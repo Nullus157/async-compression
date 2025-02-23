@@ -169,13 +169,13 @@ algos! {
             pub use crate::utils::impls::sync::to_vec;
 
             pub fn compress(bytes: &[u8]) -> Vec<u8> {
-                use xz2::bufread::XzEncoder;
+                use liblzma::bufread::XzEncoder;
 
                 to_vec(XzEncoder::new(bytes, 0))
             }
 
             pub fn decompress(bytes: &[u8]) -> Vec<u8> {
-                use xz2::bufread::XzDecoder;
+                use liblzma::bufread::XzDecoder;
 
                 to_vec(XzDecoder::new(bytes))
             }
@@ -187,8 +187,8 @@ algos! {
             pub use crate::utils::impls::sync::to_vec;
 
             pub fn compress(bytes: &[u8]) -> Vec<u8> {
-                use xz2::bufread::XzEncoder;
-                use xz2::stream::{LzmaOptions, Stream};
+                use liblzma::bufread::XzEncoder;
+                use liblzma::stream::{LzmaOptions, Stream};
 
                 to_vec(XzEncoder::new_stream(
                     bytes,
@@ -197,8 +197,8 @@ algos! {
             }
 
             pub fn decompress(bytes: &[u8]) -> Vec<u8> {
-                use xz2::bufread::XzDecoder;
-                use xz2::stream::Stream;
+                use liblzma::bufread::XzDecoder;
+                use liblzma::stream::Stream;
 
                 to_vec(XzDecoder::new_stream(
                     bytes,

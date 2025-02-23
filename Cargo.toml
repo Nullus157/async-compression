@@ -24,9 +24,9 @@ all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "z
 # algorithms
 deflate = ["flate2"]
 gzip = ["flate2"]
-lzma = ["xz2"]
-xz = ["xz2"]
-zlib = ["flate2"]
+lzma = ["liblzma"]
+xz = ["liblzma"]
+zlib = ["liblzma"]
 zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]
 deflate64 = ["dep:deflate64"]
@@ -41,7 +41,7 @@ libzstd = { package = "zstd", version = "0.13.1", optional = true, default-featu
 memchr = "2"
 pin-project-lite = "0.2"
 tokio = { version = "1.24.2", optional = true, default-features = false }
-xz2 = { version = "0.1.6", optional = true }
+liblzma = { version = "0.3.6", optional = true }
 zstd-safe = { version = "7", optional = true, default-features = false }
 deflate64 = { version = "0.1.5", optional = true }
 

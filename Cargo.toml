@@ -25,8 +25,9 @@ all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "z
 # algorithms
 deflate = ["flate2"]
 gzip = ["flate2"]
-lzma = ["liblzma"]
-xz = ["liblzma"]
+lzma = ["dep:liblzma"]
+xz = ["lzma"]
+xz2 = ["xz"]
 zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]

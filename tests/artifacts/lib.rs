@@ -130,7 +130,7 @@
 )]
 #![cfg_attr(not(all), allow(unused))]
 
-#[cfg(any(feature = "bzip2", feature = "flate2", feature = "liblzma"))]
+#[cfg(any(feature = "bzip2", feature = "flate2", feature = "xz2"))]
 use std::convert::TryInto;
 
 #[macro_use]
@@ -225,7 +225,7 @@ impl Level {
         }
     }
 
-    #[cfg(feature = "liblzma")]
+    #[cfg(feature = "xz2")]
     fn into_xz2(self) -> u32 {
         match self {
             Self::Fastest => 0,

@@ -8,10 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## [0.4.19](https://github.com/Nullus157/async-compression/compare/v0.4.18...v0.4.19) - 2025-02-27
 
-### Other
+### Changed
+
+- Update `bzip2` dependency to `0.5`.
+
+### Fixed
 
 - Ensure that flush finishes before continuing.
-- Update `bzip2` dependency to `0.5`.
 
 ## [0.4.18](https://github.com/Nullus157/async-compression/compare/v0.4.17...v0.4.18) - 2024-11-23
 

@@ -1,0 +1,32 @@
+name: wasi
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: Build for wasm32-wasip1-threads
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: nightly
+        target: wasm32-wasip1-threads
+    - run: |
+        curl -L https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-25/wasi-sysroot-25.0.tar.gz -o wasi-sysroot.tar.gz
+        mkdir -p wasi-sysroot
+        tar xf wasi-sysroot.tar.gz --strip-components=1 -C wasi-sysroot
+    - run: |
+        export "CFLAGS_wasm32_wasip1_threads=--sysroot=${{ github.workspace }}/wasi-sysroot -I${{ github.workspace }}/wasi-sysroot/include/wasm32-wasip1-threads -L-I${{ github.workspace }}/wasi-sysroot/lib/wasm32-wasip1-threads"
+        cargo +nightly build --lib --features all --target wasm32-wasip1-threads
+
+on:
+    merge_group:
+        types: [checks_requested]
+    pull_request:
+        branches: [main]
+        types: [opened, synchronize, reopened, ready_for_review]
+    push:
+        branches:
+            - main

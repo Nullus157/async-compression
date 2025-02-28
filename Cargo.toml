@@ -3,6 +3,7 @@ name = "async-compression"
 version = "0.4.19"
 authors = ["Wim Looman <wim@nemo157.com>", "Allen Bui <fairingrey@gmail.com>"]
 edition = "2018"
+resolver = "2"
 license = "MIT OR Apache-2.0"
 keywords = ["compression", "gzip", "zstd", "brotli", "async"]
 categories = ["compression", "asynchronous"]
@@ -24,8 +25,9 @@ all-algorithms = ["brotli", "bzip2", "deflate", "gzip", "lzma", "xz", "zlib", "z
 # algorithms
 deflate = ["flate2"]
 gzip = ["flate2"]
-lzma = ["xz2"]
-xz = ["xz2"]
+lzma = ["dep:liblzma"]
+xz = ["lzma"]
+xz2 = ["xz"]
 zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]
@@ -41,7 +43,7 @@ libzstd = { package = "zstd", version = "0.13.1", optional = true, default-featu
 memchr = "2"
 pin-project-lite = "0.2"
 tokio = { version = "1.24.2", optional = true, default-features = false }
-xz2 = { version = "0.1.6", optional = true }
+liblzma = { version = "0.3.6", optional = true }
 zstd-safe = { version = "7", optional = true, default-features = false }
 deflate64 = { version = "0.1.5", optional = true }
 

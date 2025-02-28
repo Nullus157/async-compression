@@ -17,7 +17,7 @@ mod gzip;
 mod lzma;
 #[cfg(feature = "xz")]
 mod xz;
-#[cfg(feature = "xz2")]
+#[cfg(feature = "lzma")]
 mod xz2;
 #[cfg(feature = "zlib")]
 mod zlib;
@@ -40,7 +40,7 @@ pub(crate) use self::gzip::{GzipDecoder, GzipEncoder};
 pub(crate) use self::lzma::{LzmaDecoder, LzmaEncoder};
 #[cfg(feature = "xz")]
 pub(crate) use self::xz::{XzDecoder, XzEncoder};
-#[cfg(feature = "xz2")]
+#[cfg(feature = "lzma")]
 pub(crate) use self::xz2::{Xz2Decoder, Xz2Encoder, Xz2FileFormat};
 #[cfg(feature = "zlib")]
 pub(crate) use self::zlib::{ZlibDecoder, ZlibEncoder};

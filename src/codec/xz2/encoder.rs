@@ -1,6 +1,6 @@
 use std::{fmt, io};
 
-use xz2::stream::{Action, Check, LzmaOptions, Status, Stream};
+use liblzma::stream::{Action, Check, LzmaOptions, Status, Stream};
 
 use crate::{
     codec::{Encode, Xz2FileFormat},

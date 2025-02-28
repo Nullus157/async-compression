@@ -1,6 +1,6 @@
 [package]
 name = "async-compression"
-version = "0.4.19"
+version = "0.4.20"
 authors = ["Wim Looman <wim@nemo157.com>", "Allen Bui <fairingrey@gmail.com>"]
 edition = "2018"
 resolver = "2"

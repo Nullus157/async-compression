@@ -147,7 +147,12 @@
 )]
 #![cfg_attr(not(all), allow(unused))]
 
-#[cfg(any(feature = "bzip2", feature = "flate2", feature = "lzma", feature = "lz4"))]
+#[cfg(any(
+    feature = "bzip2",
+    feature = "flate2",
+    feature = "lzma",
+    feature = "lz4"
+))]
 use std::convert::TryInto;
 
 #[macro_use]

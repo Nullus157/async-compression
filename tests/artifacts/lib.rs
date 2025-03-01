@@ -88,14 +88,6 @@
     doc = "`gzip` (*inactive*) | `GzipEncoder`, `GzipDecoder`"
 )]
 #![cfg_attr(
-    feature = "lz4",
-    doc = "`lz4` | [`Lz4Encoder`](?search=Lz4Encoder), [`Lz4Decoder`](?search=Lz4Decoder)"
-)]
-#![cfg_attr(
-    not(feature = "lz4"),
-    doc = "`lz4` (*inactive*) | `Lz4Encoder`, `Lz4Decoder`"
-)]
-#![cfg_attr(
     feature = "lzma",
     doc = "`lzma` | [`LzmaEncoder`](?search=LzmaEncoder), [`LzmaDecoder`](?search=LzmaDecoder)"
 )]

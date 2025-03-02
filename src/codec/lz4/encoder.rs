@@ -123,7 +123,7 @@ impl Encode for Lz4Encoder {
 
                     if buffer.unwritten().is_empty() {
                         buffer.reset();
-                        let size = std::cmp::min(input.unwritten().len(), self.limit);
+                        let size = input.unwritten().len().min(self.limit);
                         unsafe {
                             let len = check_error(LZ4F_compressUpdate(
                                 self.ctx.get_mut().ctx,

@@ -83,8 +83,9 @@ impl Encode for FlateEncoder {
             }
         }
 
-        self.flushed = true;
-        Ok(!output.unwritten().is_empty())
+        let internal_flushed = !output.unwritten().is_empty();
+        self.flushed = internal_flushed;
+        Ok(internal_flushed)
     }
 
     fn finish(

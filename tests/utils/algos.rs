@@ -207,4 +207,26 @@ algos! {
             }
         }
     }
+
+    pub mod lz4("lz4", Lz4Encoder, Lz4Decoder) {
+        pub mod sync {
+            pub use crate::utils::impls::sync::to_vec;
+
+            pub fn compress(bytes: &[u8]) -> Vec<u8> {
+                use std::io::Write;
+                use lz4::EncoderBuilder;
+
+                let mut encoder = EncoderBuilder::new().build(vec![]).unwrap();
+                encoder.write_all(bytes).unwrap();
+                let (compressed_bytes, result) = encoder.finish();
+                result.unwrap();
+                compressed_bytes
+            }
+
+            pub fn decompress(bytes: &[u8]) -> Vec<u8> {
+                use lz4::Decoder;
+                to_vec(Decoder::new(bytes).unwrap())
+            }
+        }
+    }
 }

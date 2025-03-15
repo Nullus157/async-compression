@@ -31,6 +31,10 @@ impl<B: AsRef<[u8]>> PartialBuffer<B> {
     pub(crate) fn into_inner(self) -> B {
         self.buffer
     }
+
+    pub(crate) fn reset(&mut self) {
+        self.index = 0;
+    }
 }
 
 impl<B: AsRef<[u8]> + AsMut<[u8]>> PartialBuffer<B> {

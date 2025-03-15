@@ -289,5 +289,21 @@ macro_rules! algos {
 
         }
         );
+
+        algos!(@algo gzip ["lz4"] Lz4Decoder Lz4Encoder <$inner>
+        { @enc
+
+            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::Lz4Encoder::new(level.into_lz4()),
+                    ),
+                }
+            }
+        }
+        { @dec }
+        );
+
     }
 }

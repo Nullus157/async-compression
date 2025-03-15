@@ -10,8 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ### Other
 
-- Update buf_writer.rs
-- Update buf_writer.rs
+- fix flate encoder: do not mark internal state as flushed if we ran out of buffer space
 - Add assertion in `produce` method to check buffer capacity in implementations for `BufWriter`
 
 ## [0.4.20](https://github.com/Nullus157/async-compression/compare/v0.4.19...v0.4.20) - 2025-02-28

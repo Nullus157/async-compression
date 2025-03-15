@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.21](https://github.com/Nullus157/async-compression/compare/v0.4.20...v0.4.21) - 2025-03-15
+
+### Fixed
+
+- When flate encoding, do not mark internal state as flushed if it ran out of buffer space.
+- Add debug assertion in `produce` method to check buffer capacity in implementations for `BufWriter`.
+
 ## [0.4.20](https://github.com/Nullus157/async-compression/compare/v0.4.19...v0.4.20) - 2025-02-28
 
 ### Added

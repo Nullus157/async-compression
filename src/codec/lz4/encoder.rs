@@ -89,6 +89,19 @@ impl Lz4Encoder {
         self.block_buffer_size
     }
 
+    fn drain_buffer(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> (usize, usize) {
+        match self.maybe_buffer.as_mut() {
+            Some(buffer) => {
+                let drained_bytes = output.copy_unwritten_from(buffer);
+                (drained_bytes, buffer.unwritten().len())
+            }
+            None => (0, 0),
+        }
+    }
+
     fn write<'a, T>(
         &'a mut self,
         lz4_fn: Lz4Fn<'a, T>,
@@ -97,6 +110,11 @@ impl Lz4Encoder {
     where
         T: AsRef<[u8]>,
     {
+        let (drained_before, undrained) = self.drain_buffer(output);
+        if undrained > 0 {
+            return Ok(drained_before);
+        }
+
         let min_dst_size = match &lz4_fn {
             Lz4Fn::Begin => LZ4F_HEADER_SIZE_MAX,
             Lz4Fn::Update { input } => {
@@ -169,8 +187,9 @@ impl Lz4Encoder {
             }
         };
 
-        if direct_output {
+        let drained_after = if direct_output {
             output.advance(len);
+            len
         } else {
             // SAFETY: buffer is initialized above incase of a non-direct operation
             unsafe {
@@ -180,9 +199,11 @@ impl Lz4Encoder {
                     .get_mut()
                     .set_len(len);
             }
-        }
+            let (d, _) = self.drain_buffer(output);
+            d
+        };
 
-        Ok(len)
+        Ok(drained_before + drained_after)
     }
 }
 
@@ -199,18 +220,7 @@ impl Encode for Lz4Encoder {
                 }
 
                 State::Encoding => {
-                    if let Some(buffer) = self.maybe_buffer.as_mut() {
-                        output.copy_unwritten_from(buffer);
-                    }
-
-                    // start another round of compression if buffer is fully drained or None
-                    if self
-                        .maybe_buffer
-                        .as_ref()
-                        .is_none_or(|buffer| buffer.unwritten().is_empty())
-                    {
-                        self.write(Lz4Fn::Update { input }, output)?;
-                    }
+                    self.write(Lz4Fn::Update { input }, output)?;
                 }
 
                 State::Footer | State::Done => {
@@ -236,32 +246,13 @@ impl Encode for Lz4Encoder {
                 }
 
                 State::Encoding => {
-                    if let Some(buffer) = self.maybe_buffer.as_mut() {
-                        output.copy_unwritten_from(buffer);
-                    }
-
-                    if self
-                        .maybe_buffer
-                        .as_ref()
-                        .is_none_or(|buffer| buffer.unwritten().is_empty())
-                    {
-                        let len = self.write(Lz4Fn::Flush::<&[u8]>, output)?;
-                        len == 0
-                    } else {
-                        false
-                    }
+                    let len = self.write(Lz4Fn::Flush::<&[u8]>, output)?;
+                    len == 0
                 }
 
                 State::Footer => {
-                    if let Some(buffer) = self.maybe_buffer.as_mut() {
-                        output.copy_unwritten_from(buffer);
-                    }
-
-                    if self
-                        .maybe_buffer
-                        .as_ref()
-                        .is_none_or(|buffer| buffer.unwritten().is_empty())
-                    {
+                    let (_, undrained) = self.drain_buffer(output);
+                    if undrained == 0 {
                         self.state = State::Done;
                         true
                     } else {
@@ -293,29 +284,12 @@ impl Encode for Lz4Encoder {
                 }
 
                 State::Encoding => {
-                    if let Some(buffer) = self.maybe_buffer.as_mut() {
-                        output.copy_unwritten_from(buffer);
-                    }
-
-                    if self
-                        .maybe_buffer
-                        .as_ref()
-                        .is_none_or(|buffer| buffer.unwritten().is_empty())
-                    {
-                        self.write(Lz4Fn::End::<&[u8]>, output)?;
-                    }
+                    self.write(Lz4Fn::End::<&[u8]>, output)?;
                 }
 
                 State::Footer => {
-                    if let Some(buffer) = self.maybe_buffer.as_mut() {
-                        output.copy_unwritten_from(buffer);
-                    }
-
-                    if self
-                        .maybe_buffer
-                        .as_ref()
-                        .is_none_or(|buffer| buffer.unwritten().is_empty())
-                    {
+                    let (_, undrained) = self.drain_buffer(output);
+                    if undrained == 0 {
                         self.state = State::Done;
                     }
                 }

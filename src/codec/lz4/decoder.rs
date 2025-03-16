@@ -88,6 +88,6 @@ impl Decode for Lz4Decoder {
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        Ok(true)
+        self.flush(output)
     }
 }

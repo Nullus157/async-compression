@@ -32,7 +32,7 @@ impl Drop for DecoderContext {
 }
 
 impl Lz4Decoder {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             ctx: Unshared::new(DecoderContext::new().unwrap()),
         }

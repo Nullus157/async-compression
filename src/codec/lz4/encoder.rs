@@ -7,33 +7,50 @@ use lz4::liblz4::{
     LZ4F_freeCompressionContext, LZ4F_VERSION,
 };
 
-use crate::{codec::Encode, unshared::Unshared, util::PartialBuffer};
+use crate::{codec::Encode, lz4::EncoderParams, unshared::Unshared, util::PartialBuffer};
+
+// https://github.com/lz4/lz4/blob/9d53d8bb6c4120345a0966e5d8b16d7def1f32c5/lib/lz4frame.h#L281
+const LZ4F_HEADER_SIZE_MAX: usize = 19;
 
 #[derive(Debug)]
 struct EncoderContext {
     ctx: LZ4FCompressionContext,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 enum State {
-    Init {
-        preferences: LZ4FPreferences,
-        buffer: PartialBuffer<Vec<u8>>,
-    },
-    Encoding {
-        buffer: PartialBuffer<Vec<u8>>,
-    },
-    Footer {
-        buffer: PartialBuffer<Vec<u8>>,
-    },
+    Header,
+    Encoding,
+    Footer,
     Done,
+}
+
+enum Lz4Fn<'a, T>
+where
+    T: AsRef<[u8]>,
+{
+    Begin,
+    Update { input: &'a mut PartialBuffer<T> },
+    Flush,
+    End,
 }
 
 #[derive(Debug)]
 pub struct Lz4Encoder {
     ctx: Unshared<EncoderContext>,
     state: State,
+    preferences: LZ4FPreferences,
     limit: usize,
+    maybe_buffer: Option<PartialBuffer<Vec<u8>>>,
+    /// Minimum dst buffer size for a block
+    block_buffer_size: usize,
+    /// Minimum dst buffer size for flush/end
+    flush_buffer_size: usize,
+}
+
+// minimum size of destination buffer for compressing `src_size` bytes
+fn min_dst_size(src_size: usize, preferences: &LZ4FPreferences) -> usize {
+    unsafe { LZ4F_compressBound(src_size, preferences) }
 }
 
 impl EncoderContext {
@@ -51,51 +68,121 @@ impl Drop for EncoderContext {
 }
 
 impl Lz4Encoder {
-    pub fn new(level: u32) -> Self {
-        let block_size = BlockSize::Default.get_size();
-        let preferences = LZ4FPreferences {
-            frame_info: LZ4FFrameInfo {
-                block_size_id: BlockSize::Default,
-                block_mode: BlockMode::Linked,
-                content_checksum_flag: ContentChecksum::ChecksumEnabled,
-                content_size: 0,
-                frame_type: FrameType::Frame,
-                dict_id: 0,
-                block_checksum_flag: BlockChecksum::BlockChecksumEnabled,
-            },
-            compression_level: level,
-            auto_flush: 0,
-            favor_dec_speed: 0,
-            reserved: [0; 3],
-        };
+    pub(crate) fn new(preferences: LZ4FPreferences) -> Self {
+        let block_size = preferences.frame_info.block_size_id.get_size();
 
-        let buffer_size = unsafe { LZ4F_compressBound(block_size, &preferences) };
+        let block_buffer_size = min_dst_size(block_size, &preferences);
+        let flush_buffer_size = min_dst_size(0, &preferences);
 
         Self {
             ctx: Unshared::new(EncoderContext::new().unwrap()),
-            state: State::Init {
-                preferences,
-                buffer: PartialBuffer::new(Vec::with_capacity(buffer_size)),
-            },
+            state: State::Header,
+            preferences,
             limit: block_size,
+            maybe_buffer: None,
+            block_buffer_size,
+            flush_buffer_size,
         }
     }
 
-    fn init(
-        ctx: LZ4FCompressionContext,
-        preferences: &LZ4FPreferences,
-        buffer: &mut PartialBuffer<Vec<u8>>,
-    ) -> Result<()> {
-        unsafe {
-            let len = check_error(LZ4F_compressBegin(
-                ctx,
-                buffer.unwritten_mut().as_mut_ptr(),
-                buffer.get_mut().capacity(),
-                preferences,
-            ))?;
-            buffer.get_mut().set_len(len);
+    pub(crate) fn buffer_size(&self) -> usize {
+        self.block_buffer_size
+    }
+
+    fn write<'a, T>(
+        &'a mut self,
+        lz4_fn: Lz4Fn<'a, T>,
+        output: &'a mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<usize>
+    where
+        T: AsRef<[u8]>,
+    {
+        let min_dst_size = match &lz4_fn {
+            Lz4Fn::Begin => LZ4F_HEADER_SIZE_MAX,
+            Lz4Fn::Update { input } => {
+                min_dst_size(input.unwritten().len().min(self.limit), &self.preferences)
+            }
+            Lz4Fn::Flush | Lz4Fn::End => self.flush_buffer_size,
         };
-        Ok(())
+
+        let direct_output = output.unwritten().len() >= min_dst_size;
+
+        let (dst_buffer, dst_max_size) = if direct_output {
+            let output_len = output.unwritten().len();
+            (output.unwritten_mut(), output_len)
+        } else {
+            let buffer_size = self.block_buffer_size;
+            let buffer = self
+                .maybe_buffer
+                .get_or_insert_with(|| PartialBuffer::new(Vec::with_capacity(buffer_size)));
+            buffer.reset();
+            (buffer.unwritten_mut(), buffer_size)
+        };
+
+        let len = match lz4_fn {
+            Lz4Fn::Begin => {
+                let len = check_error(unsafe {
+                    LZ4F_compressBegin(
+                        self.ctx.get_mut().ctx,
+                        dst_buffer.as_mut_ptr(),
+                        dst_max_size,
+                        &self.preferences,
+                    )
+                })?;
+                self.state = State::Encoding;
+                len
+            }
+            Lz4Fn::Update { input } => {
+                let size = input.unwritten().len().min(self.limit);
+                let len = check_error(unsafe {
+                    LZ4F_compressUpdate(
+                        self.ctx.get_mut().ctx,
+                        dst_buffer.as_mut_ptr(),
+                        dst_max_size,
+                        input.unwritten().as_ptr(),
+                        size,
+                        core::ptr::null(),
+                    )
+                })?;
+                input.advance(size);
+                len
+            }
+            Lz4Fn::Flush => check_error(unsafe {
+                LZ4F_flush(
+                    self.ctx.get_mut().ctx,
+                    dst_buffer.as_mut_ptr(),
+                    dst_max_size,
+                    core::ptr::null(),
+                )
+            })?,
+            Lz4Fn::End => {
+                let len = check_error(unsafe {
+                    LZ4F_compressEnd(
+                        self.ctx.get_mut().ctx,
+                        dst_buffer.as_mut_ptr(),
+                        dst_max_size,
+                        core::ptr::null(),
+                    )
+                })?;
+                self.state = State::Footer;
+                len
+            }
+        };
+
+        if direct_output {
+            output.advance(len);
+        } else {
+            // SAFETY: buffer is initialized above incase of a non-direct operation
+            unsafe {
+                self.maybe_buffer
+                    .as_mut()
+                    .unwrap_unchecked()
+                    .get_mut()
+                    .set_len(len);
+            }
+        }
+
+        Ok(len)
     }
 }
 
@@ -106,44 +193,28 @@ impl Encode for Lz4Encoder {
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<()> {
         loop {
-            match &mut self.state {
-                State::Init {
-                    preferences,
-                    buffer,
-                } => {
-                    Self::init(self.ctx.get_mut().ctx, preferences, buffer);
+            match self.state {
+                State::Header => {
+                    self.write(Lz4Fn::Begin::<&[u8]>, output)?;
+                }
 
-                    self.state = State::Encoding {
-                        buffer: buffer.take(),
+                State::Encoding => {
+                    if let Some(buffer) = self.maybe_buffer.as_mut() {
+                        output.copy_unwritten_from(buffer);
+                    }
+
+                    // start another round of compression if buffer is fully drained or None
+                    if self
+                        .maybe_buffer
+                        .as_ref()
+                        .is_none_or(|buffer| buffer.unwritten().is_empty())
+                    {
+                        self.write(Lz4Fn::Update { input }, output)?;
                     }
                 }
 
-                State::Encoding { buffer } => {
-                    output.copy_unwritten_from(buffer);
-
-                    if buffer.unwritten().is_empty() {
-                        buffer.reset();
-                        let size = input.unwritten().len().min(self.limit);
-                        unsafe {
-                            let len = check_error(LZ4F_compressUpdate(
-                                self.ctx.get_mut().ctx,
-                                buffer.unwritten_mut().as_mut_ptr(),
-                                buffer.get_mut().capacity(),
-                                input.unwritten().as_ptr(),
-                                size,
-                                core::ptr::null(),
-                            ))?;
-                            buffer.get_mut().set_len(len);
-                        }
-                        input.advance(size);
-                    }
-                }
-
-                State::Footer { .. } | State::Done => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "encode after complete",
-                    ));
+                State::Footer | State::Done => {
+                    return Err(io::Error::other("encode after complete"));
                 }
             }
 
@@ -158,42 +229,39 @@ impl Encode for Lz4Encoder {
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         loop {
-            let done = match &mut self.state {
-                State::Init {
-                    preferences,
-                    buffer,
-                } => {
-                    Self::init(self.ctx.get_mut().ctx, preferences, buffer);
-                    self.state = State::Encoding {
-                        buffer: buffer.take(),
-                    };
+            let done = match self.state {
+                State::Header => {
+                    self.write(Lz4Fn::Begin::<&[u8]>, output)?;
                     false
                 }
 
-                State::Encoding { buffer } => {
-                    output.copy_unwritten_from(buffer);
+                State::Encoding => {
+                    if let Some(buffer) = self.maybe_buffer.as_mut() {
+                        output.copy_unwritten_from(buffer);
+                    }
 
-                    if buffer.unwritten().is_empty() {
-                        buffer.reset();
-                        unsafe {
-                            let len = check_error(LZ4F_flush(
-                                self.ctx.get_mut().ctx,
-                                buffer.unwritten_mut().as_mut_ptr(),
-                                buffer.get_mut().capacity(),
-                                core::ptr::null(),
-                            ))?;
-                            buffer.get_mut().set_len(len);
-                            len == 0
-                        }
+                    if self
+                        .maybe_buffer
+                        .as_ref()
+                        .is_none_or(|buffer| buffer.unwritten().is_empty())
+                    {
+                        let len = self.write(Lz4Fn::Flush::<&[u8]>, output)?;
+                        len == 0
                     } else {
                         false
                     }
                 }
 
-                State::Footer { buffer } => {
-                    output.copy_unwritten_from(buffer);
+                State::Footer => {
+                    if let Some(buffer) = self.maybe_buffer.as_mut() {
+                        output.copy_unwritten_from(buffer);
+                    }
 
-                    if buffer.unwritten().is_empty() {
+                    if self
+                        .maybe_buffer
+                        .as_ref()
+                        .is_none_or(|buffer| buffer.unwritten().is_empty())
+                    {
                         self.state = State::Done;
                         true
                     } else {
@@ -219,42 +287,35 @@ impl Encode for Lz4Encoder {
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         loop {
-            match &mut self.state {
-                State::Init {
-                    preferences,
-                    buffer,
-                } => {
-                    Self::init(self.ctx.get_mut().ctx, preferences, buffer);
+            match self.state {
+                State::Header => {
+                    self.write(Lz4Fn::Begin::<&[u8]>, output)?;
+                }
 
-                    self.state = State::Encoding {
-                        buffer: buffer.take(),
+                State::Encoding => {
+                    if let Some(buffer) = self.maybe_buffer.as_mut() {
+                        output.copy_unwritten_from(buffer);
+                    }
+
+                    if self
+                        .maybe_buffer
+                        .as_ref()
+                        .is_none_or(|buffer| buffer.unwritten().is_empty())
+                    {
+                        self.write(Lz4Fn::End::<&[u8]>, output)?;
                     }
                 }
 
-                State::Encoding { buffer } => {
-                    output.copy_unwritten_from(buffer);
-
-                    if buffer.unwritten().is_empty() {
-                        buffer.reset();
-                        unsafe {
-                            let len = check_error(LZ4F_compressEnd(
-                                self.ctx.get_mut().ctx,
-                                buffer.unwritten_mut().as_mut_ptr(),
-                                buffer.get_mut().capacity(),
-                                core::ptr::null(),
-                            ))?;
-                            buffer.get_mut().set_len(len);
-                        }
-                        self.state = State::Footer {
-                            buffer: buffer.take(),
-                        };
+                State::Footer => {
+                    if let Some(buffer) = self.maybe_buffer.as_mut() {
+                        output.copy_unwritten_from(buffer);
                     }
-                }
 
-                State::Footer { buffer } => {
-                    output.copy_unwritten_from(buffer);
-
-                    if buffer.unwritten().is_empty() {
+                    if self
+                        .maybe_buffer
+                        .as_ref()
+                        .is_none_or(|buffer| buffer.unwritten().is_empty())
+                    {
                         self.state = State::Done;
                     }
                 }

@@ -61,6 +61,14 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
         }
     }
 
+    pub fn with_capacity(writer: W, encoder: E, cap: usize) -> Self {
+        Self {
+            writer: BufWriter::with_capacity(cap, writer),
+            encoder,
+            state: State::Encoding,
+        }
+    }
+
     fn do_poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

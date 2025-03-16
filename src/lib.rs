@@ -169,6 +169,8 @@ mod util;
 
 #[cfg(feature = "brotli")]
 pub mod brotli;
+#[cfg(feature = "lz4")]
+pub mod lz4;
 #[cfg(feature = "zstd")]
 pub mod zstd;
 
@@ -266,12 +268,18 @@ impl Level {
     }
 
     #[cfg(feature = "lz4")]
-    fn into_lz4(self) -> u32 {
-        match self {
+    fn into_lz4(
+        self,
+        mut preferences: ::lz4::liblz4::LZ4FPreferences,
+    ) -> ::lz4::liblz4::LZ4FPreferences {
+        let level = match self {
             Self::Fastest => 0,
             Self::Best => 12,
             Self::Precise(quality) => quality.try_into().unwrap_or(0).min(12),
             Self::Default => 0,
-        }
+        };
+
+        preferences.compression_level = level;
+        preferences
     }
 }

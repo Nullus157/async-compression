@@ -39,6 +39,14 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
             state: State::Encoding,
         }
     }
+
+    pub fn with_capacity(writer: W, encoder: E, cap: usize) -> Self {
+        Self {
+            writer: BufWriter::with_capacity(cap, writer),
+            encoder,
+            state: State::Encoding,
+        }
+    }
 }
 
 impl<W, E> Encoder<W, E> {

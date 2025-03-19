@@ -123,18 +123,15 @@ impl Lz4Encoder {
             Lz4Fn::Flush | Lz4Fn::End => self.flush_buffer_size,
         };
 
-        let direct_output = output.unwritten().len() >= min_dst_size;
-
-        let (dst_buffer, dst_max_size) = if direct_output {
-            let output_len = output.unwritten().len();
-            (output.unwritten_mut(), output_len)
-        } else {
+        let (dst_buffer, maybe_internal_buffer) = if min_dst_size > output.unwritten().len() {
             let buffer_size = self.block_buffer_size;
             let buffer = self
                 .maybe_buffer
                 .get_or_insert_with(|| PartialBuffer::new(Vec::with_capacity(buffer_size)));
             buffer.reset();
-            (buffer.unwritten_mut(), buffer_size)
+            (buffer.unwritten_mut().as_mut_ptr(), Some(buffer))
+        } else {
+            (output.unwritten_mut().as_mut_ptr(), None)
         };
 
         let len = match lz4_fn {
@@ -142,8 +139,8 @@ impl Lz4Encoder {
                 let len = check_error(unsafe {
                     LZ4F_compressBegin(
                         self.ctx.get_mut().ctx,
-                        dst_buffer.as_mut_ptr(),
-                        dst_max_size,
+                        dst_buffer,
+                        min_dst_size,
                         &self.preferences,
                     )
                 })?;
@@ -155,8 +152,8 @@ impl Lz4Encoder {
                 let len = check_error(unsafe {
                     LZ4F_compressUpdate(
                         self.ctx.get_mut().ctx,
-                        dst_buffer.as_mut_ptr(),
-                        dst_max_size,
+                        dst_buffer,
+                        min_dst_size,
                         input.unwritten().as_ptr(),
                         size,
                         core::ptr::null(),
@@ -168,8 +165,8 @@ impl Lz4Encoder {
             Lz4Fn::Flush => check_error(unsafe {
                 LZ4F_flush(
                     self.ctx.get_mut().ctx,
-                    dst_buffer.as_mut_ptr(),
-                    dst_max_size,
+                    dst_buffer,
+                    min_dst_size,
                     core::ptr::null(),
                 )
             })?,
@@ -177,8 +174,8 @@ impl Lz4Encoder {
                 let len = check_error(unsafe {
                     LZ4F_compressEnd(
                         self.ctx.get_mut().ctx,
-                        dst_buffer.as_mut_ptr(),
-                        dst_max_size,
+                        dst_buffer,
+                        min_dst_size,
                         core::ptr::null(),
                     )
                 })?;
@@ -187,20 +184,15 @@ impl Lz4Encoder {
             }
         };
 
-        let drained_after = if direct_output {
-            output.advance(len);
-            len
-        } else {
-            // SAFETY: buffer is initialized above incase of a non-direct operation
+        let drained_after = if let Some(internal_buffer) = maybe_internal_buffer {
             unsafe {
-                self.maybe_buffer
-                    .as_mut()
-                    .unwrap_unchecked()
-                    .get_mut()
-                    .set_len(len);
+                internal_buffer.get_mut().set_len(len);
             }
             let (d, _) = self.drain_buffer(output);
             d
+        } else {
+            output.advance(len);
+            len
         };
 
         Ok(drained_before + drained_after)

@@ -115,10 +115,13 @@ impl Lz4Encoder {
             return Ok(drained_before);
         }
 
+        let mut src_size = 0;
+
         let min_dst_size = match &lz4_fn {
             Lz4Fn::Begin => LZ4F_HEADER_SIZE_MAX,
             Lz4Fn::Update { input } => {
-                min_dst_size(input.unwritten().len().min(self.limit), &self.preferences)
+                src_size = input.unwritten().len().min(self.limit);
+                min_dst_size(src_size, &self.preferences)
             }
             Lz4Fn::Flush | Lz4Fn::End => self.flush_buffer_size,
         };
@@ -148,18 +151,17 @@ impl Lz4Encoder {
                 len
             }
             Lz4Fn::Update { input } => {
-                let size = input.unwritten().len().min(self.limit);
                 let len = check_error(unsafe {
                     LZ4F_compressUpdate(
                         self.ctx.get_mut().ctx,
                         dst_buffer,
                         min_dst_size,
                         input.unwritten().as_ptr(),
-                        size,
+                        src_size,
                         core::ptr::null(),
                     )
                 })?;
-                input.advance(size);
+                input.advance(src_size);
                 len
             }
             Lz4Fn::Flush => check_error(unsafe {

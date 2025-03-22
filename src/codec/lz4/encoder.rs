@@ -126,15 +126,21 @@ impl Lz4Encoder {
             Lz4Fn::Flush | Lz4Fn::End => self.flush_buffer_size,
         };
 
-        let (dst_buffer, maybe_internal_buffer) = if min_dst_size > output.unwritten().len() {
+        let output_len = output.unwritten().len();
+
+        let (dst_buffer, dst_size, maybe_internal_buffer) = if min_dst_size > output_len {
             let buffer_size = self.block_buffer_size;
             let buffer = self
                 .maybe_buffer
                 .get_or_insert_with(|| PartialBuffer::new(Vec::with_capacity(buffer_size)));
             buffer.reset();
-            (buffer.unwritten_mut().as_mut_ptr(), Some(buffer))
+            (
+                buffer.unwritten_mut().as_mut_ptr(),
+                buffer_size,
+                Some(buffer),
+            )
         } else {
-            (output.unwritten_mut().as_mut_ptr(), None)
+            (output.unwritten_mut().as_mut_ptr(), output_len, None)
         };
 
         let len = match lz4_fn {
@@ -143,7 +149,7 @@ impl Lz4Encoder {
                     LZ4F_compressBegin(
                         self.ctx.get_mut().ctx,
                         dst_buffer,
-                        min_dst_size,
+                        dst_size,
                         &self.preferences,
                     )
                 })?;
@@ -155,7 +161,7 @@ impl Lz4Encoder {
                     LZ4F_compressUpdate(
                         self.ctx.get_mut().ctx,
                         dst_buffer,
-                        min_dst_size,
+                        dst_size,
                         input.unwritten().as_ptr(),
                         src_size,
                         core::ptr::null(),
@@ -168,7 +174,7 @@ impl Lz4Encoder {
                 LZ4F_flush(
                     self.ctx.get_mut().ctx,
                     dst_buffer,
-                    min_dst_size,
+                    dst_size,
                     core::ptr::null(),
                 )
             })?,
@@ -177,7 +183,7 @@ impl Lz4Encoder {
                     LZ4F_compressEnd(
                         self.ctx.get_mut().ctx,
                         dst_buffer,
-                        min_dst_size,
+                        dst_size,
                         core::ptr::null(),
                     )
                 })?;

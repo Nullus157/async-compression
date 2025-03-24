@@ -14,6 +14,10 @@ impl DeflateEncoder {
             inner: crate::codec::FlateEncoder::new(level, false),
         }
     }
+
+    pub(crate) fn get_ref(&self) -> &crate::codec::FlateEncoder {
+        &self.inner
+    }
 }
 
 impl Encode for DeflateEncoder {

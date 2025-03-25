@@ -289,5 +289,34 @@ macro_rules! algos {
 
         }
         );
+
+        algos!(@algo lz4 ["lz4"] Lz4Decoder Lz4Encoder <$inner>
+        { @enc
+
+            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+                Self::with_quality_and_params(inner, level, crate::lz4::EncoderParams::default())
+            }
+
+            /// Creates a new encoder, using the specified compression level and parameters, which
+            /// will read uncompressed data from the given stream and emit a compressed stream.
+            pub fn with_quality_and_params(
+                inner: $inner,
+                level: crate::Level,
+                params: crate::lz4::EncoderParams,
+            ) -> Self {
+                let encoder = crate::codec::Lz4Encoder::new(level.into_lz4(params.as_lz4()));
+                let cap = encoder.buffer_size();
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::with_capacity(
+                        inner,
+                        encoder,
+                        cap,
+                    ),
+                }
+            }
+        }
+        { @dec }
+        );
+
     }
 }

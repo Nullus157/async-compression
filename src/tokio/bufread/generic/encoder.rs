@@ -34,6 +34,10 @@ impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
             state: State::Encoding,
         }
     }
+
+    pub fn with_capacity(reader: R, encoder: E, _cap: usize) -> Self {
+        Self::new(reader, encoder)
+    }
 }
 
 impl<R, E> Encoder<R, E> {

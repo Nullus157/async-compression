@@ -128,6 +128,9 @@ mod proptest {
     #[cfg(feature = "gzip")]
     tests!(gzip);
 
+    #[cfg(feature = "lz4")]
+    tests!(lz4);
+
     #[cfg(feature = "lzma")]
     tests!(lzma);
 

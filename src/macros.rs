@@ -98,6 +98,16 @@ macro_rules! algos {
                     ),
                 }
             }
+
+            /// Returns the total number of input bytes which have been processed by this compression object.
+            pub fn total_in(&self) -> u64 {
+                self.inner.get_encoder_ref().get_ref().get_ref().total_in()
+            }
+
+            /// Returns the total number of output bytes which have been produced by this compression object.
+            pub fn total_out(&self) -> u64 {
+                self.inner.get_encoder_ref().get_ref().get_ref().total_out()
+            }
         }
         { @dec }
         );

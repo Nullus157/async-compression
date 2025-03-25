@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ### Other
 
-- Merge pull request #337 from ardurin/main
+- Add lz4 encoder/decoder
 - Expose total_in/total_out in DeflateEncoder
 
 ## [0.4.21](https://github.com/Nullus157/async-compression/compare/v0.4.20...v0.4.21) - 2025-03-15

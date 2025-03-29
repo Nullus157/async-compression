@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.23](https://github.com/Nullus157/async-compression/compare/v0.4.22...v0.4.23) - 2025-03-29
+
+### Other
+
+- *(deps)* update liblzma requirement from 0.3.6 to 0.4.0
+
 ## [0.4.22](https://github.com/Nullus157/async-compression/compare/v0.4.21...v0.4.22) - 2025-03-25
 
 ### Other

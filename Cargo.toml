@@ -33,6 +33,7 @@ zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]
 deflate64 = ["dep:deflate64"]
+uncheck-liblzma-version = ["liblzma/uncheck_liblzma_version"]
 
 [dependencies]
 brotli = { version = "7.0", optional = true }
@@ -45,7 +46,7 @@ lz4 = { version = "1.28.1", optional = true }
 memchr = "2"
 pin-project-lite = "0.2"
 tokio = { version = "1.24.2", optional = true, default-features = false }
-liblzma = { version = "0.4.0", optional = true }
+liblzma = { version = "0.4.1", optional = true }
 zstd-safe = { version = "7", optional = true, default-features = false }
 deflate64 = { version = "0.1.5", optional = true }
 

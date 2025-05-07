@@ -97,8 +97,8 @@ impl Decode for BzDecoder {
 
     fn finish(
         &mut self,
-        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> io::Result<bool> {
-        Ok(true)
+        self.flush(output)
     }
 }

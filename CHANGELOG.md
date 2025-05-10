@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.24](https://github.com/Nullus157/async-compression/compare/v0.4.23...v0.4.24) - 2025-05-10
+
+### Other
+
+- narrow tokio requirement to account for RUSTSEC-2025-0023
+- move constructors back to top of rustdoc pages
+
 ## [0.4.23](https://github.com/Nullus157/async-compression/compare/v0.4.22...v0.4.23) - 2025-04-21
 
 ### Changed

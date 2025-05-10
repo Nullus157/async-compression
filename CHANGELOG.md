@@ -8,17 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## [0.4.23](https://github.com/Nullus157/async-compression/compare/v0.4.22...v0.4.23) - 2025-04-21
 
-### Other
+### Changed
 
-- *(deps)* update brotli requirement from 7.0 to 8.0
-- *(deps)* update liblzma requirement from 0.3.6 to 0.4.0
+- Update `brotli` dependency to `8.0`.
+- Update `liblzma` dependency to `0.4`.
 
 ## [0.4.22](https://github.com/Nullus157/async-compression/compare/v0.4.21...v0.4.22) - 2025-03-25
 
-### Other
+### Added
 
-- Add lz4 encoder/decoder
-- Expose total_in/total_out in DeflateEncoder
+- Add LZ4 encoders and decoders.
+- Expose `DeflateEncoder::{total_in, total_out}()` methods.
+
 
 ## [0.4.21](https://github.com/Nullus157/async-compression/compare/v0.4.20...v0.4.21) - 2025-03-15
 

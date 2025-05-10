@@ -35,8 +35,8 @@ zstdmt = ["zstd", "zstd-safe/zstdmt"]
 deflate64 = ["dep:deflate64"]
 
 [dependencies]
-brotli = { version = "8.0", optional = true }
-bzip2 = { version = "0.5.0", optional = true }
+brotli = { version = "8", optional = true }
+bzip2 = { version = "0.5", optional = true }
 flate2 = { version = "1.0.13", optional = true }
 futures-core = { version = "0.3", default-features = false }
 futures-io = { version = "0.3", default-features = false, features = ["std"], optional = true }
@@ -56,8 +56,8 @@ futures-test = "0.3.5"
 ntest = "0.9"
 proptest = "1"
 proptest-derive = "0.5"
-rand = "0.9.0"
-tokio = { version = "1.24.2", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "io-std"] }
+rand = "0.9"
+tokio = { version = "1.38.2", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "io-std"] }
 tokio-util = { version = "0.7", default-features = false, features = ["io"] }
 
 [[test]]

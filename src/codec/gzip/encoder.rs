@@ -72,10 +72,7 @@ impl Encode for GzipEncoder {
                 }
 
                 State::Footer(_) | State::Done => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "encode after complete",
-                    ));
+                    return Err(io::Error::other("encode after complete"));
                 }
             };
 

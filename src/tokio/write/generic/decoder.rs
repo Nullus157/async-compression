@@ -88,8 +88,7 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
                 }
 
                 State::Done => {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
+                    return Poll::Ready(Err(io::Error::other(
                         "Write after end of stream",
                     )))
                 }

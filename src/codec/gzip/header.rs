@@ -156,10 +156,7 @@ impl Parser {
                 }
 
                 State::Done => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "parser used after done",
-                    ));
+                    return Err(io::Error::other("parser used after done"));
                 }
             };
         }

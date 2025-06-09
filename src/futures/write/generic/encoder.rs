@@ -87,10 +87,7 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
                 }
 
                 State::Finishing | State::Done => {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Write after close",
-                    )))
+                    return Poll::Ready(Err(io::Error::other("Write after close")))
                 }
             };
 
@@ -114,10 +111,7 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
                 State::Encoding => this.encoder.flush(&mut output)?,
 
                 State::Finishing | State::Done => {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Flush after close",
-                    )))
+                    return Poll::Ready(Err(io::Error::other("Flush after close")))
                 }
             };
 

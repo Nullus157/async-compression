@@ -51,7 +51,7 @@ impl Decode for FlateDecoder {
         match self.decode(input, output, FlushDecompress::None)? {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
-            Status::BufError => Err(io::Error::new(io::ErrorKind::Other, "unexpected BufError")),
+            Status::BufError => Err(io::Error::other("unexpected BufError")),
         }
     }
 
@@ -91,7 +91,7 @@ impl Decode for FlateDecoder {
         )? {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
-            Status::BufError => Err(io::Error::new(io::ErrorKind::Other, "unexpected BufError")),
+            Status::BufError => Err(io::Error::other("unexpected BufError")),
         }
     }
 }

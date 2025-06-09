@@ -32,7 +32,7 @@
 #![allow(unexpected_cfgs)]
 #![cfg_attr(
     feature = "futures-io",
-    doc = "[`futures-io`](crate::futures) | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead), [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
+    doc = "[`futures-io`] | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead), [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
 )]
 #![cfg_attr(
     not(feature = "futures-io"),
@@ -40,7 +40,7 @@
 )]
 #![cfg_attr(
     feature = "tokio",
-    doc = "[`tokio`](crate::tokio) | [`tokio::io::AsyncBufRead`](::tokio::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio::io::AsyncWrite)"
+    doc = "[`tokio`] | [`tokio::io::AsyncBufRead`](::tokio::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio::io::AsyncWrite)"
 )]
 #![cfg_attr(
     not(feature = "tokio"),

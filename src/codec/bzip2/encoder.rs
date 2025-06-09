@@ -116,7 +116,7 @@ impl Encode for BzEncoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::other("out of memory")),
         }
     }
 
@@ -142,7 +142,7 @@ impl Encode for BzEncoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::other("out of memory")),
         }
     }
 }

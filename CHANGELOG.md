@@ -10,35 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ### Other
 
-- Fix fmt in decoder.rs
-- Fix tokio write generics decoder.rs
-- Fix fmt in tokio generics write encoder.rs
-- Fix fmt in tokio write generics decoder.rs
-- Fix fmt in future write generics encoder.rs
-- Fix fmt in decoder.rs
-- Fix clippy error and fmt in xz2 encoder.rs
-- Fix fmt in xz2 decoder.rs
-- Fix fmt in brotli decoder.rs
-- Fix clippy error in tokio/write/generic/decoder.rs
-- Fix clippy error in xz2 decoder.rs
-- Fix clippy error in bzip2 encoder.rs
-- Fix clippy error in bzip2 encoder.rs
-- Fix clippy error in bzip2 decoder.rs
-- Fix doc link in lib.rs
-- Fix clippy error in futures write generic encoder.rs
-- Fix clippy error in future write generic decoder.rs
-- Fix clippy error in tokio generic encoder.rs
-- Fix clippy error in tokio generic decoder.rs
-- Fix clippy error in gzip encoder.rs
-- Fix clippy error in gzip decoder.rs
-- Fix clippy error in gzip encoder.rs
-- Fix clippy error in gzip header.rs
-- Fix clippy error in flate encoder.rs
-- Fix clippy error in flate decoder.rs
-- Fix clippy error in bzip2 decoder.rs
-- Fix encoder.rs
-- Fix clippy error in brotli encoder.rs
-- Fix clippy error in brotli decoder.rs
+- Fix clippy error and links in documentation
 - narrow tokio requirement to account for RUSTSEC-2025-0023
 - move constructors back to top of rustdoc pages
 

@@ -36,7 +36,7 @@ impl BzDecoder {
         let status = self
             .decompress
             .decompress(input.unwritten(), output.unwritten_mut())
-            .map_err(|e| io::Error::other(e))?;
+            .map_err(io::Error::other)?;
 
         input.advance((self.decompress.total_in() - prior_in) as usize);
         output.advance((self.decompress.total_out() - prior_out) as usize);

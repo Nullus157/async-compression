@@ -41,7 +41,7 @@ impl BrotliDecoder {
             &mut self.state,
         ) {
             BrotliResult::ResultFailure => {
-                return Err(io::Error::new(io::ErrorKind::Other, "brotli error"))
+                return Err(io::Error::other("brotli error"))
             }
             status => status,
         };

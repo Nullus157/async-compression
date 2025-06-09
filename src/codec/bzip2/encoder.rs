@@ -57,7 +57,7 @@ impl BzEncoder {
         let status = self
             .compress
             .compress(input.unwritten(), output.unwritten_mut(), action)
-            .map_err(|e| io::Error::other(e))?;
+            .map_err(io::Error::other)?;
 
         input.advance((self.compress.total_in() - prior_in) as usize);
         output.advance((self.compress.total_out() - prior_out) as usize);

@@ -48,11 +48,10 @@ impl Encode for Xz2Encoder {
 
         match status {
             Status::Ok | Status::StreamEnd => Ok(()),
-            Status::GetCheck => Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Unexpected lzma integrity check",
+            Status::GetCheck => Err(io::Error::other(
+                "Unexpected lzma integrity check"
             )),
-            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::other("out of memory")),
         }
     }
 

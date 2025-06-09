@@ -178,8 +178,7 @@ impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
             ready!(self.as_mut().project().writer.as_mut().poll_shutdown(cx))?;
             Poll::Ready(Ok(()))
         } else {
-            Poll::Ready(Err(io::Error::new(
-                io::ErrorKind::Other,
+            Poll::Ready(Err(io::Error::other
                 "Attempt to shutdown before finishing input",
             )))
         }

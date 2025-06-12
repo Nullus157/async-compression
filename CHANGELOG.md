@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.24](https://github.com/Nullus157/async-compression/compare/v0.4.23...v0.4.24) - 2025-06-09
+
+### Other
+
+- Fix clippy error
+- narrow tokio requirement to account for RUSTSEC-2025-0023
+- move constructors back to top of rustdoc pages
+
+## [0.4.23](https://github.com/Nullus157/async-compression/compare/v0.4.22...v0.4.23) - 2025-04-21
+
+### Changed
+
+- Update `brotli` dependency to `8.0`.
+- Update `liblzma` dependency to `0.4`.
+
+## [0.4.22](https://github.com/Nullus157/async-compression/compare/v0.4.21...v0.4.22) - 2025-03-25
+
+### Added
+
+- Add LZ4 encoders and decoders.
+- Expose `DeflateEncoder::{total_in, total_out}()` methods.
+
+
 ## [0.4.21](https://github.com/Nullus157/async-compression/compare/v0.4.20...v0.4.21) - 2025-03-15
 
 ### Fixed

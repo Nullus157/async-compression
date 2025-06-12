@@ -57,7 +57,7 @@ impl BzEncoder {
         let status = self
             .compress
             .compress(input.unwritten(), output.unwritten_mut(), action)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            .map_err(io::Error::other)?;
 
         input.advance((self.compress.total_in() - prior_in) as usize);
         output.advance((self.compress.total_out() - prior_out) as usize);
@@ -90,7 +90,7 @@ impl Encode for BzEncoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::other("out of memory")),
         }
     }
 
@@ -116,7 +116,7 @@ impl Encode for BzEncoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::other("out of memory")),
         }
     }
 
@@ -142,7 +142,7 @@ impl Encode for BzEncoder {
 
             // There was insufficient memory in the input or output buffer to complete
             // the request, but otherwise everything went normally.
-            Status::MemNeeded => Err(io::Error::new(io::ErrorKind::Other, "out of memory")),
+            Status::MemNeeded => Err(io::Error::other("out of memory")),
         }
     }
 }

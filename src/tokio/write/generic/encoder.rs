@@ -39,6 +39,14 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
             state: State::Encoding,
         }
     }
+
+    pub fn with_capacity(writer: W, encoder: E, cap: usize) -> Self {
+        Self {
+            writer: BufWriter::with_capacity(cap, writer),
+            encoder,
+            state: State::Encoding,
+        }
+    }
 }
 
 impl<W, E> Encoder<W, E> {
@@ -88,10 +96,7 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
                 },
 
                 State::Finishing | State::Done => {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Write after shutdown",
-                    )))
+                    return Poll::Ready(Err(io::Error::other("Write after shutdown")))
                 }
             };
 
@@ -115,10 +120,7 @@ impl<W: AsyncWrite, E: Encode> Encoder<W, E> {
                 State::Encoding | State::Flushing => this.encoder.flush(&mut output)?,
 
                 State::Finishing | State::Done => {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Flush after shutdown",
-                    )))
+                    return Poll::Ready(Err(io::Error::other("Flush after shutdown")))
                 }
             };
             *this.state = State::Flushing;

@@ -32,7 +32,7 @@
 #![allow(unexpected_cfgs)]
 #![cfg_attr(
     feature = "futures-io",
-    doc = "[`futures-io`](crate::futures) | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead), [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
+    doc = "[`futures-io`] | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead), [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
 )]
 #![cfg_attr(
     not(feature = "futures-io"),
@@ -40,7 +40,7 @@
 )]
 #![cfg_attr(
     feature = "tokio",
-    doc = "[`tokio`](crate::tokio) | [`tokio::io::AsyncBufRead`](::tokio::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio::io::AsyncWrite)"
+    doc = "[`tokio`] | [`tokio::io::AsyncBufRead`](::tokio::io::AsyncBufRead), [`tokio::io::AsyncWrite`](::tokio::io::AsyncWrite)"
 )]
 #![cfg_attr(
     not(feature = "tokio"),
@@ -87,6 +87,14 @@
 #![cfg_attr(
     not(feature = "gzip"),
     doc = "`gzip` (*inactive*) | `GzipEncoder`, `GzipDecoder`"
+)]
+#![cfg_attr(
+    feature = "lz4",
+    doc = "`lz4` | [`Lz4Encoder`](?search=Lz4Encoder), [`Lz4Decoder`](?search=Lz4Decoder)"
+)]
+#![cfg_attr(
+    not(feature = "lz4"),
+    doc = "`lz4` (*inactive*) | `Lz4Encoder`, `Lz4Decoder`"
 )]
 #![cfg_attr(
     feature = "lzma",
@@ -139,7 +147,12 @@
 )]
 #![cfg_attr(not(all), allow(unused))]
 
-#[cfg(any(feature = "bzip2", feature = "flate2", feature = "lzma"))]
+#[cfg(any(
+    feature = "bzip2",
+    feature = "flate2",
+    feature = "lzma",
+    feature = "lz4"
+))]
 use std::convert::TryInto;
 
 #[macro_use]
@@ -156,6 +169,8 @@ mod util;
 
 #[cfg(feature = "brotli")]
 pub mod brotli;
+#[cfg(feature = "lz4")]
+pub mod lz4;
 #[cfg(feature = "zstd")]
 pub mod zstd;
 
@@ -250,5 +265,21 @@ impl Level {
             Self::Precise(quality) => quality.try_into().unwrap_or(0).min(9),
             Self::Default => 5,
         }
+    }
+
+    #[cfg(feature = "lz4")]
+    fn into_lz4(
+        self,
+        mut preferences: ::lz4::liblz4::LZ4FPreferences,
+    ) -> ::lz4::liblz4::LZ4FPreferences {
+        let level = match self {
+            Self::Fastest => 0,
+            Self::Best => 12,
+            Self::Precise(quality) => quality.try_into().unwrap_or(0).min(12),
+            Self::Default => 0,
+        };
+
+        preferences.compression_level = level;
+        preferences
     }
 }

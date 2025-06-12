@@ -30,6 +30,16 @@ pin_project! {
     }
 }
 
+impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
+    pub fn new(writer: W, decoder: D) -> Self {
+        Self {
+            writer: BufWriter::new(writer),
+            decoder,
+            state: State::Decoding,
+        }
+    }
+}
+
 impl<W, D> Decoder<W, D> {
     pub fn get_ref(&self) -> &W {
         self.writer.get_ref()
@@ -49,14 +59,6 @@ impl<W, D> Decoder<W, D> {
 }
 
 impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
-    pub fn new(writer: W, decoder: D) -> Self {
-        Self {
-            writer: BufWriter::new(writer),
-            decoder,
-            state: State::Decoding,
-        }
-    }
-
     fn do_poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -86,10 +88,7 @@ impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
                 }
 
                 State::Done => {
-                    return Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Write after end of stream",
-                    )))
+                    return Poll::Ready(Err(io::Error::other("Write after end of stream")))
                 }
             };
 
@@ -177,8 +176,7 @@ impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
             ready!(self.as_mut().project().writer.as_mut().poll_close(cx))?;
             Poll::Ready(Ok(()))
         } else {
-            Poll::Ready(Err(io::Error::new(
-                io::ErrorKind::Other,
+            Poll::Ready(Err(io::Error::other(
                 "Attempt to close before finishing input",
             )))
         }

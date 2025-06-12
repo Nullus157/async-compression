@@ -103,9 +103,12 @@ impl Decode for BzDecoder {
             &mut PartialBuffer::new(&[][..]),
             output,
         )? {
-            Status::Ok => Ok(false),
+            Status::Ok
+            | Status::FlushOk
+            | Status::RunOk
+            | Status::FinishOk  => Ok(false),
             Status::StreamEnd => Ok(true),
-            Status::BufError => Err(io::Error::other("unexpected BufError")),
+            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
         }
     }
 }

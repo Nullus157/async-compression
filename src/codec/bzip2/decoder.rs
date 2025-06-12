@@ -99,6 +99,6 @@ impl Decode for BzDecoder {
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> io::Result<bool> {
-        self.flush(output)
+        self.decode(&mut PartialBuffer::new(&[][..]), output)
     }
 }

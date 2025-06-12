@@ -102,7 +102,6 @@ impl Decode for BzDecoder {
         match self.decode(
             &mut PartialBuffer::new(&[][..]),
             output,
-            FlushDecompress::Finish,
         )? {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),

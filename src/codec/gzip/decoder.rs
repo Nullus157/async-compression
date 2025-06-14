@@ -5,9 +5,9 @@ use crate::{
     },
     util::PartialBuffer,
 };
-use std::io::{Error, ErrorKind, Result};
-
 use flate2::Crc;
+use std::io::{Error, ErrorKind, Read, Result};
+use std::ops::Deref;
 
 #[derive(Debug)]
 enum State {
@@ -163,16 +163,22 @@ impl Decode for GzipDecoder {
 
     fn finish(
         &mut self,
-        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
-        // Because of the footer we have to have already flushed all the data out before we get here
-        if let State::Done = self.state {
-            Ok(true)
-        } else {
-            Err(Error::new(
-                ErrorKind::UnexpectedEof,
-                "unexpected end of file",
-            ))
+        match &mut self.state {
+            State::Done => return Ok(true),
+            State::Header(parser) => {
+                // In this case, the input was an empty gzip. Exit successfully with an empty gzip.
+                if parser.has_no_content() {
+                    return Ok(true);
+                }
+            }
+            _ => {}
         }
+
+        Err(Error::new(
+            ErrorKind::UnexpectedEof,
+            "unexpected end of file",
+        ))
     }
 }

@@ -161,4 +161,11 @@ impl Parser {
             };
         }
     }
+
+    pub(super) fn has_no_content(&self) -> bool {
+        match &self.state {
+            State::Fixed(data) => data.buffer().iter().all(|&b| b == 0),
+            _ => false,
+        }
+    }
 }

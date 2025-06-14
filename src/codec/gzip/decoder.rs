@@ -166,19 +166,13 @@ impl Decode for GzipDecoder {
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         match &mut self.state {
-            State::Done => return Ok(true),
-            State::Header(parser) => {
-                // In this case, the input was an empty gzip. Exit successfully with an empty gzip.
-                if parser.has_no_content() {
-                    return Ok(true);
-                }
-            }
-            _ => {}
+            State::Done => Ok(true),
+            // In this case, the input was an empty gzip. Exit successfully with an empty gzip.
+            State::Header(parser) if parser.has_no_content() => Ok(true),
+            _ => Err(Error::new(
+                ErrorKind::UnexpectedEof,
+                "unexpected end of file",
+            )),
         }
-
-        Err(Error::new(
-            ErrorKind::UnexpectedEof,
-            "unexpected end of file",
-        ))
     }
 }

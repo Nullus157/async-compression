@@ -8,7 +8,7 @@ allow = [
   "Apache-2.0",
   "BSD-3-Clause",
   "Unicode-DFS-2016",
-  "bzip2-1.0.6-or-later",
+  "bzip2-1.0.6",
 ]
 
 [bans]

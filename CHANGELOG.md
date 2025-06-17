@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ### Changed
 
-- Update `bzip2` dependency from `0.6`. ([#350](https://github.com/Nullus157/async-compression/pull/350))
+- Update `bzip2` dependency to `0.6`. ([#350](https://github.com/Nullus157/async-compression/pull/350))
 
 ## [0.4.24](https://github.com/Nullus157/async-compression/compare/v0.4.23...v0.4.24) - 2025-06-09
 

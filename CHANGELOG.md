@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.25](https://github.com/Nullus157/async-compression/compare/v0.4.24...v0.4.25) - 2025-06-17
+
+### Other
+
+- *(deps)* update bzip2 requirement from 0.5 to 0.6 ([#350](https://github.com/Nullus157/async-compression/pull/350))
+
 ## [0.4.24](https://github.com/Nullus157/async-compression/compare/v0.4.23...v0.4.24) - 2025-06-09
 
 ### Other

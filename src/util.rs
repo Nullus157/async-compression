@@ -20,6 +20,10 @@ impl<B: AsRef<[u8]>> PartialBuffer<B> {
         &self.buffer.as_ref()[self.index..]
     }
 
+    pub(crate) fn buffer(&self) -> &[u8] {
+        self.buffer.as_ref()
+    }
+
     pub(crate) fn advance(&mut self, amount: usize) {
         self.index += amount;
     }

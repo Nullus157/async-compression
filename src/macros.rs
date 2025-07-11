@@ -252,6 +252,19 @@ macro_rules! algos {
                     ),
                 }
             }
+
+            /// Creates a new multi-threaded encoder.
+            ///
+            /// Note that flushing will severely impact multi-threaded performance.
+            #[cfg(feature = "xz-parallel")]
+            pub fn parallel(inner: $inner, level: crate::Level, threads: u32) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codec::XzEncoder::parallel(level.into_xz2(), threads),
+                    ),
+                }
+            }
         }
         { @dec
             /// Creates a new decoder with the specified limit of memory.
@@ -264,6 +277,32 @@ macro_rules! algos {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,
                         crate::codec::XzDecoder::with_memlimit(memlimit),
+                    ),
+                }
+            }
+
+            /// Creates a new multi-threaded decoder.
+            #[cfg(feature = "xz-parallel")]
+            pub fn parallel(read: $inner, threads: u32) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Decoder::new(
+                        read,
+                        crate::codec::XzDecoder::parallel(threads, u64::MAX),
+                    ),
+                }
+            }
+
+            /// Creates a new multi-threaded decoder with the specified limit of memory.
+            ///
+            /// # Errors
+            ///
+            /// An IO error may be returned during decoding if the specified limit is too small.
+            #[cfg(feature = "xz-parallel")]
+            pub fn parallel_with_mem_limit(read: $inner, threads: u32, memlimit: u64) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Decoder::new(
+                        read,
+                        crate::codec::XzDecoder::parallel(threads, memlimit),
                     ),
                 }
             }

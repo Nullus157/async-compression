@@ -9,6 +9,8 @@ use crate::{
 
 pub struct Xz2Encoder {
     stream: Stream,
+    #[cfg(feature = "xz-parallel")]
+    threads: Option<u32>,
 }
 
 impl fmt::Debug for Xz2Encoder {
@@ -26,7 +28,27 @@ impl Xz2Encoder {
             }
         };
 
-        Self { stream }
+        Self {
+            stream,
+            #[cfg(feature = "xz-parallel")]
+            threads: None,
+        }
+    }
+
+    #[cfg(feature = "xz-parallel")]
+    pub fn xz_parallel(level: u32, threads: u32) -> Self {
+        let stream = liblzma::stream::MtStreamBuilder::new()
+            .threads(threads)
+            .timeout_ms(300)
+            .preset(level)
+            .check(Check::Crc64)
+            .encoder()
+            .unwrap();
+
+        Self {
+            stream,
+            threads: Some(threads),
+        }
     }
 }
 
@@ -59,9 +81,17 @@ impl Encode for Xz2Encoder {
     ) -> io::Result<bool> {
         let previous_out = self.stream.total_out() as usize;
 
-        let status = self
-            .stream
-            .process(&[], output.unwritten_mut(), Action::SyncFlush)?;
+        // Multi-threaded streams don't support SyncFlush, use FullFlush instead
+        #[cfg(feature = "xz-parallel")]
+        let action = match self.threads {
+            Some(_) => Action::FullFlush,
+            None => Action::SyncFlush,
+        };
+
+        #[cfg(not(feature = "xz-parallel"))]
+        let action = Action::SyncFlush;
+
+        let status = self.stream.process(&[], output.unwritten_mut(), action)?;
 
         output.advance(self.stream.total_out() as usize - previous_out);
 

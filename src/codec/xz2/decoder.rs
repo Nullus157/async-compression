@@ -6,6 +6,8 @@ use crate::{codec::Decode, util::PartialBuffer};
 
 pub struct Xz2Decoder {
     stream: Stream,
+    #[cfg(feature = "xz-parallel")]
+    threads: Option<u32>,
 }
 
 impl fmt::Debug for Xz2Decoder {
@@ -18,13 +20,40 @@ impl Xz2Decoder {
     pub fn new(mem_limit: u64) -> Self {
         Self {
             stream: Stream::new_auto_decoder(mem_limit, 0).unwrap(),
+            #[cfg(feature = "xz-parallel")]
+            threads: None,
+        }
+    }
+
+    #[cfg(feature = "xz-parallel")]
+    pub fn parallel(threads: u32, mem_limit: u64) -> Self {
+        Self {
+            stream: liblzma::stream::MtStreamBuilder::new()
+                .threads(threads)
+                .timeout_ms(300)
+                .memlimit_stop(mem_limit)
+                .decoder()
+                .unwrap(),
+            threads: Some(threads),
         }
     }
 }
 
 impl Decode for Xz2Decoder {
     fn reinit(&mut self) -> io::Result<()> {
-        *self = Self::new(self.stream.memlimit());
+        #[cfg(feature = "xz-parallel")]
+        {
+            *self = match self.threads {
+                Some(threads) => Self::parallel(threads, self.stream.memlimit()),
+                None => Self::new(self.stream.memlimit()),
+            };
+        }
+
+        #[cfg(not(feature = "xz-parallel"))]
+        {
+            *self = Self::new(self.stream.memlimit());
+        }
+
         Ok(())
     }
 

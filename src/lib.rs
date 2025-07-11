@@ -138,6 +138,11 @@
 )]
 //!
 
+//! ## Multi-thread support
+//! The `xz` compression algorithm supports multi-threaded compression and decompression.
+//! Enable the `xz-parallel` feature to enable multi-threading support.
+//!
+
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
 #![warn(
     missing_docs,

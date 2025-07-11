@@ -13,6 +13,13 @@ impl XzEncoder {
             inner: crate::codec::Xz2Encoder::new(crate::codec::Xz2FileFormat::Xz, level),
         }
     }
+
+    #[cfg(feature = "xz-parallel")]
+    pub fn parallel(level: u32, threads: u32) -> Self {
+        Self {
+            inner: crate::codec::Xz2Encoder::xz_parallel(level, threads),
+        }
+    }
 }
 
 impl Encode for XzEncoder {

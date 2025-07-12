@@ -15,7 +15,7 @@ impl XzEncoder {
     }
 
     #[cfg(feature = "xz-parallel")]
-    pub fn parallel(level: u32, threads: u32) -> Self {
+    pub fn parallel(threads: std::num::NonZeroU32, level: u32) -> Self {
         Self {
             inner: crate::codec::Xz2Encoder::xz_parallel(level, threads),
         }

@@ -234,6 +234,8 @@ algos! {
 macro_rules! io_algo_parallel {
     ($impl:ident, $algo:ident($encoder:ident, $decoder:ident)) => {
         pub mod $impl {
+            const THREADS: std::num::NonZeroU32 = std::num::NonZeroU32::new(16).unwrap();
+
             pub mod read {
                 pub use crate::utils::impls::$impl::read::{poll_read, to_vec};
             }
@@ -244,16 +246,17 @@ macro_rules! io_algo_parallel {
                     $decoder as Decoder, $encoder as Encoder,
                 };
 
+                use super::THREADS;
                 use crate::utils::{pin_mut, Level};
 
                 pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
                     pin_mut!(input);
-                    super::read::to_vec(Encoder::parallel(input, Level::Fastest, 16))
+                    super::read::to_vec(Encoder::parallel(input, Level::Fastest, THREADS))
                 }
 
                 pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
                     pin_mut!(input);
-                    super::read::to_vec(Decoder::parallel(input, 16))
+                    super::read::to_vec(Decoder::parallel(input, THREADS))
                 }
             }
 
@@ -263,18 +266,23 @@ macro_rules! io_algo_parallel {
                     $decoder as Decoder, $encoder as Encoder,
                 };
 
+                use super::THREADS;
                 use crate::utils::Level;
 
                 pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
                     to_vec(
                         input,
-                        |input| Box::pin(Encoder::parallel(input, Level::Fastest, 16)),
+                        |input| Box::pin(Encoder::parallel(input, Level::Fastest, THREADS)),
                         limit,
                     )
                 }
 
                 pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
-                    to_vec(input, |input| Box::pin(Decoder::parallel(input, 16)), limit)
+                    to_vec(
+                        input,
+                        |input| Box::pin(Decoder::parallel(input, THREADS)),
+                        limit,
+                    )
                 }
             }
         }

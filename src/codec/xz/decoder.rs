@@ -24,7 +24,7 @@ impl XzDecoder {
     }
 
     #[cfg(feature = "xz-parallel")]
-    pub fn parallel(threads: u32, memlimit: u64) -> Self {
+    pub fn parallel(threads: std::num::NonZeroU32, memlimit: u64) -> Self {
         Self {
             inner: crate::codec::Xz2Decoder::parallel(threads, memlimit),
             skip_padding: None,

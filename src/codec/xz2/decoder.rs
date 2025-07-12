@@ -7,7 +7,7 @@ use crate::{codec::Decode, util::PartialBuffer};
 pub struct Xz2Decoder {
     stream: Stream,
     #[cfg(feature = "xz-parallel")]
-    threads: Option<u32>,
+    threads: Option<std::num::NonZeroU32>,
 }
 
 impl fmt::Debug for Xz2Decoder {
@@ -26,10 +26,10 @@ impl Xz2Decoder {
     }
 
     #[cfg(feature = "xz-parallel")]
-    pub fn parallel(threads: u32, mem_limit: u64) -> Self {
+    pub fn parallel(threads: std::num::NonZeroU32, mem_limit: u64) -> Self {
         Self {
             stream: liblzma::stream::MtStreamBuilder::new()
-                .threads(threads)
+                .threads(threads.get())
                 .timeout_ms(300)
                 .memlimit_stop(mem_limit)
                 .decoder()

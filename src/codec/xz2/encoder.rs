@@ -10,7 +10,7 @@ use crate::{
 pub struct Xz2Encoder {
     stream: Stream,
     #[cfg(feature = "xz-parallel")]
-    threads: Option<u32>,
+    threads: Option<std::num::NonZeroU32>,
 }
 
 impl fmt::Debug for Xz2Encoder {
@@ -36,9 +36,9 @@ impl Xz2Encoder {
     }
 
     #[cfg(feature = "xz-parallel")]
-    pub fn xz_parallel(level: u32, threads: u32) -> Self {
+    pub fn xz_parallel(level: u32, threads: std::num::NonZeroU32) -> Self {
         let stream = liblzma::stream::MtStreamBuilder::new()
-            .threads(threads)
+            .threads(threads.get())
             .timeout_ms(300)
             .preset(level)
             .check(Check::Crc64)

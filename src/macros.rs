@@ -257,11 +257,11 @@ macro_rules! algos {
             ///
             /// Note that flushing will severely impact multi-threaded performance.
             #[cfg(feature = "xz-parallel")]
-            pub fn parallel(inner: $inner, level: crate::Level, threads: u32) -> Self {
+            pub fn parallel(inner: $inner, level: crate::Level, threads: std::num::NonZeroU32) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::XzEncoder::parallel(level.into_xz2(), threads),
+                        crate::codec::XzEncoder::parallel(threads, level.into_xz2()),
                     ),
                 }
             }
@@ -283,7 +283,7 @@ macro_rules! algos {
 
             /// Creates a new multi-threaded decoder.
             #[cfg(feature = "xz-parallel")]
-            pub fn parallel(read: $inner, threads: u32) -> Self {
+            pub fn parallel(read: $inner, threads: std::num::NonZeroU32) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,
@@ -298,7 +298,7 @@ macro_rules! algos {
             ///
             /// An IO error may be returned during decoding if the specified limit is too small.
             #[cfg(feature = "xz-parallel")]
-            pub fn parallel_with_mem_limit(read: $inner, threads: u32, memlimit: u64) -> Self {
+            pub fn parallel_with_mem_limit(read: $inner, threads: std::num::NonZeroU32, memlimit: u64) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,

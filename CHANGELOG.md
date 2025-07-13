@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.27](https://github.com/Nullus157/async-compression/compare/v0.4.26...v0.4.27) - 2025-07-13
+
+### Fixed
+
+- Zstd fastest level now does compression. ([#357](https://github.com/Nullus157/async-compression/pull/357))
+
 ## [0.4.26](https://github.com/Nullus157/async-compression/compare/v0.4.25...v0.4.26) - 2025-07-13
 
 ### Features

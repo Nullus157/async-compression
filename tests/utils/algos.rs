@@ -230,3 +230,98 @@ algos! {
         }
     }
 }
+
+macro_rules! io_algo_parallel {
+    ($impl:ident, $algo:ident($encoder:ident, $decoder:ident)) => {
+        pub mod $impl {
+            const THREADS: std::num::NonZeroU32 = std::num::NonZeroU32::new(16).unwrap();
+
+            pub mod read {
+                pub use crate::utils::impls::$impl::read::{poll_read, to_vec};
+            }
+
+            pub mod bufread {
+                pub use crate::utils::impls::$impl::bufread::{from, AsyncBufRead};
+                pub use async_compression::$impl::bufread::{
+                    $decoder as Decoder, $encoder as Encoder,
+                };
+
+                use super::THREADS;
+                use crate::utils::{pin_mut, Level};
+
+                pub fn compress(input: impl AsyncBufRead) -> Vec<u8> {
+                    pin_mut!(input);
+                    super::read::to_vec(Encoder::parallel(input, Level::Fastest, THREADS))
+                }
+
+                pub fn decompress(input: impl AsyncBufRead) -> Vec<u8> {
+                    pin_mut!(input);
+                    super::read::to_vec(Decoder::parallel(input, THREADS))
+                }
+            }
+
+            pub mod write {
+                pub use crate::utils::impls::$impl::write::to_vec;
+                pub use async_compression::$impl::write::{
+                    $decoder as Decoder, $encoder as Encoder,
+                };
+
+                use super::THREADS;
+                use crate::utils::Level;
+
+                pub fn compress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+                    to_vec(
+                        input,
+                        |input| Box::pin(Encoder::parallel(input, Level::Fastest, THREADS)),
+                        limit,
+                    )
+                }
+
+                pub fn decompress(input: &[Vec<u8>], limit: usize) -> Vec<u8> {
+                    to_vec(
+                        input,
+                        |input| Box::pin(Decoder::parallel(input, THREADS)),
+                        limit,
+                    )
+                }
+            }
+        }
+    };
+}
+
+macro_rules! algos_parallel {
+    ($(pub mod $name:ident($feat:literal, $encoder:ident, $decoder:ident) { pub mod sync { $($tt:tt)* } })*) => {
+        $(
+            #[cfg(feature = $feat)]
+            pub mod $name {
+                pub mod sync { $($tt)* }
+
+                #[cfg(feature = "futures-io")]
+                io_algo_parallel!(futures, $name($encoder, $decoder));
+
+                #[cfg(feature = "tokio")]
+                io_algo_parallel!(tokio, $name($encoder, $decoder));
+            }
+        )*
+    }
+}
+
+algos_parallel! {
+    pub mod xz_parallel("xz-parallel", XzEncoder, XzDecoder) {
+        pub mod sync {
+            pub use crate::utils::impls::sync::to_vec;
+
+            pub fn compress(bytes: &[u8]) -> Vec<u8> {
+                use liblzma::bufread::XzEncoder;
+
+                to_vec(XzEncoder::new(bytes, 0))
+            }
+
+            pub fn decompress(bytes: &[u8]) -> Vec<u8> {
+                use liblzma::bufread::XzDecoder;
+
+                to_vec(XzDecoder::new(bytes))
+            }
+        }
+    }
+}

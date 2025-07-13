@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.26](https://github.com/Nullus157/async-compression/compare/v0.4.25...v0.4.26) - 2025-07-13
+
+### Other
+
+- use crates.io trusted publishing ([#354](https://github.com/Nullus157/async-compression/pull/354))
+- add multi-thread support ([#353](https://github.com/Nullus157/async-compression/pull/353))
+
 ## [0.4.25](https://github.com/Nullus157/async-compression/compare/v0.4.24...v0.4.25) - 2025-06-17
 
 ### Changed

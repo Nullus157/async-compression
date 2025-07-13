@@ -8,9 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## [0.4.26](https://github.com/Nullus157/async-compression/compare/v0.4.25...v0.4.26) - 2025-07-13
 
-### Other
+### Features
 
-- add multi-thread support ([#353](https://github.com/Nullus157/async-compression/pull/353))
+- Add multi-thread support for XZ. ([#353](https://github.com/Nullus157/async-compression/pull/353))
 
 ## [0.4.25](https://github.com/Nullus157/async-compression/compare/v0.4.24...v0.4.25) - 2025-06-17
 

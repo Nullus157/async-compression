@@ -6,6 +6,9 @@ test_cases!(gzip);
 #[allow(unused)]
 use utils::{algos::gzip::sync, InputStream};
 
+#[allow(unused)]
+use ntest::assert_true;
+
 #[cfg(feature = "futures-io")]
 use utils::algos::gzip::futures::bufread;
 
@@ -50,4 +53,29 @@ fn gzip_bufread_chunks_decompress_with_extra_header() {
     let output = bufread::decompress(bufread::from(&input));
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+}
+
+#[test]
+#[ntest::timeout(1000)]
+#[cfg(feature = "futures-io")]
+fn gzip_empty() {
+    let bytes = Vec::new();
+
+    let input = InputStream::from(bytes.chunks(2));
+    let output = bufread::decompress(bufread::from(&input));
+
+    assert_eq!(output, &[][..]);
+}
+
+#[test]
+#[ntest::timeout(1000)]
+#[cfg(feature = "futures-io")]
+fn invalid_gzip() {
+    let bytes = [0, 0, 0, 1, 0, 0];
+
+    let input = InputStream::from(bytes.chunks(2));
+
+    let result = std::panic::catch_unwind(|| bufread::decompress(bufread::from(&input)));
+
+    assert_true!(result.is_err());
 }

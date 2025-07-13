@@ -254,8 +254,15 @@ impl Level {
     #[cfg(feature = "zstd")]
     fn into_zstd(self) -> i32 {
         let (fastest, best) = libzstd::compression_level_range().into_inner();
+
+        // NOTE: zstd's "fastest" level is -131072 which can create outputs larger than inputs.
+        // This library chooses a "fastest" level which has a more-or-less equivalent compression
+        // ratio to gzip's fastest mode. We still allow precise levels to go negative.
+        // See discussion in https://github.com/Nullus157/async-compression/issues/352
+        const OUR_FASTEST: i32 = 1;
+
         match self {
-            Self::Fastest => fastest,
+            Self::Fastest => OUR_FASTEST,
             Self::Best => best,
             Self::Precise(quality) => quality.clamp(fastest, best),
             Self::Default => libzstd::DEFAULT_COMPRESSION_LEVEL,

@@ -1,0 +1,12 @@
+[package]
+name = "compression-core"
+description = """
+Abstractions for compression algorithms.
+"""
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+categories.workspace = true
+edition.workspace = true
+
+[dependencies]

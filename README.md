@@ -20,6 +20,43 @@ enable different subsets of features as appropriate for the code you are
 testing to avoid compiling all dependencies, e.g. `cargo test --features
 tokio,gzip`.
 
+To prepare for a pull request, you can run several other checks:
+
+1. `fmt`
+
+    ```bash
+    cargo fmt --all
+    cargo clippy --no-deps
+    ```
+
+2. `build`
+
+    ```bash
+    cargo build --lib --all-features
+    ```
+
+3. `nextest`
+
+    ```bash
+    cargo --locked nextest run --workspace --all-features
+    ```
+
+4. `hack check`
+
+    ```bash
+    cargo hack check --workspace --feature-powerset --all-targets --skip 'all,all-algorithms,all-implementations'
+    ```
+
+5. `wasm32` - Linux only
+
+    ```bash
+    gh release download --repo WebAssembly/wasi-sdk --pattern 'wasi-sysroot-*.tar.gz'
+    rustup target add wasm32-wasip1-threads
+
+    export "CFLAGS_wasm32_wasip1_threads=--sysroot=\"${PWD}/wasi-sysroot\" -I\"${PWD}/wasi-sysroot/include/wasm32-wasip1-threads\" -L-I\"${PWD}/wasi-sysroot/lib/wasm32-wasip1-threads\""
+    cargo build --lib --features all-implementations,brotli,bzip2,deflate,gzip,lz4,lzma,xz,zlib,zstd,deflate64 --target wasm32-wasip1-threads
+    ```
+
 ## License
 
 Licensed under either of

@@ -4,11 +4,9 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::{
-    codec::Encode,
-    futures::write::{AsyncBufWrite, BufWriter},
-    util::PartialBuffer,
-};
+use crate::codec::Encode;
+use crate::core::util::PartialBuffer;
+use crate::futures::write::{AsyncBufWrite, BufWriter};
 use futures_core::ready;
 use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite, IoSliceMut};
 use pin_project_lite::pin_project;

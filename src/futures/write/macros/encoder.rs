@@ -19,6 +19,14 @@ macro_rules! encoder {
                 ///
                 $($inherent_methods)*
             )*
+
+            /// Creates a new encoder with the given codec, which will take in uncompressed data and write it
+            /// compressed to the given stream.
+            pub fn with_codec(read: $inner, codec: crate::codec::$name) -> $name<$inner> {
+                $name {
+                   inner: crate::futures::write::Encoder::new(read, codec)
+                }
+            }
         }
 
         impl<$inner> $name<$inner> {
@@ -111,7 +119,7 @@ macro_rules! encoder {
 
         const _: () = {
             fn _assert() {
-                use crate::util::{_assert_send, _assert_sync};
+                use crate::core::util::{_assert_send, _assert_sync};
                 use core::pin::Pin;
                 use futures_io::AsyncWrite;
 

@@ -14,10 +14,18 @@ macro_rules! decoder {
 
         impl<$inner: tokio::io::AsyncBufRead> $name<$inner> {
             /// Creates a new decoder which will read compressed data from the given stream and
-            /// emit a uncompressed stream.
+            /// emit an uncompressed stream.
             pub fn new(read: $inner) -> $name<$inner> {
                 $name {
                     inner: crate::tokio::bufread::Decoder::new(read, crate::codec::$name::new()),
+                }
+            }
+
+            /// Creates a new decoder with the given codec, which will read compressed data from the given stream and
+            /// emit an uncompressed stream.
+            pub fn with_codec(read: $inner, codec: crate::codec::$name) -> $name<$inner> {
+                $name {
+                    inner: crate::tokio::bufread::Decoder::new(read, codec)
                 }
             }
 
@@ -112,7 +120,7 @@ macro_rules! decoder {
 
         const _: () = {
             fn _assert() {
-                use crate::util::{_assert_send, _assert_sync};
+                use crate::core::util::{_assert_send, _assert_sync};
                 use core::pin::Pin;
                 use tokio::io::AsyncBufRead;
 

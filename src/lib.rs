@@ -32,7 +32,7 @@
 #![allow(unexpected_cfgs)]
 #![cfg_attr(
     feature = "futures-io",
-    doc = "[`futures-io`] | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead), [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
+    doc = "[`futures-io`](futures_io) | [`futures::io::AsyncBufRead`](futures_io::AsyncBufRead), [`futures::io::AsyncWrite`](futures_io::AsyncWrite)"
 )]
 #![cfg_attr(
     not(feature = "futures-io"),

@@ -1,17 +1,14 @@
+use crate::codec::Decode;
+use crate::core::util::PartialBuffer;
+use crate::futures::write::{AsyncBufWrite, BufWriter};
+use futures_core::ready;
+use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite, IoSliceMut};
+use pin_project_lite::pin_project;
 use std::{
     io,
     pin::Pin,
     task::{Context, Poll},
 };
-
-use crate::{
-    codec::Decode,
-    futures::write::{AsyncBufWrite, BufWriter},
-    util::PartialBuffer,
-};
-use futures_core::ready;
-use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite, IoSliceMut};
-use pin_project_lite::pin_project;
 
 #[derive(Debug)]
 enum State {

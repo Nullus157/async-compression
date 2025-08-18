@@ -34,10 +34,13 @@ zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]
 deflate64 = ["dep:deflate64"]
+bzip2 = ["dep:bzip2", "bzip2/default"]
+bzip2-sys = ["dep:bzip2", "bzip2/bzip2-sys"]
+
 
 [dependencies]
 brotli = { version = "8", optional = true }
-bzip2 = { version = "0.6", optional = true }
+bzip2 = { version = "0.6", default-features = false, optional = true }
 flate2 = { version = "1.0.13", optional = true }
 futures-core = { version = "0.3", default-features = false }
 futures-io = { version = "0.3", default-features = false, features = ["std"], optional = true }

@@ -1,16 +1,13 @@
+use crate::codec::Decode;
+use crate::core::util::PartialBuffer;
+use crate::tokio::write::{AsyncBufWrite, BufWriter};
+use futures_core::ready;
+use pin_project_lite::pin_project;
 use std::{
     io,
     pin::Pin,
     task::{Context, Poll},
 };
-
-use crate::{
-    codec::Decode,
-    tokio::write::{AsyncBufWrite, BufWriter},
-    util::PartialBuffer,
-};
-use futures_core::ready;
-use pin_project_lite::pin_project;
 use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};
 
 #[derive(Debug)]

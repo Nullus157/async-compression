@@ -18,7 +18,7 @@ macro_rules! algos {
             #[cfg(feature = $algo_s)]
             $encoder<$inner> {
                 pub fn new(inner: $inner) -> Self {
-                    Self::with_quality(inner, crate::Level::Default)
+                    Self::with_quality(inner, crate::core::Level::Default)
                 }
             }
 
@@ -42,26 +42,24 @@ macro_rules! algos {
     ($($mod:ident)::+ <$inner:ident>) => {
         algos!(@algo brotli ["brotli"] BrotliDecoder BrotliEncoder <$inner>
         { @enc
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                let params = brotli::enc::backward_references::BrotliEncoderParams::default();
-
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                // let params = brotli::enc::backward_references::BrotliEncoderParams::default();
+                let params = crate::codec::brotli::params::EncoderParams::default();
+                let params = params.quality(level);
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::BrotliEncoder::new(level.into_brotli(params)),
+                        crate::codec::BrotliEncoder::new(params),
                     ),
                 }
             }
 
             /// Creates a new encoder, using the specified compression level and parameters, which
             /// will read uncompressed data from the given stream and emit a compressed stream.
-            pub fn with_quality_and_params(
+            pub fn with_params(
                 inner: $inner,
-                level: crate::Level,
-                params: crate::brotli::EncoderParams,
+                params: crate::codec::brotli::params::EncoderParams,
             ) -> Self {
-                let params = level.into_brotli(params.as_brotli());
-
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
@@ -76,11 +74,12 @@ macro_rules! algos {
         algos!(@algo bzip2 ["bzip2"] BzDecoder BzEncoder <$inner>
         { @enc
 
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                let params = crate::codec::bzip2::params::Bzip2EncoderParams::from(level);
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::BzEncoder::new(level.into_bzip2(), 0),
+                        crate::codec::BzEncoder::new(params, 0),
                     ),
                 }
             }
@@ -90,11 +89,13 @@ macro_rules! algos {
 
         algos!(@algo deflate ["deflate"] DeflateDecoder DeflateEncoder <$inner>
         { @enc
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                let mut params = crate::codec::flate::params::FlateEncoderParams::from(level);
+
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::DeflateEncoder::new(level.into_flate2()),
+                        crate::codec::DeflateEncoder::new(params),
                     ),
                 }
             }
@@ -119,11 +120,12 @@ macro_rules! algos {
         algos!(@algo gzip ["gzip"] GzipDecoder GzipEncoder <$inner>
         { @enc
 
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                let params = crate::codec::flate::params::FlateEncoderParams::from(level);
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::GzipEncoder::new(level.into_flate2()),
+                        crate::codec::GzipEncoder::new(params),
                     ),
                 }
             }
@@ -133,11 +135,12 @@ macro_rules! algos {
 
         algos!(@algo zlib ["zlib"] ZlibDecoder ZlibEncoder <$inner>
         { @enc
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                  let params = crate::codec::flate::params::FlateEncoderParams::from(level);
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZlibEncoder::new(level.into_flate2()),
+                        crate::codec::ZlibEncoder::new(params),
                     ),
                 }
             }
@@ -158,11 +161,12 @@ macro_rules! algos {
         algos!(@algo zstd ["zstd"] ZstdDecoder ZstdEncoder <$inner>
         { @enc
 
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                let params = crate::codec::zstd::params::CParameter::quality(level);
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZstdEncoder::new(level.into_zstd()),
+                        crate::codec::ZstdEncoder::new(params),
                     ),
                 }
             }
@@ -175,15 +179,16 @@ macro_rules! algos {
             /// Panics if this function is called with a [`CParameter::nb_workers()`] parameter and
             /// the `zstdmt` crate feature is _not_ enabled.
             ///
-            /// [`CParameter::nb_workers()`]: crate::zstd::CParameter
+            /// [`CParameter::nb_workers()`]: crate::codec::zstd::params::CParameter
             //
             // TODO: remove panic note on next breaking release, along with `CParameter::nb_workers`
             // change
-            pub fn with_quality_and_params(inner: $inner, level: crate::Level, params: &[crate::zstd::CParameter]) -> Self {
+            pub fn with_quality_and_params(inner: $inner, level: crate::core::Level, params: &[crate::codec::zstd::params::CParameter]) -> Self {
+                let level = crate::codec::zstd::params::CParameter::quality(level);
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZstdEncoder::new_with_params(level.into_zstd(), params),
+                        crate::codec::ZstdEncoder::new_with_params(level, params),
                     ),
                 }
             }
@@ -198,11 +203,12 @@ macro_rules! algos {
             /// # Errors
             ///
             /// Returns error when `dictionary` is not valid.
-            pub fn with_dict(inner: $inner, level: crate::Level, dictionary: &[u8]) -> ::std::io::Result<Self> {
+            pub fn with_dict(inner: $inner, level: crate::core::Level, dictionary: &[u8]) -> ::std::io::Result<Self> {
+                let level = crate::codec::zstd::params::CParameter::quality(level);
                 Ok(Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::ZstdEncoder::new_with_dict(level.into_zstd(), dictionary)?,
+                        crate::codec::ZstdEncoder::new_with_dict(level, dictionary)?,
                     ),
                 })
             }
@@ -210,7 +216,7 @@ macro_rules! algos {
         { @dec
             /// Creates a new decoder, using the specified parameters, which will read compressed
             /// data from the given stream and emit a decompressed stream.
-            pub fn with_params(inner: $inner, params: &[crate::zstd::DParameter]) -> Self {
+            pub fn with_params(inner: $inner, params: &[crate::codec::zstd::params::DParameter]) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         inner,
@@ -244,11 +250,11 @@ macro_rules! algos {
         algos!(@algo xz ["xz"] XzDecoder XzEncoder <$inner>
         { @enc
 
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::XzEncoder::new(level.into_xz2()),
+                        crate::codec::XzEncoder::new(level),
                     ),
                 }
             }
@@ -257,11 +263,11 @@ macro_rules! algos {
             ///
             /// Note that flushing will severely impact multi-threaded performance.
             #[cfg(feature = "xz-parallel")]
-            pub fn parallel(inner: $inner, level: crate::Level, threads: std::num::NonZeroU32) -> Self {
+            pub fn parallel(inner: $inner, level: crate::core::Level, threads: std::num::NonZeroU32) -> Self {
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
-                        crate::codec::XzEncoder::parallel(threads, level.into_xz2()),
+                        crate::codec::XzEncoder::parallel(threads, level),
                     ),
                 }
             }
@@ -284,10 +290,12 @@ macro_rules! algos {
             /// Creates a new multi-threaded decoder.
             #[cfg(feature = "xz-parallel")]
             pub fn parallel(read: $inner, threads: std::num::NonZeroU32) -> Self {
+                use std::convert::TryInto;
+
                 Self {
                     inner: crate::$($mod::)+generic::Decoder::new(
                         read,
-                        crate::codec::XzDecoder::parallel(threads, u64::MAX),
+                        crate::codec::XzDecoder::parallel(threads, usize::MAX.try_into().unwrap()),
                     ),
                 }
             }
@@ -312,12 +320,11 @@ macro_rules! algos {
         algos!(@algo lzma ["lzma"] LzmaDecoder LzmaEncoder <$inner>
         { @enc
 
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
+            pub fn with_quality(inner: $inner, level:  crate::core::Level) -> Self {
+                let encoder = crate::codec::LzmaEncoder::new(level);
+                let inner =  crate::$($mod::)+generic::Encoder::new(inner, encoder);
                 Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codec::LzmaEncoder::new(level.into_xz2()),
-                    ),
+                    inner
                 }
             }
         }
@@ -342,18 +349,19 @@ macro_rules! algos {
         algos!(@algo lz4 ["lz4"] Lz4Decoder Lz4Encoder <$inner>
         { @enc
 
-            pub fn with_quality(inner: $inner, level: crate::Level) -> Self {
-                Self::with_quality_and_params(inner, level, crate::lz4::EncoderParams::default())
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                Self::with_quality_and_params(inner, level, crate::codec::lz4::params::EncoderParams::default())
             }
 
             /// Creates a new encoder, using the specified compression level and parameters, which
             /// will read uncompressed data from the given stream and emit a compressed stream.
             pub fn with_quality_and_params(
                 inner: $inner,
-                level: crate::Level,
-                params: crate::lz4::EncoderParams,
+                level: crate::core::Level,
+                mut params: crate::codec::lz4::params::EncoderParams,
             ) -> Self {
-                let encoder = crate::codec::Lz4Encoder::new(level.into_lz4(params.as_lz4()));
+                let params = params.level(level);
+                let encoder = crate::codec::Lz4Encoder::new(params);
                 let cap = encoder.buffer_size();
                 Self {
                     inner: crate::$($mod::)+generic::Encoder::with_capacity(

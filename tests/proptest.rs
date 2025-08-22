@@ -1,4 +1,4 @@
-use async_compression::Level;
+use compression_core::Level;
 
 use ::proptest::{
     arbitrary::any,

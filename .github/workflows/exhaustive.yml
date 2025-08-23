@@ -93,7 +93,8 @@ jobs:
           --feature-powerset \
           --features ${{ matrix.async_runtime }} \
           --no-dev-deps \
-          --skip "all,all-algorithms,${skipped_features}all-implementations,xz-parallel,zstdmt"
+          --skip "all,all-algorithms,${skipped_features}all-implementations,xz-parallel,zstdmt" \
+          --depth 4
         cargo check --features ${{ matrix.async_runtime }},xz-parallel,zstdmt
 
   check-test-features:
@@ -117,7 +118,8 @@ jobs:
           --feature-powerset \
           --features ${{ matrix.async_runtime }} \
           --all-targets \
-          --skip "all,all-algorithms,${skipped_features}all-implementations,xz-parallel,zstdmt"
+          --skip "all,all-algorithms,${skipped_features}all-implementations,xz-parallel,zstdmt" \
+          --depth 4
         cargo check --all-targets --features ${{ matrix.async_runtime }},xz-parallel,zstdmt
 
   # Dummy job to have a stable name for the "all tests pass" requirement

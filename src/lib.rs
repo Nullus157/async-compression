@@ -164,9 +164,13 @@ pub use compression_codecs as codec;
 pub use compression_core as core;
 
 pub use core::Level;
-pub use codec::{
-    zstd::params as zstd,
-    lz4::params as lz4,
-    brotli::params as brotli,
-};
+
+#[cfg(feature = "zstd")]
+pub use codec::zstd::params as zstd;
+
+#[cfg(feature = "lz4")]
+pub use codec::lz4::params as lz4;
+
+#[cfg(feature = "brotli")]
+pub use codec::brotli::params as brotli;
 

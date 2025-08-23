@@ -119,14 +119,12 @@ macro_rules! decoder {
         }
 
         const _: () = {
-            fn _assert() {
-                use crate::core::util::{_assert_send, _assert_sync};
-                use core::pin::Pin;
-                use tokio::io::AsyncBufRead;
+            use crate::core::util::{_assert_send, _assert_sync};
+            use core::pin::Pin;
+            use tokio::io::AsyncBufRead;
 
-                _assert_send::<$name<Pin<Box<dyn AsyncBufRead + Send>>>>();
-                _assert_sync::<$name<Pin<Box<dyn AsyncBufRead + Sync>>>>();
-            }
+            _assert_send::<$name<Pin<Box<dyn AsyncBufRead + Send>>>>();
+            _assert_sync::<$name<Pin<Box<dyn AsyncBufRead + Sync>>>>();
         };
     }
 }

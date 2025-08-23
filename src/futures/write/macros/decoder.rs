@@ -121,14 +121,12 @@ macro_rules! decoder {
         }
 
         const _: () = {
-            fn _assert() {
-                use crate::core::util::{_assert_send, _assert_sync};
-                use core::pin::Pin;
-                use futures_io::AsyncWrite;
+            use crate::core::util::{_assert_send, _assert_sync};
+            use core::pin::Pin;
+            use futures_io::AsyncWrite;
 
-                _assert_send::<$name<Pin<Box<dyn AsyncWrite + Send>>>>();
-                _assert_sync::<$name<Pin<Box<dyn AsyncWrite + Sync>>>>();
-            }
+            _assert_send::<$name<Pin<Box<dyn AsyncWrite + Send>>>>();
+            _assert_sync::<$name<Pin<Box<dyn AsyncWrite + Sync>>>>();
         };
     }
 }

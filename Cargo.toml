@@ -10,8 +10,8 @@ categories = ["compression", "asynchronous"]
 edition = "2018"
 
 [workspace.dependencies]
-compression-codecs = { version = "0.4.27", path = "crates/compression-codecs" }
-compression-core = { version = "0.4.27", path = "crates/compression-core" }
+compression-codecs = { version = "0.4.28", path = "crates/compression-codecs" }
+compression-core = { version = "0.4.28", path = "crates/compression-core" }
 futures-core = { version = "0.3", default-features = false }
 memchr = "2"
 pin-project-lite = "0.2"
@@ -25,7 +25,7 @@ authors.workspace = true
 license.workspace = true
 categories.workspace = true
 edition.workspace = true
-version = "0.4.27"
+version = "0.5.0"
 
 [package.metadata.docs.rs]
 all-features = true

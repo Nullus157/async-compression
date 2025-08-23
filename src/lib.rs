@@ -173,4 +173,3 @@ pub use codec::lz4::params as lz4;
 
 #[cfg(feature = "brotli")]
 pub use codec::brotli::params as brotli;
-

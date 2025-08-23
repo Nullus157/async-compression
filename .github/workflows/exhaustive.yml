@@ -85,13 +85,14 @@ jobs:
     - uses: actions-rust-lang/setup-rust-toolchain@v1
     - uses: taiki-e/install-action@v2
       with: { tool: cargo-hack }
-    - run: |
+    - name: cargo-hack check
+      run: |
         set -exuo pipefail
         skipped_features=$(echo 'futures-io,tokio,' | sed 's/${{ matrix.async_runtime }},//')
-        cargo hack check
-          --feature-powerset
-          --features ${{ matrix.async_runtime }}
-          --no-dev-deps
+        cargo hack check \
+          --feature-powerset \
+          --features ${{ matrix.async_runtime }} \
+          --no-dev-deps \
           --skip "all,all-algorithms,${skipped_features}all-implementations,xz-parallel,zstdmt"
         cargo check --features ${{ matrix.async_runtime }},xz-parallel,zstdmt
 
@@ -108,13 +109,14 @@ jobs:
     - uses: actions-rust-lang/setup-rust-toolchain@v1
     - uses: taiki-e/install-action@v2
       with: { tool: cargo-hack }
-    - run: |
+    - name: cargo-hack check
+      run: |
         set -exuo pipefail
         skipped_features=$(echo 'futures-io,tokio,' | sed 's/${{ matrix.async_runtime }},//')
-        cargo hack check
-          --feature-powerset
-          --features ${{ matrix.async_runtime }}
-          --all-targets
+        cargo hack check \
+          --feature-powerset \
+          --features ${{ matrix.async_runtime }} \
+          --all-targets \
           --skip "all,all-algorithms,${skipped_features}all-implementations,xz-parallel,zstdmt"
         cargo check --all-targets --features ${{ matrix.async_runtime }},xz-parallel,zstdmt
 

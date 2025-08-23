@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.5.0](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.27...async-compression-v0.5.0) - 2025-08-23
+
+### Fixed
+
+- fix wasi ci testing and update doc in README ([#367](https://github.com/Nullus157/async-compression/pull/367))
+
+### Other
+
+- Fix breaking API change ([#366](https://github.com/Nullus157/async-compression/pull/366))
+- Fix docs.rs build for compression-codecs ([#365](https://github.com/Nullus157/async-compression/pull/365))
+- Separate codecs as a separate crate, allow direct configuration ([#363](https://github.com/Nullus157/async-compression/pull/363))
+- *(deps)* bump actions/checkout from 4 to 5 ([#360](https://github.com/Nullus157/async-compression/pull/360))
+- Fix doc link for futures-io ([#361](https://github.com/Nullus157/async-compression/pull/361))
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased

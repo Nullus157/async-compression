@@ -51,6 +51,9 @@ To prepare for a pull request, you can run several other checks:
 
     ```bash
     gh release download --repo WebAssembly/wasi-sdk --pattern 'wasi-sysroot-*.tar.gz'
+    mkdir -p wasi-sysroot
+    tar xf wasi-sysroot-*.tar.gz --strip-components=1 -C wasi-sysroot
+
     rustup target add wasm32-wasip1-threads
 
     export "CFLAGS_wasm32_wasip1_threads=--sysroot=\"${PWD}/wasi-sysroot\" -I\"${PWD}/wasi-sysroot/include/wasm32-wasip1-threads\" -L-I\"${PWD}/wasi-sysroot/lib/wasm32-wasip1-threads\""

@@ -26,6 +26,9 @@ license.workspace = true
 categories.workspace = true
 edition.workspace = true
 version = "0.4.28"
+exclude = [
+    "tests/artifacts/",
+]
 
 [package.metadata.docs.rs]
 all-features = true

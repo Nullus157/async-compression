@@ -86,11 +86,13 @@ jobs:
     - uses: taiki-e/install-action@v2
       with: { tool: cargo-hack }
     - run:
+        skipped_features='all,all-algorithms,futures-io,tokio,all-implementations'
+        skipped_features=$(echo "$skipped_features" | sed 's/${{ matrix.async_runtime }},//')
         cargo hack check
           --feature-powerset
           --features ${{ matrix.async_runtime }}
           --no-dev-deps
-          --skip 'all,all-algorithms,all-implementations,futures-io,tokio'
+          --skip "$skipped_features"
 
   check-test-features:
     strategy:
@@ -106,11 +108,13 @@ jobs:
     - uses: taiki-e/install-action@v2
       with: { tool: cargo-hack }
     - run:
+        skipped_features='all,all-algorithms,futures-io,tokio,all-implementations'
+        skipped_features=$(echo "$skipped_features" | sed 's/${{ matrix.async_runtime }},//')
         cargo hack check
           --feature-powerset
           --features ${{ matrix.async_runtime }}
           --all-targets
-          --skip 'all,all-algorithms,all-implementations,futures-io,tokio'
+          --skip "$skipped_features"
 
 on:
   merge_group:

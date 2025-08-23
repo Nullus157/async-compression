@@ -22,7 +22,6 @@ name = "async-compression"
 description = """
 Adaptors between compression crates and Rust's modern asynchronous IO types.
 """
-version.workspace = true
 authors.workspace = true
 license.workspace = true
 categories.workspace = true

@@ -112,7 +112,7 @@ macro_rules! decoder {
             }
         }
 
-        const _: () = 
+        const _: () = {
             use crate::core::util::{_assert_send, _assert_sync};
             use core::pin::Pin;
             use tokio::io::AsyncWrite;

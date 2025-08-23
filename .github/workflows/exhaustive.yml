@@ -84,7 +84,6 @@ jobs:
       with: { tool: cargo-hack }
     - run:
         cargo hack check
-          --workspace
           --feature-powerset
           --no-dev-deps
           --skip 'all,all-algorithms,all-implementations'
@@ -101,7 +100,6 @@ jobs:
       with: { tool: cargo-hack }
     - run:
         cargo hack check
-          --workspace
           --feature-powerset
           --all-targets
           --skip 'all,all-algorithms,all-implementations'

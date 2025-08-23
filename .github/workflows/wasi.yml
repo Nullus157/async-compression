@@ -13,13 +13,17 @@ jobs:
       with:
         toolchain: nightly
         target: wasm32-wasip1-threads
-    - run: |
-        gh release download --repo WebAssembly/wasi-sdk --pattern 'wasi-sysroot-*.tar.gz'
+    - run: gh release download --repo WebAssembly/wasi-sdk --pattern 'wasi-sysroot-*.tar.gz'
+      env:
+        GH_TOKEN: ${{ github.token }}
+    - name: Extract wasi-sysroot
+      run: |
         mkdir -p wasi-sysroot
         tar xf wasi-sysroot-*.tar.gz --strip-components=1 -C wasi-sysroot
     - run: |
-        export "CFLAGS_wasm32_wasip1_threads=--sysroot=${{ github.workspace }}/wasi-sysroot -I${{ github.workspace }}/wasi-sysroot/include/wasm32-wasip1-threads -L-I${{ github.workspace }}/wasi-sysroot/lib/wasm32-wasip1-threads"
         cargo +nightly check --lib --features all-implementations,brotli,bzip2,deflate,gzip,lz4,lzma,xz,zlib,zstd,deflate64 --target wasm32-wasip1-threads
+      env:
+        CFLAGS_wasm32_wasip1_threads: --sysroot=${{ github.workspace }}/wasi-sysroot -I${{ github.workspace }}/wasi-sysroot/include/wasm32-wasip1-threads -L-I${{ github.workspace }}/wasi-sysroot/lib/wasm32-wasip1-threads
 
 on:
     merge_group:

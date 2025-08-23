@@ -1,8 +1,8 @@
-pub fn _assert_send<T: Send>() {}
-pub fn _assert_sync<T: Sync>() {}
+pub const fn _assert_send<T: Send>() {}
+pub const fn _assert_sync<T: Sync>() {}
 
 #[derive(Debug, Default)]
-pub struct PartialBuffer<B: AsRef<[u8]>> {
+pub struct PartialBuffer<B> {
     buffer: B,
     index: usize,
 }
@@ -43,7 +43,7 @@ impl<B: AsRef<[u8]> + AsMut<[u8]>> PartialBuffer<B> {
     }
 
     pub fn copy_unwritten_from<C: AsRef<[u8]>>(&mut self, other: &mut PartialBuffer<C>) -> usize {
-        let len = std::cmp::min(self.unwritten().len(), other.unwritten().len());
+        let len = self.unwritten().len().min(other.unwritten().len());
 
         self.unwritten_mut()[..len].copy_from_slice(&other.unwritten()[..len]);
 
@@ -55,7 +55,7 @@ impl<B: AsRef<[u8]> + AsMut<[u8]>> PartialBuffer<B> {
 
 impl<B: AsRef<[u8]> + Default> PartialBuffer<B> {
     pub fn take(&mut self) -> Self {
-        std::mem::replace(self, Self::new(B::default()))
+        std::mem::take(self)
     }
 }
 

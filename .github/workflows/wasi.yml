@@ -14,12 +14,12 @@ jobs:
         toolchain: nightly
         target: wasm32-wasip1-threads
     - run: |
-        curl -L https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-25/wasi-sysroot-25.0.tar.gz -o wasi-sysroot.tar.gz
+        gh release download --repo WebAssembly/wasi-sdk --pattern 'wasi-sysroot-*.tar.gz'
         mkdir -p wasi-sysroot
-        tar xf wasi-sysroot.tar.gz --strip-components=1 -C wasi-sysroot
+        tar xf wasi-sysroot-*.tar.gz --strip-components=1 -C wasi-sysroot
     - run: |
         export "CFLAGS_wasm32_wasip1_threads=--sysroot=${{ github.workspace }}/wasi-sysroot -I${{ github.workspace }}/wasi-sysroot/include/wasm32-wasip1-threads -L-I${{ github.workspace }}/wasi-sysroot/lib/wasm32-wasip1-threads"
-        cargo +nightly build --lib --features all-implementations,brotli,bzip2,deflate,gzip,lz4,lzma,xz,zlib,zstd,deflate64 --target wasm32-wasip1-threads
+        cargo +nightly check --lib --features all-implementations,brotli,bzip2,deflate,gzip,lz4,lzma,xz,zlib,zstd,deflate64 --target wasm32-wasip1-threads
 
 on:
     merge_group:

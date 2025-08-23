@@ -25,7 +25,7 @@ authors.workspace = true
 license.workspace = true
 categories.workspace = true
 edition.workspace = true
-version = "0.5.0"
+version = "0.4.28"
 
 [package.metadata.docs.rs]
 all-features = true

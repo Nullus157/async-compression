@@ -8,7 +8,7 @@ macro_rules! decoder {
             #[derive(Debug)]
             pub struct $name<$inner> {
                 #[pin]
-                inner: crate::futures::bufread::Decoder<$inner, crate::codec::$name>,
+                inner: crate::futures::bufread::Decoder<$inner, crate::codecs::$name>,
             }
         }
 
@@ -17,13 +17,13 @@ macro_rules! decoder {
             /// emit an uncompressed stream.
             pub fn new(read: $inner) -> $name<$inner> {
                 $name {
-                    inner: crate::futures::bufread::Decoder::new(read, crate::codec::$name::new()),
+                    inner: crate::futures::bufread::Decoder::new(read, crate::codecs::$name::new()),
                 }
             }
 
             /// Creates a new decoder with the given codec, which will read compressed data from the given stream and
             /// emit an uncompressed stream.
-            pub fn with_codec(read: $inner, codec: crate::codec::$name) -> $name<$inner> {
+            pub fn with_codec(read: $inner, codec: crate::codecs::$name) -> $name<$inner> {
                 $name {
                     inner: crate::futures::bufread::Decoder::new(read, codec)
                 }

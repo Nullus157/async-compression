@@ -8,7 +8,7 @@ macro_rules! encoder {
             #[derive(Debug)]
             pub struct $name<$inner> {
                 #[pin]
-                inner: crate::tokio::bufread::Encoder<$inner, crate::codec::$name>,
+                inner: crate::tokio::bufread::Encoder<$inner, crate::codecs::$name>,
             }
         }
 
@@ -22,7 +22,7 @@ macro_rules! encoder {
 
             /// Creates a new encoder with the given codec, which will read uncompressed data from the given stream
             /// and emit an compressed stream.
-            pub fn with_codec(read: $inner, codec: crate::codec::$name) -> $name<$inner> {
+            pub fn with_codec(read: $inner, codec: crate::codecs::$name) -> $name<$inner> {
                 $name {
                    inner: crate::tokio::bufread::Encoder::new(read, codec)
                 }

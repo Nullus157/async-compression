@@ -4,7 +4,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::codec::Encode;
+use crate::codecs::Encode;
 use crate::core::util::PartialBuffer;
 use crate::futures::write::{AsyncBufWrite, BufWriter};
 use futures_core::ready;

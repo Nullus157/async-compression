@@ -8,7 +8,7 @@ macro_rules! encoder {
             #[derive(Debug)]
             pub struct $name<$inner> {
                 #[pin]
-                inner: crate::futures::write::Encoder<$inner, crate::codec::$name>,
+                inner: crate::futures::write::Encoder<$inner, crate::codecs::$name>,
             }
         }
 
@@ -22,7 +22,7 @@ macro_rules! encoder {
 
             /// Creates a new encoder with the given codec, which will take in uncompressed data and write it
             /// compressed to the given stream.
-            pub fn with_codec(read: $inner, codec: crate::codec::$name) -> $name<$inner> {
+            pub fn with_codec(read: $inner, codec: crate::codecs::$name) -> $name<$inner> {
                 $name {
                    inner: crate::futures::write::Encoder::new(read, codec)
                 }

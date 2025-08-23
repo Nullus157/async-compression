@@ -1,4 +1,4 @@
-use crate::codec::Decode;
+use crate::codecs::Decode;
 use crate::core::util::PartialBuffer;
 use core::{
     pin::Pin,

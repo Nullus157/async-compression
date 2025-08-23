@@ -8,7 +8,7 @@ macro_rules! decoder {
             #[derive(Debug)]
             pub struct $name<$inner> {
                 #[pin]
-                inner: crate::tokio::write::Decoder<$inner, crate::codec::$name>,
+                inner: crate::tokio::write::Decoder<$inner, crate::codecs::$name>,
             }
         }
 
@@ -17,13 +17,13 @@ macro_rules! decoder {
             /// to the given stream.
             pub fn new(read: $inner) -> $name<$inner> {
                 $name {
-                    inner: crate::tokio::write::Decoder::new(read, crate::codec::$name::new()),
+                    inner: crate::tokio::write::Decoder::new(read, crate::codecs::$name::new()),
                 }
             }
 
             /// Creates a new decoder which will take in compressed data and write it, uncompressed,
             /// to the given stream.
-            pub fn with_codec(read: $inner, codec: crate::codec::$name) -> $name<$inner> {
+            pub fn with_codec(read: $inner, codec: crate::codecs::$name) -> $name<$inner> {
                 $name {
                    inner: crate::tokio::write::Decoder::new(read, codec)
                 }

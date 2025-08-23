@@ -1,4 +1,4 @@
-use crate::codec::Decode;
+use crate::codecs::Decode;
 use crate::core::util::PartialBuffer;
 use crate::futures::write::{AsyncBufWrite, BufWriter};
 use futures_core::ready;

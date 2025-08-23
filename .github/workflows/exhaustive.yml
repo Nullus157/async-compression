@@ -86,13 +86,14 @@ jobs:
     - uses: taiki-e/install-action@v2
       with: { tool: cargo-hack }
     - run:
-        skipped_features='all,all-algorithms,futures-io,tokio,all-implementations'
-        skipped_features=$(echo "$skipped_features" | sed 's/${{ matrix.async_runtime }},//')
+        set -exuo pipefail
+        skipped_features=$(echo 'futures-io,tokio,' | sed 's/${{ matrix.async_runtime }},//')
         cargo hack check
           --feature-powerset
           --features ${{ matrix.async_runtime }}
           --no-dev-deps
-          --skip "$skipped_features"
+          --skip "all,all-algorithms,${skipped_features}all-implementations,xz-parallel,zstdmt"
+        cargo check --features ${{ matrix.async_runtime }},xz-parallel,zstdmt
 
   check-test-features:
     strategy:
@@ -108,13 +109,31 @@ jobs:
     - uses: taiki-e/install-action@v2
       with: { tool: cargo-hack }
     - run:
-        skipped_features='all,all-algorithms,futures-io,tokio,all-implementations'
-        skipped_features=$(echo "$skipped_features" | sed 's/${{ matrix.async_runtime }},//')
+        set -exuo pipefail
+        skipped_features=$(echo 'futures-io,tokio,' | sed 's/${{ matrix.async_runtime }},//')
         cargo hack check
           --feature-powerset
           --features ${{ matrix.async_runtime }}
           --all-targets
-          --skip "$skipped_features"
+          --skip "all,all-algorithms,${skipped_features}all-implementations,xz-parallel,zstdmt"
+        cargo check --all-targets --features ${{ matrix.async_runtime }},xz-parallel,zstdmt
+
+  # Dummy job to have a stable name for the "all tests pass" requirement
+  tests-pass:
+    name: Exhaustive tests pass
+    needs:
+      - test
+      - min-versions-shallow
+      - min-versions
+      - check-features
+      - check-test-features
+    if: always() # always run even if dependencies fail
+    runs-on: ubuntu-latest
+    steps:
+      # fail if ANY dependency has failed or cancelled
+      - if: "contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')"
+        run: exit 1
+      - run: exit 0
 
 on:
   merge_group:

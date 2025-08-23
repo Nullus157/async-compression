@@ -3,7 +3,7 @@ name = "compression-core"
 description = """
 Abstractions for compression algorithms.
 """
-version.workspace = true
+version = "0.4.27"
 authors.workspace = true
 license.workspace = true
 categories.workspace = true

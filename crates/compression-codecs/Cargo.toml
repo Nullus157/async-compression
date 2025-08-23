@@ -3,7 +3,7 @@ name = "compression-codecs"
 description = """
 Adaptors for various compression algorithms.
 """
-version = "0.4.27"
+version = "0.4.28"
 authors.workspace = true
 license.workspace = true
 categories.workspace = true

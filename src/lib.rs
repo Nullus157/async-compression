@@ -162,3 +162,11 @@ pub mod tokio;
 
 pub use compression_codecs as codec;
 pub use compression_core as core;
+
+pub use core::Level;
+pub use codec::{
+    zstd::params as zstd,
+    lz4::params as lz4,
+    brotli::params as brotli,
+};
+

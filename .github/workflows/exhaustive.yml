@@ -73,7 +73,10 @@ jobs:
     - run: cargo --locked test --workspace --doc --all-features
 
   check-features:
-    name: cargo hack check --feature-powerset
+    strategy:
+      matrix:
+        async_runtime: [tokio, futures-io]
+    name: cargo hack check --feature-powerset --features ${{ matrix.async_runtime }}
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -Dwarnings
@@ -85,11 +88,15 @@ jobs:
     - run:
         cargo hack check
           --feature-powerset
+          --features ${{ matrix.async_runtime }}
           --no-dev-deps
-          --skip 'all,all-algorithms,all-implementations'
+          --skip 'all,all-algorithms,all-implementations,futures-io,tokio'
 
   check-test-features:
-    name: cargo hack check --all-targets --feature-powerset
+    strategy:
+      matrix:
+        async_runtime: [tokio, futures-io]
+    name: cargo check --all-targets --feature-powerset --features ${{ matrix.async_runtime }}
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -Dwarnings
@@ -101,8 +108,9 @@ jobs:
     - run:
         cargo hack check
           --feature-powerset
+          --features ${{ matrix.async_runtime }}
           --all-targets
-          --skip 'all,all-algorithms,all-implementations'
+          --skip 'all,all-algorithms,all-implementations,futures-io,tokio'
 
 on:
   merge_group:

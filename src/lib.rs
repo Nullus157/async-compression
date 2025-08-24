@@ -156,7 +156,9 @@
 mod macros;
 
 mod buf_write;
-use buf_write::AsyncBufWrite;
+mod buf_writer;
+
+use buf_writer::BufWriter;
 
 #[cfg(feature = "futures-io")]
 pub mod futures;

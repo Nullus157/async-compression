@@ -2,7 +2,7 @@
 // the `AsyncBufWrite` impl can access its internals, and changed a bit to make it more efficient
 // with those methods.
 
-use super::AsyncBufWrite;
+use crate::AsyncBufWrite;
 use futures_core::ready;
 use futures_io::{AsyncSeek, AsyncWrite, SeekFrom};
 use pin_project_lite::pin_project;

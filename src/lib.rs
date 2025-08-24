@@ -155,6 +155,9 @@
 #[macro_use]
 mod macros;
 
+mod buf_write;
+use buf_write::AsyncBufWrite;
+
 #[cfg(feature = "futures-io")]
 pub mod futures;
 #[cfg(feature = "tokio")]

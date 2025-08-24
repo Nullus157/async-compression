@@ -155,6 +155,11 @@
 #[macro_use]
 mod macros;
 
+mod buf_write;
+mod buf_writer;
+
+use buf_writer::BufWriter;
+
 #[cfg(feature = "futures-io")]
 pub mod futures;
 #[cfg(feature = "tokio")]

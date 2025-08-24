@@ -5,13 +5,7 @@
 mod macros;
 mod generic;
 
-mod buf_write;
-mod buf_writer;
-
-use self::{
-    buf_write::AsyncBufWrite,
-    buf_writer::BufWriter,
-    generic::{Decoder, Encoder},
-};
+use self::generic::{Decoder, Encoder};
+use crate::{buf_write::AsyncBufWriteFuturesIo as AsyncBufWrite, BufWriter};
 
 algos!(futures::write<W>);

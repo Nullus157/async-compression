@@ -19,7 +19,7 @@ macro_rules! impl_async_buf_write {
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
             ) -> Poll<io::Result<&mut [u8]>>;
-        
+
             /// Tells this buffer that `amt` bytes have been written to its buffer, so they should be
             /// written out to the underlying IO when possible.
             ///
@@ -32,7 +32,7 @@ macro_rules! impl_async_buf_write {
             /// The `amt` must be `<=` the number of bytes in the buffer returned by `poll_flush_buf`.
             fn produce(self: Pin<&mut Self>, amt: usize);
         }
-    }
+    };
 }
 
 impl_async_buf_write!(AsyncBufWriteTokio);

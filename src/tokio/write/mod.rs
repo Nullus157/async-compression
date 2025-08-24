@@ -5,7 +5,7 @@
 mod macros;
 mod generic;
 
-use crate::{buf_write::AsyncBufWriteTokio as AsyncBufWrite, BufWriter};
 use self::generic::{Decoder, Encoder};
+use crate::{buf_write::AsyncBufWriteTokio as AsyncBufWrite, BufWriter};
 
 algos!(tokio::write<W>);

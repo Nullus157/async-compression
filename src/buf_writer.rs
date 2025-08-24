@@ -79,13 +79,15 @@ impl<W: fmt::Debug> fmt::Debug for BufWriter<W> {
     }
 }
 
-
 macro_rules! impl_traits {
     ($partial_flush_buf:tt, $flush_buf:tt, $shutdown_fn:tt) => {
         impl<W: AsyncWrite> BufWriter<W> {
-            fn $partial_flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+            fn $partial_flush_buf(
+                self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<io::Result<()>> {
                 let mut this = self.project();
-            
+
                 let mut ret = Ok(());
                 while *this.written < *this.buffered {
                     match this
@@ -110,12 +112,12 @@ macro_rules! impl_traits {
                         }
                     }
                 }
-            
+
                 if *this.written > 0 {
                     this.buf.copy_within(*this.written..*this.buffered, 0);
                     *this.buffered -= *this.written;
                     *this.written = 0;
-                
+
                     Poll::Ready(ret)
                 } else if *this.buffered == 0 {
                     Poll::Ready(ret)
@@ -124,10 +126,10 @@ macro_rules! impl_traits {
                     Poll::Pending
                 }
             }
-        
+
             fn $flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
                 let mut this = self.project();
-            
+
                 let mut ret = Ok(());
                 while *this.written < *this.buffered {
                     match ready!(this
@@ -156,7 +158,6 @@ macro_rules! impl_traits {
             }
         }
 
-
         impl<W: AsyncWrite> AsyncWrite for BufWriter<W> {
             fn poll_write(
                 mut self: Pin<&mut Self>,
@@ -167,7 +168,7 @@ macro_rules! impl_traits {
                 if *this.buffered + buf.len() > this.buf.len() {
                     ready!(self.as_mut().$partial_flush_buf(cx))?;
                 }
-            
+
                 let this = self.as_mut().project();
                 if buf.len() >= this.buf.len() {
                     if *this.buffered == 0 {
@@ -184,13 +185,16 @@ macro_rules! impl_traits {
                     Poll::Ready(Ok(len))
                 }
             }
-        
+
             fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
                 ready!(self.as_mut().$flush_buf(cx))?;
                 self.project().inner.poll_flush(cx)
             }
 
-            fn $shutdown_fn(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+            fn $shutdown_fn(
+                mut self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+            ) -> Poll<io::Result<()>> {
                 ready!(self.as_mut().$flush_buf(cx))?;
                 self.project().inner.$shutdown_fn(cx)
             }
@@ -205,7 +209,7 @@ macro_rules! impl_traits {
                 let this = self.project();
                 Poll::Ready(Ok(&mut this.buf[*this.buffered..]))
             }
-        
+
             fn produce(self: Pin<&mut Self>, amt: usize) {
                 let this = self.project();
                 debug_assert!(
@@ -220,20 +224,24 @@ macro_rules! impl_traits {
 
 #[cfg(feature = "tokio")]
 mod tokio_impl {
-    use tokio::io::AsyncWrite;
-    use crate::buf_write::AsyncBufWriteTokio as AsyncBufWrite;
     use super::*;
+    use crate::buf_write::AsyncBufWriteTokio as AsyncBufWrite;
+    use tokio::io::AsyncWrite;
 
     impl_traits!(partial_flush_buf_tokio, flush_buf_tokio, poll_shutdown);
 }
 
 #[cfg(feature = "futures-io")]
 mod futures_io_impl {
-    use crate::buf_write::AsyncBufWriteFuturesIo as AsyncBufWrite;
     use super::*;
+    use crate::buf_write::AsyncBufWriteFuturesIo as AsyncBufWrite;
     use futures_io::{AsyncSeek, AsyncWrite, SeekFrom};
 
-    impl_traits!(partial_flush_buf_futures_io, flush_buf_futures_io, poll_close);
+    impl_traits!(
+        partial_flush_buf_futures_io,
+        flush_buf_futures_io,
+        poll_close
+    );
 
     impl<W: AsyncWrite + AsyncSeek> AsyncSeek for BufWriter<W> {
         /// Seek to the offset, in bytes, in the underlying writer.

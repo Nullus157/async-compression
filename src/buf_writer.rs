@@ -5,7 +5,6 @@
 use futures_core::ready;
 use pin_project_lite::pin_project;
 use std::{
-    cmp::min,
     fmt, io,
     pin::Pin,
     task::{Context, Poll},
@@ -179,7 +178,7 @@ macro_rules! impl_traits {
                         Poll::Pending
                     }
                 } else {
-                    let len = min(this.buf.len() - *this.buffered, buf.len());
+                    let len = buf.len().min(this.buf.len() - *this.buffered);
                     this.buf[*this.buffered..*this.buffered + len].copy_from_slice(&buf[..len]);
                     *this.buffered += len;
                     Poll::Ready(Ok(len))

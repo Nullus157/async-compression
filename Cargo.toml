@@ -22,6 +22,7 @@ description = """
 Adaptors between compression crates and Rust's modern asynchronous IO types.
 """
 authors.workspace = true
+repository.workspace = true
 license.workspace = true
 categories.workspace = true
 edition.workspace = true

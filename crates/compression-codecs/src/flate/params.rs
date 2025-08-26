@@ -2,7 +2,7 @@ use std::convert::TryInto;
 
 use compression_core::Level;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FlateEncoderParams {
     inner: flate2::Compression,
 }

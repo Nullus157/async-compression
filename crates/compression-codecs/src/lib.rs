@@ -1,3 +1,7 @@
+//! Adaptors for various compression algorithms.
+
+#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
+
 use std::io::Result;
 
 #[cfg(feature = "brotli")]

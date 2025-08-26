@@ -1,11 +1,11 @@
-//! Clonable structs to build the non-clonables in liblzma
+//! Clone-able structs to build the non-clone-ables in liblzma
 
 use std::convert::TryFrom;
 #[cfg(feature = "xz-parallel")]
 use std::num::NonZeroU32;
 
-/// Used to control how the lzma stream is created
-#[derive(Clone)]
+/// Used to control how the LZMA stream is created.
+#[derive(Debug, Clone)]
 pub enum LzmaEncoderParams {
     Easy {
         preset: u32,
@@ -116,7 +116,7 @@ impl TryFrom<&LzmaDecoderParams> for liblzma::stream::Stream {
     }
 }
 
-/// Clonable liblzma::Filters
+/// Clone-able `liblzma::Filters`.
 #[derive(Default, Clone, Debug)]
 pub struct LzmaFilters {
     filters: Vec<LzmaFilter>,
@@ -131,7 +131,7 @@ impl LzmaFilters {
 }
 
 /// An individual filter directly corresponding to liblzma Filters method calls
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub enum LzmaFilter {
     Arm(Option<Vec<u8>>),
     Arm64(Option<Vec<u8>>),

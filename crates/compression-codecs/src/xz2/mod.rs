@@ -1,6 +1,7 @@
 mod decoder;
 mod encoder;
 
+#[derive(Debug)]
 pub enum Xz2FileFormat {
     Xz,
     Lzma,

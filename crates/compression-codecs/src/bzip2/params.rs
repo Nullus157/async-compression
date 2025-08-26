@@ -3,6 +3,7 @@ use std::convert::TryInto;
 use bzip2::Compression;
 use compression_core::Level;
 
+#[derive(Debug)]
 pub struct Bzip2EncoderParams {
     inner: Compression,
 }

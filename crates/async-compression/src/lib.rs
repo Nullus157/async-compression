@@ -144,12 +144,6 @@
 //!
 
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
-#![warn(
-    missing_docs,
-    rust_2018_idioms,
-    missing_copy_implementations,
-    missing_debug_implementations
-)]
 #![cfg_attr(not(all), allow(unused))]
 
 #[macro_use]

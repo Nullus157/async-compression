@@ -1,0 +1,144 @@
+[package]
+name = "async-compression"
+version = "0.4.28"
+description = """
+Adaptors between compression crates and Rust's modern asynchronous IO types.
+"""
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+# groups
+all = ["all-implementations", "all-algorithms"]
+all-implementations = ["futures-io", "tokio"]
+all-algorithms = [
+    "brotli",
+    "bzip2",
+    "deflate",
+    "deflate64",
+    "gzip",
+    "lz4",
+    "lzma",
+    "xz",
+    "xz-parallel",
+    "zlib",
+    "zstd",
+]
+
+# algorithms
+brotli = ["compression-codecs/brotli", "dep:brotli"]
+bzip2 = ["compression-codecs/bzip2", "dep:bzip2"]
+deflate = ["compression-codecs/deflate", "flate2"]
+deflate64 = ["compression-codecs/deflate64", "dep:deflate64"]
+gzip = ["compression-codecs/gzip", "flate2"]
+lz4 = ["compression-codecs/lz4", "dep:lz4"]
+lzma = ["compression-codecs/lzma", "liblzma"]
+xz = ["compression-codecs/xz", "lzma"]
+xz-parallel = ["compression-codecs/xz-parallel", "xz", "liblzma/parallel"]
+xz2 = ["compression-codecs/xz2", "xz"]
+zlib = ["compression-codecs/zlib", "flate2"]
+zstd = ["compression-codecs/zstd", "libzstd", "zstd-safe"]
+zstdmt = ["compression-codecs/zstdmt", "zstd", "zstd-safe/zstdmt"]
+
+
+[dependencies]
+# core dependencies
+futures-core.workspace = true
+memchr.workspace = true
+pin-project-lite.workspace = true
+compression-codecs.workspace = true
+compression-core.workspace = true
+# optionals deps
+brotli = { version = "8", optional = true }
+bzip2 = { version = "0.6", optional = true }
+flate2 = { version = "1.0.13", optional = true }
+futures-io = { version = "0.3", default-features = false, features = [
+    "std",
+], optional = true }
+libzstd = { package = "zstd", version = "0.13.1", optional = true, default-features = false }
+lz4 = { version = "1.28.1", optional = true }
+tokio = { version = "1.24.2", optional = true, default-features = false }
+liblzma = { version = "0.4.2", optional = true }
+zstd-safe = { version = "7", optional = true, default-features = false }
+deflate64 = { version = "0.1.5", optional = true }
+
+[dev-dependencies]
+bytes = "1"
+futures = "0.3.5"
+futures-test = "0.3.5"
+ntest = "0.9"
+proptest = "1"
+proptest-derive = "0.6"
+rand = "0.9"
+tokio = { version = "1.38.2", default-features = false, features = [
+    "io-util",
+    "macros",
+    "rt-multi-thread",
+    "io-std",
+] }
+tokio-util = { version = "0.7", default-features = false, features = ["io"] }
+
+[lints]
+workspace = true
+
+[[test]]
+name = "brotli"
+required-features = ["brotli"]
+
+[[test]]
+name = "bzip2"
+required-features = ["bzip2"]
+
+[[test]]
+name = "deflate"
+required-features = ["deflate"]
+
+[[test]]
+name = "gzip"
+required-features = ["gzip"]
+
+[[test]]
+name = "lz4"
+required-features = ["lz4"]
+
+[[test]]
+name = "lzma"
+required-features = ["lzma"]
+
+[[test]]
+name = "xz"
+required-features = ["xz"]
+
+[[test]]
+name = "zlib"
+required-features = ["zlib"]
+
+[[test]]
+name = "zstd"
+required-features = ["zstd"]
+
+[[test]]
+name = "zstd-dict"
+required-features = ["zstd", "tokio"]
+
+[[test]]
+name = "zstd-window-size"
+required-features = ["zstd", "tokio"]
+
+[[example]]
+name = "zlib_tokio_write"
+required-features = ["zlib", "tokio"]
+
+[[example]]
+name = "zstd_gzip"
+required-features = ["zstd", "gzip", "tokio"]
+
+[[example]]
+name = "lzma_filters"
+required-features = ["xz", "tokio"]

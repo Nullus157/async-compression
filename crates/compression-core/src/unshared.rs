@@ -2,9 +2,10 @@
 
 use core::fmt::{self, Debug};
 
-/// Wraps a type and only allows unique borrowing, the main use case is to wrap a `!Sync` type and
-/// implement `Sync` for it as this type blocks having multiple shared references to the inner
-/// value.
+/// Wraps a type and only allows unique borrowing.
+///
+/// The main use case is to wrap a `!Sync` type and implement `Sync` for it as this type blocks
+/// having multiple shared references to the inner value.
 ///
 /// # Safety
 ///
@@ -18,6 +19,7 @@ use core::fmt::{self, Debug};
 pub struct Unshared<T> {
     inner: T,
 }
+
 impl<T> From<T> for Unshared<T> {
     fn from(inner: T) -> Self {
         Unshared { inner }
@@ -25,10 +27,12 @@ impl<T> From<T> for Unshared<T> {
 }
 
 impl<T> Unshared<T> {
+    /// Constructs a new `Unshared` from `inner`.
     pub fn new(inner: T) -> Self {
         Self::from(inner)
     }
 
+    /// Returns a unique reference to the inner `T`.
     pub fn get_mut(&mut self) -> &mut T {
         &mut self.inner
     }

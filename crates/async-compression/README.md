@@ -83,6 +83,6 @@ additional terms or conditions.
 [7]: https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square
 [8]: https://docs.rs/async-compression
 [9]: https://img.shields.io/crates/l/async-compression.svg?style=flat-square
-[10]: https://deps.rs/crate/async-compression/0.4.8/status.svg?style=flat-square
-[11]: https://deps.rs/crate/async-compression/0.4.8
+[10]: https://deps.rs/crate/async-compression/latest/status.svg?style=flat-square
+[11]: https://deps.rs/crate/async-compression
 [releases]: https://github.com/Nullus157/async-compression/releases

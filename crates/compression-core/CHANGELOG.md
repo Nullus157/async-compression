@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.29](https://github.com/Nullus157/async-compression/compare/compression-core-v0.4.28...compression-core-v0.4.29) - 2025-08-28
+
+### Other
+
+- Update Deps.rs badge ([#380](https://github.com/Nullus157/async-compression/pull/380))
+- move async-compression to crates/ ([#379](https://github.com/Nullus157/async-compression/pull/379))
+- Refactor compression_core::util ([#373](https://github.com/Nullus157/async-compression/pull/373))
+
 ## [0.4.28](https://github.com/Nullus157/async-compression/compare/compression-core-v0.4.27...compression-core-v0.4.28) - 2025-08-23
 
 ### Fixed

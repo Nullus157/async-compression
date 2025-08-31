@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.30](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.29...compression-codecs-v0.4.30) - 2025-08-31
+
+### Other
+
+- rm unused dep from async-compression and compression-codecs ([#381](https://github.com/Nullus157/async-compression/pull/381))
+
 ## [0.4.29](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.28...compression-codecs-v0.4.29) - 2025-08-28
 
 ### Other

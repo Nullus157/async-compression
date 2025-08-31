@@ -79,7 +79,10 @@ brotli = "8"
 bzip2 = "0.6"
 flate2 = "1.0.13"
 libzstd = { package = "zstd", version = "0.13.1", default-features = false }
+lz4 = "1.28.1"
 liblzma = "0.4.2"
+zstd-safe = { version = "7", default-features = false }
+deflate64 = "0.1.5"
 
 [lints]
 workspace = true

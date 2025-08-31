@@ -1,6 +1,6 @@
 [package]
 name = "async-compression"
-version = "0.5.0"
+version = "0.4.30"
 description = """
 Adaptors between compression crates and Rust's modern asynchronous IO types.
 """

@@ -44,7 +44,7 @@ deflate64 = ["dep:deflate64"]
 
 [dependencies]
 # Workspace dependencies.
-compression-core.workspace = tru
+compression-core.workspace = true
 # features
 brotli = { version = "8", optional = true }
 bzip2 = { version = "0.6", optional = true }

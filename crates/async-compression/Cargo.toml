@@ -32,41 +32,32 @@ all-algorithms = [
 ]
 
 # algorithms
-brotli = ["compression-codecs/brotli", "dep:brotli"]
-bzip2 = ["compression-codecs/bzip2", "dep:bzip2"]
-deflate = ["compression-codecs/deflate", "flate2"]
-deflate64 = ["compression-codecs/deflate64", "dep:deflate64"]
-gzip = ["compression-codecs/gzip", "flate2"]
-lz4 = ["compression-codecs/lz4", "dep:lz4"]
-lzma = ["compression-codecs/lzma", "liblzma"]
+brotli = ["compression-codecs/brotli"]
+bzip2 = ["compression-codecs/bzip2"]
+deflate = ["compression-codecs/deflate"]
+deflate64 = ["compression-codecs/deflate64"]
+gzip = ["compression-codecs/gzip"]
+lz4 = ["compression-codecs/lz4"]
+lzma = ["compression-codecs/lzma"]
 xz = ["compression-codecs/xz", "lzma"]
-xz-parallel = ["compression-codecs/xz-parallel", "xz", "liblzma/parallel"]
+xz-parallel = ["compression-codecs/xz-parallel", "xz"]
 xz2 = ["compression-codecs/xz2", "xz"]
-zlib = ["compression-codecs/zlib", "flate2"]
-zstd = ["compression-codecs/zstd", "libzstd", "zstd-safe"]
-zstdmt = ["compression-codecs/zstdmt", "zstd", "zstd-safe/zstdmt"]
+zlib = ["compression-codecs/zlib"]
+zstd = ["compression-codecs/zstd"]
+zstdmt = ["compression-codecs/zstdmt", "zstd"]
 
 
 [dependencies]
 # core dependencies
 futures-core.workspace = true
-memchr.workspace = true
 pin-project-lite.workspace = true
 compression-codecs.workspace = true
 compression-core.workspace = true
-# optionals deps
-brotli = { version = "8", optional = true }
-bzip2 = { version = "0.6", optional = true }
-flate2 = { version = "1.0.13", optional = true }
+# optional dependencies
 futures-io = { version = "0.3", default-features = false, features = [
     "std",
 ], optional = true }
-libzstd = { package = "zstd", version = "0.13.1", optional = true, default-features = false }
-lz4 = { version = "1.28.1", optional = true }
 tokio = { version = "1.24.2", optional = true, default-features = false }
-liblzma = { version = "0.4.2", optional = true }
-zstd-safe = { version = "7", optional = true, default-features = false }
-deflate64 = { version = "0.1.5", optional = true }
 
 [dev-dependencies]
 bytes = "1"
@@ -83,6 +74,15 @@ tokio = { version = "1.38.2", default-features = false, features = [
     "io-std",
 ] }
 tokio-util = { version = "0.7", default-features = false, features = ["io"] }
+
+brotli = "8"
+bzip2 = "0.6"
+flate2 = "1.0.13"
+libzstd = { package = "zstd", version = "0.13.1", default-features = false }
+lz4 = "1.28.1"
+liblzma = "0.4.2"
+zstd-safe = { version = "7", default-features = false }
+deflate64 = "0.1.5"
 
 [lints]
 workspace = true

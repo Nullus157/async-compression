@@ -58,6 +58,7 @@ futures-io = { version = "0.3", default-features = false, features = [
     "std",
 ], optional = true }
 tokio = { version = "1.24.2", optional = true, default-features = false }
+
 [dev-dependencies]
 bytes = "1"
 futures = "0.3.5"
@@ -73,6 +74,12 @@ tokio = { version = "1.38.2", default-features = false, features = [
     "io-std",
 ] }
 tokio-util = { version = "0.7", default-features = false, features = ["io"] }
+
+brotli = "8"
+bzip2 = "0.6"
+flate2 = "1.0.13"
+libzstd = { package = "zstd", version = "0.13.1", default-features = false }
+liblzma = "0.4.2"
 
 [lints]
 workspace = true

@@ -31,7 +31,7 @@ all-algorithms = [
 
 # algorithms
 deflate = ["flate2"]
-gzip = ["flate2"]
+gzip = ["flate2", "memchr"]
 lz4 = ["dep:lz4"]
 lzma = ["dep:liblzma"]
 xz = ["lzma"]
@@ -44,19 +44,17 @@ deflate64 = ["dep:deflate64"]
 
 [dependencies]
 # Workspace dependencies.
-compression-core.workspace = true
-futures-core.workspace = true
-memchr.workspace = true
-pin-project-lite.workspace = true
+compression-core.workspace = tru
 # features
 brotli = { version = "8", optional = true }
 bzip2 = { version = "0.6", optional = true }
+deflate64 = { version = "0.1.5", optional = true }
 flate2 = { version = "1.0.13", optional = true }
 libzstd = { package = "zstd", version = "0.13.1", optional = true, default-features = false }
 lz4 = { version = "1.28.1", optional = true }
 liblzma = { version = "0.4.4", optional = true }
+memchr = { version = "2", optional = true }
 zstd-safe = { version = "7", optional = true, default-features = false }
-deflate64 = { version = "0.1.5", optional = true }
 
 [lints]
 workspace = true

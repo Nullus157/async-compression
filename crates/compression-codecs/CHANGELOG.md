@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.31](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.30...compression-codecs-v0.4.31) - 2025-09-25
+
+### Other
+
+- Use io::ErrorKind::OutOfMemory for xz2/bzip2 codecs ([#387](https://github.com/Nullus157/async-compression/pull/387))
+
 ## [0.4.30](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.29...compression-codecs-v0.4.30) - 2025-08-31
 
 ### Other

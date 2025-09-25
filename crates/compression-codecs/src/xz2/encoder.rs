@@ -95,7 +95,7 @@ impl Encode for Xz2Encoder {
         match status {
             Status::Ok | Status::StreamEnd => Ok(()),
             Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
-            Status::MemNeeded => Err(io::Error::other("out of memory")),
+            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
         }
     }
 
@@ -120,7 +120,7 @@ impl Encode for Xz2Encoder {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
             Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
-            Status::MemNeeded => Err(io::Error::other("out of memory")),
+            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
         }
     }
 
@@ -140,7 +140,7 @@ impl Encode for Xz2Encoder {
             Status::Ok => Ok(false),
             Status::StreamEnd => Ok(true),
             Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
-            Status::MemNeeded => Err(io::Error::other("out of memory")),
+            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
         }
     }
 }

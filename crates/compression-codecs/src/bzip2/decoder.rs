@@ -103,16 +103,10 @@ impl Decode for BzDecoder {
 
     fn finish(
         &mut self,
-        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> io::Result<bool> {
-        match self.decode(
-            &mut PartialBuffer::new(&[][..]),
-            output,
-        )? {
-            Status::Ok
-            | Status::FlushOk
-            | Status::RunOk
-            | Status::FinishOk  => Ok(false),
+        match self.decode(&mut PartialBuffer::new(&[][..]), output)? {
+            Status::Ok | Status::FlushOk | Status::RunOk | Status::FinishOk  => Ok(false),
             Status::StreamEnd => Ok(true),
             Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
         }

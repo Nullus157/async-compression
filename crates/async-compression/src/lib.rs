@@ -149,6 +149,9 @@
 #[macro_use]
 mod macros;
 
+/// Generic, async runtime agonistc implementation of en/decoders
+mod generic;
+
 #[cfg(feature = "futures-io")]
 pub mod futures;
 #[cfg(feature = "tokio")]

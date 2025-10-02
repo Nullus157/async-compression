@@ -143,7 +143,7 @@
 //! Enable the `xz-parallel` feature to enable multi-threading support.
 //!
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(all), allow(unused))]
 
 #[macro_use]

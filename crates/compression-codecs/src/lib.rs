@@ -4,6 +4,8 @@
 
 use std::io::Result;
 
+pub use compression_core as core;
+
 #[cfg(feature = "brotli")]
 pub mod brotli;
 #[cfg(feature = "bzip2")]

@@ -1,10 +1,7 @@
 use crate::codecs::Decode;
 use crate::core::util::PartialBuffer;
 
-use core::task::{Context, Poll};
-use std::io::Result;
-
-use futures_core::ready;
+use std::{io::Result, ops::ControlFlow};
 
 #[derive(Debug)]
 enum State {
@@ -12,11 +9,6 @@ enum State {
     Flushing,
     Done,
     Next,
-}
-
-pub(crate) trait AsyncBufRead {
-    fn poll_fill_buf(&mut self, cx: &mut Context<'_>) -> Poll<Result<&[u8]>>;
-    fn consume(&mut self, bytes: usize);
 }
 
 #[derive(Debug)]
@@ -41,73 +33,61 @@ impl Decoder {
 
     pub fn do_poll_read<D: Decode>(
         &mut self,
-        cx: &mut Context<'_>,
         output: &mut PartialBuffer<&mut [u8]>,
-        reader: &mut dyn AsyncBufRead,
         decoder: &mut D,
-    ) -> Poll<Result<()>> {
-        let mut first = true;
-
+        input: &mut PartialBuffer<&[u8]>,
+        mut first: bool,
+    ) -> ControlFlow<Result<()>> {
         loop {
             self.state = match self.state {
                 State::Decoding => {
-                    let input = if first {
-                        &[][..]
-                    } else {
-                        ready!(reader.poll_fill_buf(cx))?
-                    };
-
-                    if input.is_empty() && !first {
+                    if input.unwritten().is_empty() && !first {
                         // Avoid attempting to reinitialise the decoder if the
                         // reader has returned EOF.
                         self.multiple_members = false;
 
                         State::Flushing
                     } else {
-                        let mut input = PartialBuffer::new(input);
-                        let res = decoder.decode(&mut input, output).or_else(|err| {
+                        match decoder.decode(input, output) {
+                            Ok(true) => State::Flushing,
                             // ignore the first error, occurs when input is empty
                             // but we need to run decode to flush
-                            if first {
-                                Ok(false)
-                            } else {
-                                Err(err)
-                            }
-                        });
-
-                        if !first {
-                            let len = input.written().len();
-                            reader.consume(len);
-                        }
-
-                        first = false;
-
-                        if res? {
-                            State::Flushing
-                        } else {
-                            State::Decoding
+                            Err(err) if !first => return ControlFlow::Break(Err(err)),
+                            // poll for more data for the next decode
+                            _ => break,
                         }
                     }
                 }
 
                 State::Flushing => {
-                    if decoder.finish(output)? {
-                        if self.multiple_members {
-                            decoder.reinit()?;
-                            State::Next
-                        } else {
-                            State::Done
+                    match decoder.finish(output) {
+                        Ok(true) => {
+                            if self.multiple_members {
+                                if let Err(err) = decoder.reinit() {
+                                    return ControlFlow::Break(Err(err));
+                                }
+
+                                // The decode stage might consume all the input,
+                                // the next stage might need to poll again if it's empty.
+                                first = true;
+                                State::Next
+                            } else {
+                                State::Done
+                            }
                         }
-                    } else {
-                        State::Flushing
+                        Ok(false) => State::Flushing,
+                        Err(err) => return ControlFlow::Break(Err(err)),
                     }
                 }
 
-                State::Done => State::Done,
+                State::Done => return ControlFlow::Break(Ok(())),
 
                 State::Next => {
-                    let input = ready!(reader.poll_fill_buf(cx))?;
-                    if input.is_empty() {
+                    if input.unwritten().is_empty() {
+                        if first {
+                            // poll for more data to check if there's another stream
+                            break;
+                        }
                         State::Done
                     } else {
                         State::Decoding
@@ -115,12 +95,104 @@ impl Decoder {
                 }
             };
 
-            if let State::Done = self.state {
-                return Poll::Ready(Ok(()));
-            }
             if output.unwritten().is_empty() {
-                return Poll::Ready(Ok(()));
+                return ControlFlow::Break(Ok(()));
             }
+        }
+
+        if output.unwritten().is_empty() {
+            ControlFlow::Break(Ok(()))
+        } else {
+            ControlFlow::Continue(())
         }
     }
 }
+
+macro_rules! impl_do_poll_read {
+    () => {
+        use crate::generic::bufread::Decoder as GenericDecoder;
+
+        use std::ops::ControlFlow;
+
+        use futures_core::ready;
+        use pin_project_lite::pin_project;
+
+        pin_project! {
+            #[derive(Debug)]
+            pub struct Decoder<R, D> {
+                #[pin]
+                reader: R,
+                decoder: D,
+                inner: GenericDecoder,
+            }
+        }
+
+        impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
+            pub fn new(reader: R, decoder: D) -> Self {
+                Self {
+                    reader,
+                    decoder,
+                    inner: GenericDecoder::default(),
+                }
+            }
+        }
+
+        impl<R, D> Decoder<R, D> {
+            pub fn get_ref(&self) -> &R {
+                &self.reader
+            }
+
+            pub fn get_mut(&mut self) -> &mut R {
+                &mut self.reader
+            }
+
+            pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut R> {
+                self.project().reader
+            }
+
+            pub fn into_inner(self) -> R {
+                self.reader
+            }
+
+            pub fn multiple_members(&mut self, enabled: bool) {
+                self.inner.multiple_members(enabled);
+            }
+        }
+
+        impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
+            fn do_poll_read(
+                self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+                output: &mut PartialBuffer<&mut [u8]>,
+            ) -> Poll<Result<()>> {
+                let mut this = self.project();
+
+                if let ControlFlow::Break(res) = this.inner.do_poll_read(
+                    output,
+                    this.decoder,
+                    &mut PartialBuffer::new(&[][..]),
+                    true,
+                ) {
+                    return Poll::Ready(res);
+                }
+
+                loop {
+                    let mut input =
+                        PartialBuffer::new(ready!(this.reader.as_mut().poll_fill_buf(cx))?);
+
+                    let control_flow =
+                        this.inner
+                            .do_poll_read(output, this.decoder, &mut input, false);
+
+                    let bytes_read = input.written().len();
+                    this.reader.as_mut().consume(bytes_read);
+
+                    if let ControlFlow::Break(res) = control_flow {
+                        break Poll::Ready(res);
+                    }
+                }
+            }
+        }
+    };
+}
+pub(crate) use impl_do_poll_read;

@@ -1,5 +1,5 @@
 use crate::zstd::params::DParameter;
-use crate::Decode;
+use crate::{Decode, DecodedSize};
 use compression_core::unshared::Unshared;
 use compression_core::util::PartialBuffer;
 use libzstd::stream::raw::{Decoder, Operation};
@@ -82,5 +82,12 @@ impl Decode for ZstdDecoder {
         let len = out_buf.as_slice().len();
         output.advance(len);
         Ok(bytes_left == 0)
+    }
+}
+
+impl DecodedSize for ZstdDecoder {
+    fn decoded_size(input: &[u8]) -> Result<usize> {
+        zstd_safe::find_frame_compressed_size(input)
+            .map_err(|_err| io::Error::from(io::ErrorKind::Other))
     }
 }

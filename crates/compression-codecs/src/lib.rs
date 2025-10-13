@@ -97,3 +97,8 @@ pub trait Decode {
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool>;
 }
+
+pub trait DecodedSize {
+    /// Returns the size of the input when uncompressed.
+    fn decoded_size(input: &[u8]) -> Result<usize>;
+}

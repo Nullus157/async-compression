@@ -1,4 +1,4 @@
-use crate::{Decode, Xz2Decoder};
+use crate::{Decode, DecodedSize, Xz2Decoder};
 use compression_core::util::PartialBuffer;
 use std::{
     convert::TryInto,
@@ -95,5 +95,11 @@ impl Decode for XzDecoder {
             return Ok(true);
         }
         self.inner.finish(output)
+    }
+}
+
+impl DecodedSize for XzDecoder {
+    fn decoded_size(input: &[u8]) -> Result<usize> {
+        Xz2Decoder::decoded_size(input)
     }
 }

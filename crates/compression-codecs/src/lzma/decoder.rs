@@ -1,4 +1,4 @@
-use crate::{Decode, Xz2Decoder};
+use crate::{Decode, DecodedSize, Xz2Decoder};
 use compression_core::util::PartialBuffer;
 use std::{convert::TryInto, io::Result};
 
@@ -59,5 +59,11 @@ impl Decode for LzmaDecoder {
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool> {
         self.inner.finish(output)
+    }
+}
+
+impl DecodedSize for LzmaDecoder {
+    fn decoded_size(input: &[u8]) -> Result<usize> {
+        Xz2Decoder::decoded_size(input)
     }
 }

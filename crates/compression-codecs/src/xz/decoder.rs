@@ -99,7 +99,7 @@ impl Decode for XzDecoder {
 }
 
 impl DecodedSize for XzDecoder {
-    fn decoded_size(input: &[u8]) -> Result<usize> {
+    fn decoded_size(input: &[u8]) -> Result<u64> {
         Xz2Decoder::decoded_size(input)
     }
 }

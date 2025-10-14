@@ -63,7 +63,7 @@ impl Decode for LzmaDecoder {
 }
 
 impl DecodedSize for LzmaDecoder {
-    fn decoded_size(input: &[u8]) -> Result<usize> {
+    fn decoded_size(input: &[u8]) -> Result<u64> {
         Xz2Decoder::decoded_size(input)
     }
 }

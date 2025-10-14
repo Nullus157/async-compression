@@ -100,5 +100,5 @@ pub trait Decode {
 
 pub trait DecodedSize {
     /// Returns the size of the input when uncompressed.
-    fn decoded_size(input: &[u8]) -> Result<usize>;
+    fn decoded_size(input: &[u8]) -> Result<u64>;
 }

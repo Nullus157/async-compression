@@ -113,9 +113,9 @@ impl Decode for Xz2Decoder {
 }
 
 impl DecodedSize for Xz2Decoder {
-    fn decoded_size(input: &[u8]) -> io::Result<usize> {
+    fn decoded_size(input: &[u8]) -> io::Result<u64> {
         let cursor = Cursor::new(input);
-        liblzma::uncompressed_size(cursor).map(|size| size as usize)
+        liblzma::uncompressed_size(cursor)
     }
 }
 

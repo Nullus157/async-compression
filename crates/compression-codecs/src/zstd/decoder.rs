@@ -5,6 +5,7 @@ use compression_core::util::PartialBuffer;
 use libzstd::stream::raw::{Decoder, Operation};
 use std::io;
 use std::io::Result;
+use zstd_safe::get_error_name;
 
 #[derive(Debug)]
 pub struct ZstdDecoder {
@@ -88,6 +89,6 @@ impl Decode for ZstdDecoder {
 impl DecodedSize for ZstdDecoder {
     fn decoded_size(input: &[u8]) -> Result<usize> {
         zstd_safe::find_frame_compressed_size(input)
-            .map_err(|_err| io::Error::from(io::ErrorKind::Other))
+            .map_err(|error_code| io::Error::other(get_error_name(error_code)))
     }
 }

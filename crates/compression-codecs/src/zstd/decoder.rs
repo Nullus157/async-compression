@@ -93,7 +93,7 @@ impl DecodedSize for ZstdDecoder {
             .map_err(|error_code| io::Error::other(get_error_name(error_code)))
             .and_then(|size| {
                 size.try_into()
-                    .map_err(|_| io::Error::from(io::ErrorKind::InvalidData))
+                    .map_err(|_| io::Error::from(io::ErrorKind::FileTooLarge))
             })
     }
 }

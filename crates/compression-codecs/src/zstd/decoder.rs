@@ -1,10 +1,12 @@
 use crate::zstd::params::DParameter;
-use crate::Decode;
+use crate::{Decode, DecodedSize};
 use compression_core::unshared::Unshared;
 use compression_core::util::PartialBuffer;
 use libzstd::stream::raw::{Decoder, Operation};
+use std::convert::TryInto;
 use std::io;
 use std::io::Result;
+use zstd_safe::get_error_name;
 
 #[derive(Debug)]
 pub struct ZstdDecoder {
@@ -82,5 +84,16 @@ impl Decode for ZstdDecoder {
         let len = out_buf.as_slice().len();
         output.advance(len);
         Ok(bytes_left == 0)
+    }
+}
+
+impl DecodedSize for ZstdDecoder {
+    fn decoded_size(input: &[u8]) -> Result<u64> {
+        zstd_safe::find_frame_compressed_size(input)
+            .map_err(|error_code| io::Error::other(get_error_name(error_code)))
+            .and_then(|size| {
+                size.try_into()
+                    .map_err(|_| io::Error::from(io::ErrorKind::FileTooLarge))
+            })
     }
 }

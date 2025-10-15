@@ -1,7 +1,11 @@
-use crate::{lzma::params::LzmaDecoderParams, Decode};
+use crate::{lzma::params::LzmaDecoderParams, Decode, DecodedSize};
 use compression_core::util::PartialBuffer;
 use liblzma::stream::{Action, Status, Stream};
-use std::{convert::TryFrom, fmt, io};
+use std::{
+    convert::TryFrom,
+    fmt,
+    io::{self, Cursor},
+};
 
 /// Xz2 decoding stream
 pub struct Xz2Decoder {
@@ -105,6 +109,13 @@ impl Decode for Xz2Decoder {
             Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
             Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
         }
+    }
+}
+
+impl DecodedSize for Xz2Decoder {
+    fn decoded_size(input: &[u8]) -> io::Result<u64> {
+        let cursor = Cursor::new(input);
+        liblzma::uncompressed_size(cursor)
     }
 }
 

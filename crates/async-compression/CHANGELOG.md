@@ -44,6 +44,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.33](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.32...async-compression-v0.4.33) - 2025-10-15
+
+### Other
+
+- Deduplicate `generic::bufread::Decoder` impl of tokio/futures-io ([#391](https://github.com/Nullus157/async-compression/pull/391))
+- Disable nightly feature `doc_auto_cfg` on docsrs ([#392](https://github.com/Nullus157/async-compression/pull/392))
+
 ## [0.4.32](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.31...async-compression-v0.4.32) - 2025-09-25
 
 ### Other

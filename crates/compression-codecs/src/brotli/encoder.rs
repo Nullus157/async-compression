@@ -1,4 +1,4 @@
-use crate::{brotli::params::EncoderParams, Encode};
+use crate::{brotli::params::EncoderParams, EncodeV2};
 use brotli::enc::{
     backward_references::BrotliEncoderParams,
     encode::{BrotliEncoderOperation, BrotliEncoderStateStruct},
@@ -21,8 +21,8 @@ impl BrotliEncoder {
 
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
         op: BrotliEncoderOperation,
     ) -> io::Result<()> {
         let in_buf = input.unwritten();
@@ -52,11 +52,11 @@ impl BrotliEncoder {
     }
 }
 
-impl Encode for BrotliEncoder {
-    fn encode(
+impl EncodeV2 for BrotliEncoder {
+    fn encode_init(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
     ) -> io::Result<()> {
         self.encode(
             input,
@@ -65,9 +65,9 @@ impl Encode for BrotliEncoder {
         )
     }
 
-    fn flush(
+    fn flush_init(
         &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut PartialBuffer<&mut [u8]>,
     ) -> io::Result<bool> {
         self.encode(
             &mut PartialBuffer::new(&[][..]),
@@ -78,9 +78,9 @@ impl Encode for BrotliEncoder {
         Ok(!self.state.has_more_output())
     }
 
-    fn finish(
+    fn finish_init(
         &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        output: &mut PartialBuffer<&mut [u8]>,
     ) -> io::Result<bool> {
         self.encode(
             &mut PartialBuffer::new(&[][..]),

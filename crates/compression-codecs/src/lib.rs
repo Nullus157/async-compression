@@ -58,6 +58,38 @@ pub use self::zlib::{ZlibDecoder, ZlibEncoder};
 #[cfg(feature = "zstd")]
 pub use self::zstd::{ZstdDecoder, ZstdEncoder};
 
+fn forward_output<R>(
+    output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    f: FnOnce(&mut PartialBuffer<&mut [u8]>) -> R,
+) -> R {
+    let written_len = output.written_len();
+ 
+    let mut partial_buffer = PartialBuffer::new(output.get_mut().as_mut());
+    partial_buffer.advance(written_len);
+
+    let result = f(&mut partial_buffer);
+    let new_written_len = partial_buffer.written_len();
+    output.advance(new_written_len - written_len);
+    result
+}
+
+
+fn forward_input_output<R>(
+    input: &mut PartialBuffer<impl AsRef<[u8]>>,
+    output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    f: FnOnce(&mut PartialBuffer<&[u8]>, &mut PartialBuffer<&mut [u8]>) -> R,
+) -> R {
+    let written_len = input.written_len();
+ 
+    let mut partial_buffer = PartialBuffer::new(input.get_mut().as_ref());
+    partial_buffer.advance(written_len);
+
+    let result = forward_output(output, |output| f(&mut partial_buffer, output));
+    let new_written_len = partial_buffer.written_len();
+    input.advance(new_written_len - written_len);
+    result
+}
+
 pub trait Encode {
     fn encode(
         &mut self,
@@ -75,6 +107,48 @@ pub trait Encode {
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool>;
 }
+impl<T: EncodeV2 + ?Sized> Encode for T {
+    fn encode(
+        &mut self,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<()> {
+        forward_input_output(input, output, |input, output| self.encode_init(input, output))
+    }
+
+    fn flush(&mut self, output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>)
+        -> Result<bool>
+    {
+        forward_output(output, |output| self.flush_init(output))
+    }
+
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool>
+    {
+        forward_output(output, |output| self.finish_init(output))
+    }
+}
+
+/// Object safe version of [`Encode`], its method takes a `&mut [u8]` as output buffer.
+pub trait EncodeV2 {
+    /// same as [`Encode::encode`]
+    fn encode_init(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<()>;
+
+    /// same as [`Encode::flush`]
+    fn flush_init(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
+
+    /// same as [`Encode::finish`]
+    fn finish_init(
+        &mut self,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<bool>;
+}
 
 pub trait Decode {
     /// Reinitializes this decoder ready to decode a new member/frame of data.
@@ -86,7 +160,7 @@ pub trait Decode {
         input: &mut PartialBuffer<impl AsRef<[u8]>>,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> Result<bool>;
-
+ 
     /// Returns whether the internal buffers are flushed
     fn flush(&mut self, output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>)
         -> Result<bool>;
@@ -95,5 +169,57 @@ pub trait Decode {
     fn finish(
         &mut self,
         output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool>;
+}
+
+impl<T: DecodeV2 + ?Sized> Decode for T {
+    fn reinit(&mut self) -> Result<()> {
+        DecodeV2::reinit(self)
+    }
+
+    fn decode(
+        &mut self,
+        input: &mut PartialBuffer<impl AsRef<[u8]>>,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool> {
+        forward_input_output(input, output, |input, output| self.decode_init(input, output))
+    }
+ 
+    /// Returns whether the internal buffers are flushed
+    fn flush(&mut self, output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>)
+        -> Result<bool>
+    {
+        forward_output(output, |output| self.flush_init(output))
+    }
+
+    /// Returns whether the internal buffers are flushed
+    fn finish(
+        &mut self,
+        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+    ) -> Result<bool>
+    {
+        forward_output(output, |output| self.finish_init(output))
+    }
+}
+
+/// Object safe version of [`Decode`], its method takes a `&mut [u8]` as output buffer.
+pub trait DecodeV2 {
+    /// same as [`Decode::reinit`]
+    fn reinit(&mut self) -> Result<()>;
+
+    /// same as [`Decode::decode`]
+    fn decode_init(
+        &mut self,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut PartialBuffer<&mut [u8]>,
+    ) -> Result<bool>;
+
+    /// same as [`Decode::flush`]
+    fn flush_init(&mut self, output: &mut PartialBuffer<&mut [u8]>) -> Result<bool>;
+
+    /// same as [`Decode::finish`]
+    fn finish_init(
+        &mut self,
+        output: &mut PartialBuffer<&mut [u8]>,
     ) -> Result<bool>;
 }

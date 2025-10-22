@@ -62,10 +62,7 @@ impl Header {
 }
 
 impl Parser {
-    pub(super) fn input(
-        &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-    ) -> io::Result<Option<Header>> {
+    pub(super) fn input(&mut self, input: &mut PartialBuffer<&[u8]>) -> io::Result<Option<Header>> {
         loop {
             match &mut self.state {
                 State::Fixed(data) => {

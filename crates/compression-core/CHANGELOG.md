@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.30](https://github.com/Nullus157/async-compression/compare/compression-core-v0.4.29...compression-core-v0.4.30) - 2025-10-28
+
+### Other
+
+- Disable nightly feature `doc_auto_cfg` on docsrs ([#392](https://github.com/Nullus157/async-compression/pull/392))
+
 ## [0.4.29](https://github.com/Nullus157/async-compression/compare/compression-core-v0.4.28...compression-core-v0.4.29) - 2025-08-28
 
 ### Other

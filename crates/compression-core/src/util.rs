@@ -78,8 +78,10 @@ impl<B: AsRef<[u8]> + AsMut<[u8]>> From<B> for PartialBuffer<B> {
 ///
 /// # Layout
 ///
+/// ```
 /// |                                       buffer                                    |
 /// | written and initialized | unwritten but initialized | unwritten and uninitialized
+/// ```
 #[derive(Debug)]
 pub struct WriteBuffer<'a> {
     buffer: &'a mut [u8],

@@ -1,7 +1,9 @@
 use crate::zstd::params::DParameter;
-use crate::{Decode, DecodedSize};
-use compression_core::unshared::Unshared;
-use compression_core::util::PartialBuffer;
+use crate::{DecodeV2, DecodedSize};
+use compression_core::{
+    unshared::Unshared,
+    util::{PartialBuffer, WriteBuffer},
+};
 use libzstd::stream::raw::{Decoder, Operation};
 use std::convert::TryInto;
 use std::io;
@@ -42,9 +44,24 @@ impl ZstdDecoder {
             decoder: Unshared::new(decoder),
         })
     }
+
+    fn call_fn_on_out_buffer(
+        &mut self,
+        output: &mut WriteBuffer<'_>,
+        f: fn(&mut Decoder<'static>, &mut zstd_safe::OutBuffer<'_, [u8]>) -> io::Result<usize>,
+    ) -> io::Result<bool> {
+        output.initialize_unwritten();
+
+        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_initialized_mut());
+        let res = f(self.decoder.get_mut(), &mut out_buf);
+        let len = out_buf.as_slice().len();
+        output.advance(len);
+
+        res.map(|bytes_left| bytes_left == 0)
+    }
 }
 
-impl Decode for ZstdDecoder {
+impl DecodeV2 for ZstdDecoder {
     fn reinit(&mut self) -> Result<()> {
         self.decoder.get_mut().reinit()?;
         Ok(())
@@ -52,38 +69,26 @@ impl Decode for ZstdDecoder {
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
     ) -> Result<bool> {
+        output.initialize_unwritten();
+
         let status = self
             .decoder
             .get_mut()
-            .run_on_buffers(input.unwritten(), output.unwritten_mut())?;
+            .run_on_buffers(input.unwritten(), output.unwritten_initialized_mut())?;
         input.advance(status.bytes_read);
         output.advance(status.bytes_written);
         Ok(status.remaining == 0)
     }
 
-    fn flush(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
-        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_mut());
-        let bytes_left = self.decoder.get_mut().flush(&mut out_buf)?;
-        let len = out_buf.as_slice().len();
-        output.advance(len);
-        Ok(bytes_left == 0)
+    fn flush(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
+        self.call_fn_on_out_buffer(output, |decoder, out_buf| decoder.flush(out_buf))
     }
 
-    fn finish(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
-        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_mut());
-        let bytes_left = self.decoder.get_mut().finish(&mut out_buf, true)?;
-        let len = out_buf.as_slice().len();
-        output.advance(len);
-        Ok(bytes_left == 0)
+    fn finish(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
+        self.call_fn_on_out_buffer(output, |decoder, out_buf| decoder.finish(out_buf, true))
     }
 }
 

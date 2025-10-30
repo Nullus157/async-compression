@@ -1,5 +1,5 @@
-use crate::{Decode, DecodedSize, Xz2Decoder};
-use compression_core::util::PartialBuffer;
+use crate::{DecodeV2, DecodedSize, Xz2Decoder};
+use compression_core::util::{PartialBuffer, WriteBuffer};
 use std::{convert::TryInto, io::Result};
 
 /// Lzma decoding stream
@@ -34,30 +34,24 @@ impl LzmaDecoder {
     }
 }
 
-impl Decode for LzmaDecoder {
+impl DecodeV2 for LzmaDecoder {
     fn reinit(&mut self) -> Result<()> {
         self.inner.reinit()
     }
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
     ) -> Result<bool> {
         self.inner.decode(input, output)
     }
 
-    fn flush(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    fn flush(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
         self.inner.flush(output)
     }
 
-    fn finish(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    fn finish(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
         self.inner.finish(output)
     }
 }

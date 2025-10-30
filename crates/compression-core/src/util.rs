@@ -78,7 +78,7 @@ impl<B: AsRef<[u8]> + AsMut<[u8]>> From<B> for PartialBuffer<B> {
 ///
 /// # Layout
 ///
-/// ```
+/// ```text
 /// |                                       buffer                                    |
 /// | written and initialized | unwritten but initialized | unwritten and uninitialized
 /// ```

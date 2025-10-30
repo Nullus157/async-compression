@@ -61,7 +61,12 @@ impl Decode for ZstdDecoder {
             .run_on_buffers(input.unwritten(), output.unwritten_mut())?;
         input.advance(status.bytes_read);
         output.advance(status.bytes_written);
-        Ok(status.remaining == 0)
+
+        // See docs on remaining field
+        let finished_frame = status.remaining == 0;
+        // ...                    && "no more data"
+        let done = finished_frame && status.bytes_read == 0;
+        Ok(done)
     }
 
     fn flush(

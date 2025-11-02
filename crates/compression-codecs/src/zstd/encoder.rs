@@ -1,7 +1,9 @@
 use crate::zstd::params::CParameter;
-use crate::Encode;
-use compression_core::unshared::Unshared;
-use compression_core::util::PartialBuffer;
+use crate::EncodeV2;
+use compression_core::{
+    unshared::Unshared,
+    util::{PartialBuffer, WriteBuffer},
+};
 use libzstd::stream::raw::{Encoder, Operation};
 use std::io;
 use std::io::Result;
@@ -34,42 +36,45 @@ impl ZstdEncoder {
             encoder: Unshared::new(encoder),
         })
     }
+
+    fn call_fn_on_out_buffer(
+        &mut self,
+        output: &mut WriteBuffer<'_>,
+        f: fn(&mut Encoder<'static>, &mut zstd_safe::OutBuffer<'_, [u8]>) -> io::Result<usize>,
+    ) -> io::Result<bool> {
+        output.initialize_unwritten();
+
+        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_initialized_mut());
+        let res = f(self.encoder.get_mut(), &mut out_buf);
+        let len = out_buf.as_slice().len();
+        output.advance(len);
+
+        res.map(|bytes_left| bytes_left == 0)
+    }
 }
 
-impl Encode for ZstdEncoder {
+impl EncodeV2 for ZstdEncoder {
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
     ) -> Result<()> {
+        output.initialize_unwritten();
+
         let status = self
             .encoder
             .get_mut()
-            .run_on_buffers(input.unwritten(), output.unwritten_mut())?;
+            .run_on_buffers(input.unwritten(), output.unwritten_initialized_mut())?;
         input.advance(status.bytes_read);
         output.advance(status.bytes_written);
         Ok(())
     }
 
-    fn flush(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
-        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_mut());
-        let bytes_left = self.encoder.get_mut().flush(&mut out_buf)?;
-        let len = out_buf.as_slice().len();
-        output.advance(len);
-        Ok(bytes_left == 0)
+    fn flush(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
+        self.call_fn_on_out_buffer(output, |encoder, out_buf| encoder.flush(out_buf))
     }
 
-    fn finish(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
-        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_mut());
-        let bytes_left = self.encoder.get_mut().finish(&mut out_buf, true)?;
-        let len = out_buf.as_slice().len();
-        output.advance(len);
-        Ok(bytes_left == 0)
+    fn finish(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
+        self.call_fn_on_out_buffer(output, |encoder, out_buf| encoder.finish(out_buf, true))
     }
 }

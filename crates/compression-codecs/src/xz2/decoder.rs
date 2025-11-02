@@ -1,5 +1,5 @@
-use crate::{lzma::params::LzmaDecoderParams, Decode, DecodedSize};
-use compression_core::util::PartialBuffer;
+use crate::{lzma::params::LzmaDecoderParams, DecodeV2, DecodedSize};
+use compression_core::util::{PartialBuffer, WriteBuffer};
 use liblzma::stream::{Action, Status, Stream};
 use std::{
     convert::TryFrom,
@@ -52,9 +52,33 @@ impl Xz2Decoder {
 
         Self::try_from(params).unwrap()
     }
+
+    /// Return `Ok(true)` on stream ends.
+    fn process(
+        &mut self,
+        input: &[u8],
+        output: &mut WriteBuffer<'_>,
+        action: Action,
+    ) -> io::Result<bool> {
+        let previous_out = self.stream.total_out() as usize;
+
+        output.initialize_unwritten();
+        let status = self
+            .stream
+            .process(input, output.unwritten_initialized_mut(), action)?;
+
+        output.advance(self.stream.total_out() as usize - previous_out);
+
+        match status {
+            Status::Ok => Ok(false),
+            Status::StreamEnd => Ok(true),
+            Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
+            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
+        }
+    }
 }
 
-impl Decode for Xz2Decoder {
+impl DecodeV2 for Xz2Decoder {
     fn reinit(&mut self) -> io::Result<()> {
         *self = Self::try_from(self.params.clone())?;
         Ok(())
@@ -62,53 +86,24 @@ impl Decode for Xz2Decoder {
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
     ) -> io::Result<bool> {
         let previous_in = self.stream.total_in() as usize;
-        let previous_out = self.stream.total_out() as usize;
 
-        let status = self
-            .stream
-            .process(input.unwritten(), output.unwritten_mut(), Action::Run)?;
-
+        let res = self.process(input.unwritten(), output, Action::Run);
         input.advance(self.stream.total_in() as usize - previous_in);
-        output.advance(self.stream.total_out() as usize - previous_out);
 
-        match status {
-            Status::Ok => Ok(false),
-            Status::StreamEnd => Ok(true),
-            Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
-            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
-        }
+        res
     }
 
-    fn flush(
-        &mut self,
-        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<bool> {
+    fn flush(&mut self, _output: &mut WriteBuffer<'_>) -> io::Result<bool> {
         // While decoding flush is a noop
         Ok(true)
     }
 
-    fn finish(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<bool> {
-        let previous_out = self.stream.total_out() as usize;
-
-        let status = self
-            .stream
-            .process(&[], output.unwritten_mut(), Action::Finish)?;
-
-        output.advance(self.stream.total_out() as usize - previous_out);
-
-        match status {
-            Status::Ok => Ok(false),
-            Status::StreamEnd => Ok(true),
-            Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
-            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
-        }
+    fn finish(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
+        self.process(&[], output, Action::Finish)
     }
 }
 

@@ -1,6 +1,6 @@
 use super::header::{self, Header};
-use crate::{Decode, FlateDecoder};
-use compression_core::util::PartialBuffer;
+use crate::{DecodeV2, FlateDecoder};
+use compression_core::util::{PartialBuffer, WriteBuffer};
 use flate2::Crc;
 use std::io::{Error, ErrorKind, Result};
 
@@ -64,11 +64,11 @@ impl GzipDecoder {
         Self::default()
     }
 
-    fn process<I: AsRef<[u8]>, O: AsRef<[u8]> + AsMut<[u8]>>(
+    fn process(
         &mut self,
-        input: &mut PartialBuffer<I>,
-        output: &mut PartialBuffer<O>,
-        inner: impl Fn(&mut Self, &mut PartialBuffer<I>, &mut PartialBuffer<O>) -> Result<bool>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
+        inner: impl Fn(&mut Self, &mut PartialBuffer<&[u8]>, &mut WriteBuffer<'_>) -> Result<bool>,
     ) -> Result<bool> {
         loop {
             match &mut self.state {
@@ -80,11 +80,11 @@ impl GzipDecoder {
                 }
 
                 State::Decoding => {
-                    let prior = output.written().len();
+                    let prior = output.written_len();
 
                     let res = inner(self, input, output);
 
-                    if output.written().len() > prior {
+                    if output.written_len() > prior {
                         // update CRC even if there was an error
                         self.crc.update(&output.written()[prior..]);
                     }
@@ -112,14 +112,14 @@ impl GzipDecoder {
                 return Ok(true);
             }
 
-            if input.unwritten().is_empty() || output.unwritten().is_empty() {
+            if input.unwritten().is_empty() || output.has_no_spare_space() {
                 return Ok(false);
             }
         }
     }
 }
 
-impl Decode for GzipDecoder {
+impl DecodeV2 for GzipDecoder {
     fn reinit(&mut self) -> Result<()> {
         self.inner.reinit()?;
         self.crc = Crc::new();
@@ -130,24 +130,21 @@ impl Decode for GzipDecoder {
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
     ) -> Result<bool> {
         self.process(input, output, |this, input, output| {
             this.inner.decode(input, output)
         })
     }
 
-    fn flush(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    fn flush(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
         loop {
             match self.state {
                 State::Header(_) | State::Footer(_) | State::Done => return Ok(true),
 
                 State::Decoding => {
-                    let prior = output.written().len();
+                    let prior = output.written_len();
                     let done = self.inner.flush(output)?;
                     self.crc.update(&output.written()[prior..]);
                     if done {
@@ -156,24 +153,18 @@ impl Decode for GzipDecoder {
                 }
             };
 
-            if output.unwritten().is_empty() {
+            if output.has_no_spare_space() {
                 return Ok(false);
             }
         }
     }
 
-    fn finish(
-        &mut self,
-        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> Result<bool> {
+    fn finish(&mut self, _output: &mut WriteBuffer<'_>) -> Result<bool> {
         // Because of the footer we have to have already flushed all the data out before we get here
         if let State::Done = self.state {
             Ok(true)
         } else {
-            Err(Error::new(
-                ErrorKind::UnexpectedEof,
-                "unexpected end of file",
-            ))
+            Err(Error::from(ErrorKind::UnexpectedEof))
         }
     }
 }

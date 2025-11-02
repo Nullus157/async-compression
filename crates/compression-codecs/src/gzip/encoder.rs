@@ -1,5 +1,5 @@
-use crate::{flate::params::FlateEncoderParams, Encode, FlateEncoder};
-use compression_core::util::PartialBuffer;
+use crate::{flate::params::FlateEncoderParams, EncodeV2, FlateEncoder};
+use compression_core::util::{PartialBuffer, WriteBuffer};
 use flate2::{Compression, Crc};
 use std::io;
 
@@ -49,11 +49,11 @@ impl GzipEncoder {
     }
 }
 
-impl Encode for GzipEncoder {
+impl EncodeV2 for GzipEncoder {
     fn encode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
     ) -> io::Result<()> {
         loop {
             match &mut self.state {
@@ -76,16 +76,13 @@ impl Encode for GzipEncoder {
                 }
             };
 
-            if input.unwritten().is_empty() || output.unwritten().is_empty() {
+            if input.unwritten().is_empty() || output.has_no_spare_space() {
                 return Ok(());
             }
         }
     }
 
-    fn flush(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<bool> {
+    fn flush(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
         loop {
             let done = match &mut self.state {
                 State::Header(header) => {
@@ -117,16 +114,13 @@ impl Encode for GzipEncoder {
                 return Ok(true);
             }
 
-            if output.unwritten().is_empty() {
+            if output.has_no_spare_space() {
                 return Ok(false);
             }
         }
     }
 
-    fn finish(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<bool> {
+    fn finish(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
         loop {
             match &mut self.state {
                 State::Header(header) => {
@@ -158,7 +152,7 @@ impl Encode for GzipEncoder {
                 return Ok(true);
             }
 
-            if output.unwritten().is_empty() {
+            if output.has_no_spare_space() {
                 return Ok(false);
             }
         }

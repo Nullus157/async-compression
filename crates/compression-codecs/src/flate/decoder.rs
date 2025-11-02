@@ -1,5 +1,5 @@
-use crate::Decode;
-use compression_core::util::PartialBuffer;
+use crate::DecodeV2;
+use compression_core::util::{PartialBuffer, WriteBuffer};
 use flate2::{Decompress, FlushDecompress, Status};
 use std::io;
 
@@ -19,16 +19,20 @@ impl FlateDecoder {
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
         flush: FlushDecompress,
     ) -> io::Result<Status> {
+        output.initialize_unwritten();
+
         let prior_in = self.decompress.total_in();
         let prior_out = self.decompress.total_out();
 
-        let status =
-            self.decompress
-                .decompress(input.unwritten(), output.unwritten_mut(), flush)?;
+        let status = self.decompress.decompress(
+            input.unwritten(),
+            output.unwritten_initialized_mut(),
+            flush,
+        )?;
 
         input.advance((self.decompress.total_in() - prior_in) as usize);
         output.advance((self.decompress.total_out() - prior_out) as usize);
@@ -37,7 +41,7 @@ impl FlateDecoder {
     }
 }
 
-impl Decode for FlateDecoder {
+impl DecodeV2 for FlateDecoder {
     fn reinit(&mut self) -> io::Result<()> {
         self.decompress.reset(self.zlib_header);
         Ok(())
@@ -45,8 +49,8 @@ impl Decode for FlateDecoder {
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<impl AsRef<[u8]>>,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        input: &mut PartialBuffer<&[u8]>,
+        output: &mut WriteBuffer<'_>,
     ) -> io::Result<bool> {
         match self.decode(input, output, FlushDecompress::None)? {
             Status::Ok => Ok(false),
@@ -55,10 +59,7 @@ impl Decode for FlateDecoder {
         }
     }
 
-    fn flush(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<bool> {
+    fn flush(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
         self.decode(
             &mut PartialBuffer::new(&[][..]),
             output,
@@ -66,24 +67,21 @@ impl Decode for FlateDecoder {
         )?;
 
         loop {
-            let old_len = output.written().len();
+            let old_len = output.written_len();
             self.decode(
                 &mut PartialBuffer::new(&[][..]),
                 output,
                 FlushDecompress::None,
             )?;
-            if output.written().len() == old_len {
+            if output.written_len() == old_len {
                 break;
             }
         }
 
-        Ok(!output.unwritten().is_empty())
+        Ok(!output.has_no_spare_space())
     }
 
-    fn finish(
-        &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
-    ) -> io::Result<bool> {
+    fn finish(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
         match self.decode(
             &mut PartialBuffer::new(&[][..]),
             output,

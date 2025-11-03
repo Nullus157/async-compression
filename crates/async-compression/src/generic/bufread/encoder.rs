@@ -154,8 +154,11 @@ macro_rules! impl_encoder {
             ) -> Poll<Result<()>> {
                 let mut this = self.project();
 
-                // TODO (nobodyxu): Maybe do_poll_read with input as `None`, to flush any
-                // existing data ASAP instead of waiting for poll_fill_buf
+                if let ControlFlow::Break(res) =
+                    this.inner.do_poll_read(output, &mut *this.encoder, None)
+                {
+                    return Poll::Ready(res);
+                }
 
                 loop {
                     let mut input = match this.reader.as_mut().poll_fill_buf(cx) {

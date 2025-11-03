@@ -1,4 +1,4 @@
-use crate::{codecs::Decode, core::util::PartialBuffer, generic::bufread::impl_do_poll_read};
+use crate::{codecs::Decode, core::util::PartialBuffer, generic::bufread::impl_decoder};
 
 use core::{
     pin::Pin,
@@ -8,7 +8,7 @@ use std::io::{IoSlice, Result};
 
 use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite};
 
-impl_do_poll_read!();
+impl_decoder!();
 
 impl<R: AsyncBufRead, D: Decode> AsyncRead for Decoder<R, D> {
     fn poll_read(

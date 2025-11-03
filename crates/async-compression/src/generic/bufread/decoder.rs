@@ -108,7 +108,7 @@ impl Decoder {
     }
 }
 
-macro_rules! impl_do_poll_read {
+macro_rules! impl_decoder {
     () => {
         use crate::generic::bufread::Decoder as GenericDecoder;
 
@@ -195,4 +195,4 @@ macro_rules! impl_do_poll_read {
         }
     };
 }
-pub(crate) use impl_do_poll_read;
+pub(crate) use impl_decoder;

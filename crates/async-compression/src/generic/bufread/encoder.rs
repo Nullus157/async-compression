@@ -35,9 +35,12 @@ impl Encoder {
                 State::Encoding(mut read) => match input.as_mut() {
                     None => {
                         if read == 0 {
-                            // Poll for more data
-                            // TODO (nobodyxu): Return Ok if `!output.written().is_empty()`
-                            break;
+                            if output.written().is_empty() {
+                                // Poll for more data
+                                break;
+                            } else {
+                                return ControlFlow::Break(Ok(()));
+                            }
                         } else {
                             State::Flushing
                         }

@@ -27,7 +27,7 @@ impl Default for Decoder {
 }
 
 impl Decoder {
-    pub fn do_poll_write(
+    fn do_poll_write(
         &mut self,
         cx: &mut Context<'_>,
         input: &mut PartialBuffer<&[u8]>,
@@ -70,6 +70,25 @@ impl Decoder {
             if input.unwritten().is_empty() {
                 return Poll::Ready(Ok(()));
             }
+        }
+    }
+
+    pub fn poll_write(
+        &mut self,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+        writer: Pin<&mut dyn AsyncBufWrite>,
+        decoder: &mut impl Decode,
+    ) -> Poll<io::Result<usize>> {
+        if buf.is_empty() {
+            return Poll::Ready(Ok(0));
+        }
+
+        let mut input = PartialBuffer::new(buf);
+
+        match self.do_poll_write(cx, &mut input, writer, decoder)? {
+            Poll::Pending if input.written().is_empty() => Poll::Pending,
+            _ => Poll::Ready(Ok(input.written().len())),
         }
     }
 
@@ -169,17 +188,6 @@ macro_rules! impl_decoder {
         }
 
         impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
-            fn do_poll_write(
-                self: Pin<&mut Self>,
-                cx: &mut Context<'_>,
-                input: &mut PartialBuffer<&[u8]>,
-            ) -> Poll<io::Result<()>> {
-                let mut this = self.project();
-
-                this.inner
-                    .do_poll_write(cx, input, this.writer, this.decoder)
-            }
-
             fn do_poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
                 let mut this = self.project();
 
@@ -193,16 +201,9 @@ macro_rules! impl_decoder {
                 cx: &mut Context<'_>,
                 buf: &[u8],
             ) -> Poll<io::Result<usize>> {
-                if buf.is_empty() {
-                    return Poll::Ready(Ok(0));
-                }
+                let mut this = self.project();
 
-                let mut input = PartialBuffer::new(buf);
-
-                match self.do_poll_write(cx, &mut input)? {
-                    Poll::Pending if input.written().is_empty() => Poll::Pending,
-                    _ => Poll::Ready(Ok(input.written().len())),
-                }
+                this.inner.poll_write(cx, buf, this.writer, this.decoder)
             }
 
             fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {

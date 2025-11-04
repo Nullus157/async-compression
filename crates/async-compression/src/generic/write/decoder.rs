@@ -208,8 +208,7 @@ macro_rules! impl_decoder {
 
             fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
                 ready!(self.as_mut().do_poll_flush(cx))?;
-                ready!(self.project().writer.as_mut().poll_flush(cx))?;
-                Poll::Ready(Ok(()))
+                self.project().writer.poll_flush(cx)
             }
 
             fn $poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
@@ -219,8 +218,7 @@ macro_rules! impl_decoder {
 
                 let this = self.project();
                 if this.inner.is_done() {
-                    ready!(this.writer.$poll_close(cx))?;
-                    Poll::Ready(Ok(()))
+                    this.writer.$poll_close(cx)
                 } else {
                     Poll::Ready(Err(io::Error::other(
                         "Attempt to close before finishing input",

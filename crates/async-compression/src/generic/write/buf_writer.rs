@@ -47,7 +47,7 @@ impl BufWriter {
     }
 
     /// Remove the already written data
-    fn reshuffle_and_remove_written(&mut self) {
+    fn remove_written(&mut self) {
         self.buf.copy_within(self.written..self.buffered, 0);
         self.buffered -= self.written;
         self.written = 0;
@@ -82,11 +82,7 @@ impl BufWriter {
             Ok(())
         };
 
-        if self.written > 0 {
-            self.reshuffle_and_remove_written();
-
-            Poll::Ready(ret)
-        } else if self.buffered == 0 {
+        if self.written > 0 || self.buffered < self.buf.len() {
             Poll::Ready(ret)
         } else {
             ret?;
@@ -99,7 +95,11 @@ impl BufWriter {
         poll_write: &mut dyn FnMut(&[u8]) -> Poll<io::Result<usize>>,
     ) -> Poll<io::Result<()>> {
         let ret = ready!(self.do_flush(poll_write));
-        self.reshuffle_and_remove_written();
+
+        debug_assert_eq!(self.buffered, self.written);
+        self.buffered = 0;
+        self.written = 0;
+
         Poll::Ready(ret)
     }
 
@@ -108,22 +108,24 @@ impl BufWriter {
         buf: &[u8],
         poll_write: &mut dyn FnMut(&[u8]) -> Poll<io::Result<usize>>,
     ) -> Poll<io::Result<usize>> {
-        if self.buffered + buf.len() > self.buf.len() {
-            ready!(self.partial_flush_buf(poll_write))?;
-        }
-
         if buf.len() >= self.buf.len() {
-            if self.buffered == 0 {
-                poll_write(buf)
-            } else {
-                // The only way that `partial_flush_buf` would have returned with
-                // `this.buffered != 0` is if it were Pending, so our waker was already queued
-                Poll::Pending
-            }
+            ready!(self.flush_buf(poll_write))?;
+            poll_write(buf)
+        } else if (self.buf.len() - self.buffered) >= buf.len() {
+            self.buf[self.buffered..].copy_from_slice(buf);
+            self.buffered += buf.len();
+
+            Poll::Ready(Ok(buf.len()))
         } else {
+            ready!(self.partial_flush_buf(poll_write))?;
+            if self.written > 0 {
+                self.remove_written();
+            }
+
             let len = buf.len().min(self.buf.len() - self.buffered);
             self.buf[self.buffered..self.buffered + len].copy_from_slice(&buf[..len]);
             self.buffered += len;
+
             Poll::Ready(Ok(len))
         }
     }
@@ -133,6 +135,11 @@ impl BufWriter {
         poll_write: &mut dyn FnMut(&[u8]) -> Poll<io::Result<usize>>,
     ) -> Poll<io::Result<&mut [u8]>> {
         ready!(self.partial_flush_buf(poll_write))?;
+
+        if self.written > 0 {
+            self.remove_written();
+        }
+
         Poll::Ready(Ok(&mut self.buf[self.buffered..]))
     }
 

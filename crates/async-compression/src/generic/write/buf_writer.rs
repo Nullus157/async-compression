@@ -46,35 +46,44 @@ impl BufWriter {
         }
     }
 
+    /// Remove the already written data
+    fn reshuffle_and_remove_written(&mut self) {
+        self.buf.copy_within(self.written..self.buffered, 0);
+        self.buffered -= self.written;
+        self.written = 0;
+    }
+
+    fn do_flush(
+        &mut self,
+        poll_write: &mut dyn FnMut(&[u8]) -> Poll<io::Result<usize>>,
+    ) -> Poll<io::Result<()>> {
+        while self.written < self.buffered {
+            let bytes_written = ready!(poll_write(&self.buf[self.written..self.buffered]))?;
+            if bytes_written == 0 {
+                return Poll::Ready(Err(io::Error::new(
+                    io::ErrorKind::WriteZero,
+                    "failed to write the buffered data",
+                )));
+            }
+
+            self.written += bytes_written;
+        }
+
+        Poll::Ready(Ok(()))
+    }
+
     fn partial_flush_buf(
         &mut self,
         poll_write: &mut dyn FnMut(&[u8]) -> Poll<io::Result<usize>>,
     ) -> Poll<io::Result<()>> {
-        let mut ret = Ok(());
-        while self.written < self.buffered {
-            match poll_write(&self.buf[self.written..self.buffered]) {
-                Poll::Pending => {
-                    break;
-                }
-                Poll::Ready(Ok(0)) => {
-                    ret = Err(io::Error::new(
-                        io::ErrorKind::WriteZero,
-                        "failed to write the buffered data",
-                    ));
-                    break;
-                }
-                Poll::Ready(Ok(n)) => self.written += n,
-                Poll::Ready(Err(e)) => {
-                    ret = Err(e);
-                    break;
-                }
-            }
-        }
+        let ret = if let Poll::Ready(res) = self.do_flush(poll_write) {
+            res
+        } else {
+            Ok(())
+        };
 
         if self.written > 0 {
-            self.buf.copy_within(self.written..self.buffered, 0);
-            self.buffered -= self.written;
-            self.written = 0;
+            self.reshuffle_and_remove_written();
 
             Poll::Ready(ret)
         } else if self.buffered == 0 {
@@ -89,26 +98,8 @@ impl BufWriter {
         &mut self,
         poll_write: &mut dyn FnMut(&[u8]) -> Poll<io::Result<usize>>,
     ) -> Poll<io::Result<()>> {
-        let mut ret = Ok(());
-        while self.written < self.buffered {
-            match ready!(poll_write(&self.buf[self.written..self.buffered])) {
-                Ok(0) => {
-                    ret = Err(io::Error::new(
-                        io::ErrorKind::WriteZero,
-                        "failed to write the buffered data",
-                    ));
-                    break;
-                }
-                Ok(n) => self.written += n,
-                Err(e) => {
-                    ret = Err(e);
-                    break;
-                }
-            }
-        }
-        self.buf.copy_within(self.written..self.buffered, 0);
-        self.buffered -= self.written;
-        self.written = 0;
+        let ret = ready!(self.do_flush(poll_write));
+        self.reshuffle_and_remove_written();
         Poll::Ready(ret)
     }
 

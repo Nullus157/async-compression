@@ -214,13 +214,17 @@ macro_rules! impl_buf_writer {
             }
         }
 
+        fn get_poll_write<'a, 'b, W: AsyncWrite>(
+            mut writer: Pin<&'a mut W>,
+            cx: &'a mut Context<'b>,
+        ) -> impl for<'buf> FnMut(&'buf [u8]) -> Poll<io::Result<usize>> + use<'a, 'b, W> {
+            move |buf| writer.as_mut().poll_write(cx, buf)
+        }
+
         impl<W: AsyncWrite> BufWriter<W> {
             fn flush_buf(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
                 let this = self.project();
-                let mut writer = this.writer;
-
-                this.inner
-                    .flush_buf(&mut move |buf| writer.as_mut().poll_write(cx, buf))
+                this.inner.flush_buf(&mut get_poll_write(this.writer, cx))
             }
         }
 
@@ -231,10 +235,8 @@ macro_rules! impl_buf_writer {
                 buf: &[u8],
             ) -> Poll<io::Result<usize>> {
                 let this = self.project();
-                let mut writer = this.writer;
-
                 this.inner
-                    .poll_write(buf, &mut move |buf| writer.as_mut().poll_write(cx, buf))
+                    .poll_write(buf, &mut get_poll_write(this.writer, cx))
             }
 
             fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
@@ -254,10 +256,8 @@ macro_rules! impl_buf_writer {
                 cx: &mut Context<'_>,
             ) -> Poll<io::Result<&mut [u8]>> {
                 let this = self.project();
-                let mut writer = this.writer;
-
                 this.inner
-                    .poll_partial_flush_buf(&mut move |buf| writer.as_mut().poll_write(cx, buf))
+                    .poll_partial_flush_buf(&mut get_poll_write(this.writer, cx))
             }
 
             fn produce(self: Pin<&mut Self>, amt: usize) {

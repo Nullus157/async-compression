@@ -17,6 +17,7 @@ struct DecoderContext {
 #[derive(Debug)]
 pub struct Lz4Decoder {
     ctx: Unshared<DecoderContext>,
+    stream_ended: bool,
 }
 
 impl DecoderContext {
@@ -37,6 +38,7 @@ impl Default for Lz4Decoder {
     fn default() -> Self {
         Self {
             ctx: Unshared::new(DecoderContext::new().unwrap()),
+            stream_ended: false,
         }
     }
 }
@@ -50,6 +52,7 @@ impl Lz4Decoder {
 impl DecodeV2 for Lz4Decoder {
     fn reinit(&mut self) -> Result<()> {
         unsafe { LZ4F_resetDecompressionContext(self.ctx.get_mut().ctx) };
+        self.stream_ended = false;
         Ok(())
     }
 
@@ -74,7 +77,12 @@ impl DecodeV2 for Lz4Decoder {
         };
         input.advance(input_size);
         output.advance(output_size);
-        Ok(remaining == 0)
+
+        let finished = remaining == 0;
+        if finished {
+            self.stream_ended = true;
+        }
+        Ok(finished)
     }
 
     fn flush(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
@@ -92,6 +100,15 @@ impl DecodeV2 for Lz4Decoder {
     }
 
     fn finish(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
-        self.flush(output)
+        self.flush(output)?;
+
+        if self.stream_ended {
+            Ok(true)
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "lz4 stream did not finish",
+            ))
+        }
     }
 }

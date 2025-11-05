@@ -1,4 +1,8 @@
-use crate::{codecs::Decode, core::util::PartialBuffer, generic::bufread::impl_decoder};
+use crate::{
+    codecs::DecodeV2,
+    core::util::{PartialBuffer, WriteBuffer},
+    generic::bufread::impl_decoder,
+};
 
 use core::{
     pin::Pin,
@@ -10,7 +14,7 @@ use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};
 
 impl_decoder!();
 
-impl<R: AsyncBufRead, D: Decode> AsyncRead for Decoder<R, D> {
+impl<R: AsyncBufRead, D: DecodeV2> AsyncRead for Decoder<R, D> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -20,11 +24,11 @@ impl<R: AsyncBufRead, D: Decode> AsyncRead for Decoder<R, D> {
             return Poll::Ready(Ok(()));
         }
 
-        let mut output = PartialBuffer::new(buf.initialize_unfilled());
+        let mut output = WriteBuffer::new_initialized(buf.initialize_unfilled());
         match self.do_poll_read(cx, &mut output)? {
             Poll::Pending if output.written().is_empty() => Poll::Pending,
             _ => {
-                let len = output.written().len();
+                let len = output.written_len();
                 buf.advance(len);
                 Poll::Ready(Ok(()))
             }
@@ -32,7 +36,7 @@ impl<R: AsyncBufRead, D: Decode> AsyncRead for Decoder<R, D> {
     }
 }
 
-impl<R: AsyncWrite, D: Decode> AsyncWrite for Decoder<R, D> {
+impl<R: AsyncWrite, D> AsyncWrite for Decoder<R, D> {
     fn poll_write(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,

@@ -1,4 +1,7 @@
-use crate::{codecs::Encode, core::util::PartialBuffer};
+use crate::{
+    codecs::EncodeV2,
+    core::util::{PartialBuffer, WriteBuffer},
+};
 use std::{io::Result, ops::ControlFlow};
 
 #[derive(Debug)]
@@ -26,8 +29,8 @@ impl Encoder {
     /// `input` - should be `None` if `Poll::Pending`.
     pub fn do_poll_read(
         &mut self,
-        output: &mut PartialBuffer<&mut [u8]>,
-        encoder: &mut impl Encode,
+        output: &mut WriteBuffer<'_>,
+        encoder: &mut dyn EncodeV2,
         mut input: Option<&mut PartialBuffer<&[u8]>>,
     ) -> ControlFlow<Result<()>> {
         loop {
@@ -81,12 +84,12 @@ impl Encoder {
                 State::Done => return ControlFlow::Break(Ok(())),
             };
 
-            if output.unwritten().is_empty() {
+            if output.has_no_spare_space() {
                 return ControlFlow::Break(Ok(()));
             }
         }
 
-        if output.unwritten().is_empty() {
+        if output.has_no_spare_space() {
             ControlFlow::Break(Ok(()))
         } else {
             ControlFlow::Continue(())
@@ -113,7 +116,7 @@ macro_rules! impl_encoder {
             }
         }
 
-        impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
+        impl<R: AsyncBufRead, E: EncodeV2> Encoder<R, E> {
             pub fn new(reader: R, encoder: E) -> Self {
                 Self {
                     reader,
@@ -149,11 +152,11 @@ macro_rules! impl_encoder {
             }
         }
 
-        impl<R: AsyncBufRead, E: Encode> Encoder<R, E> {
+        impl<R: AsyncBufRead, E: EncodeV2> Encoder<R, E> {
             fn do_poll_read(
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
-                output: &mut PartialBuffer<&mut [u8]>,
+                output: &mut WriteBuffer<'_>,
             ) -> Poll<Result<()>> {
                 let mut this = self.project();
 

@@ -1,16 +1,18 @@
-use crate::{codecs::Decode, core::util::PartialBuffer, generic::bufread::impl_decoder};
-
+use crate::{
+    codecs::DecodeV2,
+    core::util::{PartialBuffer, WriteBuffer},
+    generic::bufread::impl_decoder,
+};
 use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::{IoSlice, Result};
-
 use futures_io::{AsyncBufRead, AsyncRead, AsyncWrite};
+use std::io::{IoSlice, Result};
 
 impl_decoder!();
 
-impl<R: AsyncBufRead, D: Decode> AsyncRead for Decoder<R, D> {
+impl<R: AsyncBufRead, D: DecodeV2> AsyncRead for Decoder<R, D> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -20,10 +22,10 @@ impl<R: AsyncBufRead, D: Decode> AsyncRead for Decoder<R, D> {
             return Poll::Ready(Ok(0));
         }
 
-        let mut output = PartialBuffer::new(buf);
+        let mut output = WriteBuffer::new_initialized(buf);
         match self.do_poll_read(cx, &mut output)? {
             Poll::Pending if output.written().is_empty() => Poll::Pending,
-            _ => Poll::Ready(Ok(output.written().len())),
+            _ => Poll::Ready(Ok(output.written_len())),
         }
     }
 }

@@ -1,11 +1,14 @@
+use crate::{
+    codecs::EncodeV2,
+    core::util::{PartialBuffer, WriteBuffer},
+    generic::write::AsyncBufWrite,
+};
+use futures_core::ready;
 use std::{
     io,
     pin::Pin,
     task::{Context, Poll},
 };
-
-use crate::{codecs::Encode, core::util::PartialBuffer, generic::write::AsyncBufWrite};
-use futures_core::ready;
 
 #[derive(Debug)]
 enum State {
@@ -33,11 +36,11 @@ impl Encoder {
         cx: &mut Context<'_>,
         input: &mut PartialBuffer<&[u8]>,
         mut writer: Pin<&mut dyn AsyncBufWrite>,
-        encoder: &mut impl Encode,
+        encoder: &mut dyn EncodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
             let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = PartialBuffer::new(output);
+            let mut output = WriteBuffer::new_initialized(output);
 
             self.state = match self.state {
                 State::Encoding => {
@@ -50,7 +53,7 @@ impl Encoder {
                 }
             };
 
-            let produced = output.written().len();
+            let produced = output.written_len();
             writer.as_mut().produce(produced);
 
             if input.unwritten().is_empty() {
@@ -64,7 +67,7 @@ impl Encoder {
         cx: &mut Context<'_>,
         buf: &[u8],
         writer: Pin<&mut dyn AsyncBufWrite>,
-        encoder: &mut impl Encode,
+        encoder: &mut dyn EncodeV2,
     ) -> Poll<io::Result<usize>> {
         if buf.is_empty() {
             return Poll::Ready(Ok(0));
@@ -82,11 +85,11 @@ impl Encoder {
         &mut self,
         cx: &mut Context<'_>,
         mut writer: Pin<&mut dyn AsyncBufWrite>,
-        encoder: &mut impl Encode,
+        encoder: &mut dyn EncodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
             let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = PartialBuffer::new(output);
+            let mut output = WriteBuffer::new_initialized(output);
 
             let done = match self.state {
                 State::Encoding => encoder.flush(&mut output)?,
@@ -96,7 +99,7 @@ impl Encoder {
                 }
             };
 
-            let produced = output.written().len();
+            let produced = output.written_len();
             writer.as_mut().produce(produced);
 
             if done {
@@ -109,11 +112,11 @@ impl Encoder {
         &mut self,
         cx: &mut Context<'_>,
         mut writer: Pin<&mut dyn AsyncBufWrite>,
-        encoder: &mut impl Encode,
+        encoder: &mut dyn EncodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
             let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = PartialBuffer::new(output);
+            let mut output = WriteBuffer::new_initialized(output);
 
             self.state = match self.state {
                 State::Encoding | State::Finishing => {
@@ -127,7 +130,7 @@ impl Encoder {
                 State::Done => State::Done,
             };
 
-            let produced = output.written().len();
+            let produced = output.written_len();
             writer.as_mut().produce(produced);
 
             if let State::Done = self.state {
@@ -139,7 +142,7 @@ impl Encoder {
 
 macro_rules! impl_encoder {
     ($poll_close: tt) => {
-        use crate::{codecs::Encode, generic::write::Encoder as GenericEncoder};
+        use crate::{codecs::EncodeV2, generic::write::Encoder as GenericEncoder};
         use futures_core::ready;
         use pin_project_lite::pin_project;
 
@@ -191,7 +194,7 @@ macro_rules! impl_encoder {
             }
         }
 
-        impl<W: AsyncWrite, E: Encode> AsyncWrite for Encoder<W, E> {
+        impl<W: AsyncWrite, E: EncodeV2> AsyncWrite for Encoder<W, E> {
             fn poll_write(
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,

@@ -1,5 +1,7 @@
-use crate::codecs::Decode;
-use crate::core::util::PartialBuffer;
+use crate::{
+    codecs::DecodeV2,
+    core::util::{PartialBuffer, WriteBuffer},
+};
 
 use std::{io::Result, ops::ControlFlow};
 
@@ -31,10 +33,10 @@ impl Decoder {
         self.multiple_members = enabled;
     }
 
-    pub fn do_poll_read<D: Decode>(
+    pub fn do_poll_read(
         &mut self,
-        output: &mut PartialBuffer<&mut [u8]>,
-        decoder: &mut D,
+        output: &mut WriteBuffer<'_>,
+        decoder: &mut dyn DecodeV2,
         input: &mut PartialBuffer<&[u8]>,
         mut first: bool,
     ) -> ControlFlow<Result<()>> {
@@ -95,12 +97,12 @@ impl Decoder {
                 }
             };
 
-            if output.unwritten().is_empty() {
+            if output.has_no_spare_space() {
                 return ControlFlow::Break(Ok(()));
             }
         }
 
-        if output.unwritten().is_empty() {
+        if output.has_no_spare_space() {
             ControlFlow::Break(Ok(()))
         } else {
             ControlFlow::Continue(())
@@ -127,7 +129,7 @@ macro_rules! impl_decoder {
             }
         }
 
-        impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
+        impl<R: AsyncBufRead, D: DecodeV2> Decoder<R, D> {
             pub fn new(reader: R, decoder: D) -> Self {
                 Self {
                     reader,
@@ -159,11 +161,11 @@ macro_rules! impl_decoder {
             }
         }
 
-        impl<R: AsyncBufRead, D: Decode> Decoder<R, D> {
+        impl<R: AsyncBufRead, D: DecodeV2> Decoder<R, D> {
             fn do_poll_read(
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
-                output: &mut PartialBuffer<&mut [u8]>,
+                output: &mut WriteBuffer<'_>,
             ) -> Poll<Result<()>> {
                 let mut this = self.project();
 

@@ -1,4 +1,8 @@
-use crate::{codecs::Decode, core::util::PartialBuffer, generic::write::AsyncBufWrite};
+use crate::{
+    codecs::DecodeV2,
+    core::util::{PartialBuffer, WriteBuffer},
+    generic::write::AsyncBufWrite,
+};
 use futures_core::ready;
 use std::{
     io,
@@ -32,11 +36,11 @@ impl Decoder {
         cx: &mut Context<'_>,
         input: &mut PartialBuffer<&[u8]>,
         mut writer: Pin<&mut dyn AsyncBufWrite>,
-        decoder: &mut impl Decode,
+        decoder: &mut dyn DecodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
             let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = PartialBuffer::new(output);
+            let mut output = WriteBuffer::new_initialized(output);
 
             self.state = match self.state {
                 State::Decoding => {
@@ -60,7 +64,7 @@ impl Decoder {
                 }
             };
 
-            let produced = output.written().len();
+            let produced = output.written_len();
             writer.as_mut().produce(produced);
 
             if let State::Done = self.state {
@@ -78,7 +82,7 @@ impl Decoder {
         cx: &mut Context<'_>,
         buf: &[u8],
         writer: Pin<&mut dyn AsyncBufWrite>,
-        decoder: &mut impl Decode,
+        decoder: &mut dyn DecodeV2,
     ) -> Poll<io::Result<usize>> {
         if buf.is_empty() {
             return Poll::Ready(Ok(0));
@@ -96,11 +100,11 @@ impl Decoder {
         &mut self,
         cx: &mut Context<'_>,
         mut writer: Pin<&mut dyn AsyncBufWrite>,
-        decoder: &mut impl Decode,
+        decoder: &mut dyn DecodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
             let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = PartialBuffer::new(output);
+            let mut output = WriteBuffer::new_initialized(output);
 
             let (state, done) = match self.state {
                 State::Decoding => {
@@ -121,7 +125,7 @@ impl Decoder {
 
             self.state = state;
 
-            let produced = output.written().len();
+            let produced = output.written_len();
             writer.as_mut().produce(produced);
 
             if done {
@@ -144,7 +148,7 @@ impl Decoder {
 macro_rules! impl_decoder {
     ($poll_close: tt) => {
         use crate::{
-            codecs::Decode, core::util::PartialBuffer, generic::write::Decoder as GenericDecoder,
+            codecs::DecodeV2, core::util::PartialBuffer, generic::write::Decoder as GenericDecoder,
         };
         use futures_core::ready;
         use pin_project_lite::pin_project;
@@ -159,7 +163,7 @@ macro_rules! impl_decoder {
             }
         }
 
-        impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
+        impl<W: AsyncWrite, D: DecodeV2> Decoder<W, D> {
             pub fn new(writer: W, decoder: D) -> Self {
                 Self {
                     writer: BufWriter::new(writer),
@@ -187,7 +191,7 @@ macro_rules! impl_decoder {
             }
         }
 
-        impl<W: AsyncWrite, D: Decode> Decoder<W, D> {
+        impl<W: AsyncWrite, D: DecodeV2> Decoder<W, D> {
             fn do_poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
                 let mut this = self.project();
 
@@ -195,7 +199,7 @@ macro_rules! impl_decoder {
             }
         }
 
-        impl<W: AsyncWrite, D: Decode> AsyncWrite for Decoder<W, D> {
+        impl<W: AsyncWrite, D: DecodeV2> AsyncWrite for Decoder<W, D> {
             fn poll_write(
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,

@@ -161,38 +161,42 @@ macro_rules! impl_decoder {
             }
         }
 
+        fn do_poll_read(
+            inner: &mut GenericDecoder,
+            decoder: &mut dyn DecodeV2,
+            mut reader: Pin<&mut dyn AsyncBufRead>,
+            cx: &mut Context<'_>,
+            output: &mut WriteBuffer<'_>,
+        ) -> Poll<Result<()>> {
+            if let ControlFlow::Break(res) =
+                inner.do_poll_read(output, decoder, &mut PartialBuffer::new(&[][..]), true)
+            {
+                return Poll::Ready(res);
+            }
+
+            loop {
+                let mut input = PartialBuffer::new(ready!(reader.as_mut().poll_fill_buf(cx))?);
+
+                let control_flow = inner.do_poll_read(output, decoder, &mut input, false);
+
+                let bytes_read = input.written().len();
+                reader.as_mut().consume(bytes_read);
+
+                if let ControlFlow::Break(res) = control_flow {
+                    break Poll::Ready(res);
+                }
+            }
+        }
+
         impl<R: AsyncBufRead, D: DecodeV2> Decoder<R, D> {
             fn do_poll_read(
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
                 output: &mut WriteBuffer<'_>,
             ) -> Poll<Result<()>> {
-                let mut this = self.project();
+                let this = self.project();
 
-                if let ControlFlow::Break(res) = this.inner.do_poll_read(
-                    output,
-                    this.decoder,
-                    &mut PartialBuffer::new(&[][..]),
-                    true,
-                ) {
-                    return Poll::Ready(res);
-                }
-
-                loop {
-                    let mut input =
-                        PartialBuffer::new(ready!(this.reader.as_mut().poll_fill_buf(cx))?);
-
-                    let control_flow =
-                        this.inner
-                            .do_poll_read(output, this.decoder, &mut input, false);
-
-                    let bytes_read = input.written().len();
-                    this.reader.as_mut().consume(bytes_read);
-
-                    if let ControlFlow::Break(res) = control_flow {
-                        break Poll::Ready(res);
-                    }
-                }
+                do_poll_read(this.inner, this.decoder, this.reader, cx, output)
             }
         }
     };

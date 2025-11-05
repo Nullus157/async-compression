@@ -152,44 +152,50 @@ macro_rules! impl_encoder {
             }
         }
 
+        fn do_poll_read(
+            inner: &mut GenericEncoder,
+            encoder: &mut dyn EncodeV2,
+            mut reader: Pin<&mut dyn AsyncBufRead>,
+            cx: &mut Context<'_>,
+            output: &mut WriteBuffer<'_>,
+        ) -> Poll<Result<()>> {
+            if let ControlFlow::Break(res) = inner.do_poll_read(output, encoder, None) {
+                return Poll::Ready(res);
+            }
+
+            loop {
+                let mut input = match reader.as_mut().poll_fill_buf(cx) {
+                    Poll::Pending => None,
+                    Poll::Ready(res) => Some(PartialBuffer::new(res?)),
+                };
+
+                let control_flow = inner.do_poll_read(output, encoder, input.as_mut());
+
+                let is_pending = input.is_none();
+                if let Some(input) = input {
+                    let len = input.written().len();
+                    reader.as_mut().consume(len);
+                }
+
+                if let ControlFlow::Break(res) = control_flow {
+                    break Poll::Ready(res);
+                }
+
+                if is_pending {
+                    return Poll::Pending;
+                }
+            }
+        }
+
         impl<R: AsyncBufRead, E: EncodeV2> Encoder<R, E> {
             fn do_poll_read(
                 self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
                 output: &mut WriteBuffer<'_>,
             ) -> Poll<Result<()>> {
-                let mut this = self.project();
+                let this = self.project();
 
-                if let ControlFlow::Break(res) =
-                    this.inner.do_poll_read(output, &mut *this.encoder, None)
-                {
-                    return Poll::Ready(res);
-                }
-
-                loop {
-                    let mut input = match this.reader.as_mut().poll_fill_buf(cx) {
-                        Poll::Pending => None,
-                        Poll::Ready(res) => Some(PartialBuffer::new(res?)),
-                    };
-
-                    let control_flow =
-                        this.inner
-                            .do_poll_read(output, &mut *this.encoder, input.as_mut());
-
-                    let is_pending = input.is_none();
-                    if let Some(input) = input {
-                        let len = input.written().len();
-                        this.reader.as_mut().consume(len);
-                    }
-
-                    if let ControlFlow::Break(res) = control_flow {
-                        break Poll::Ready(res);
-                    }
-
-                    if is_pending {
-                        return Poll::Pending;
-                    }
-                }
+                do_poll_read(this.inner, this.encoder, this.reader, cx, output)
             }
         }
     };

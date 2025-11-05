@@ -72,6 +72,7 @@ tokio = { version = "1.38.2", default-features = false, features = [
     "macros",
     "rt-multi-thread",
     "io-std",
+    "fs",
 ] }
 tokio-util = { version = "0.7", default-features = false, features = ["io"] }
 
@@ -129,6 +130,10 @@ required-features = ["zstd", "tokio"]
 
 [[test]]
 name = "zstd-window-size"
+required-features = ["zstd", "tokio"]
+
+[[test]]
+name = "zstd-bufread"
 required-features = ["zstd", "tokio"]
 
 [[example]]

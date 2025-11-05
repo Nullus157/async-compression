@@ -5,6 +5,7 @@ use std::{fmt, io};
 
 pub struct BzDecoder {
     decompress: Decompress,
+    stream_ended: bool,
 }
 
 impl fmt::Debug for BzDecoder {
@@ -22,6 +23,7 @@ impl Default for BzDecoder {
     fn default() -> Self {
         Self {
             decompress: Decompress::new(false),
+            stream_ended: false,
         }
     }
 }
@@ -49,6 +51,11 @@ impl BzDecoder {
         input.advance((self.decompress.total_in() - prior_in) as usize);
         output.advance((self.decompress.total_out() - prior_out) as usize);
 
+        // Track when stream has properly ended
+        if status == Status::StreamEnd {
+            self.stream_ended = true;
+        }
+
         Ok(status)
     }
 }
@@ -56,6 +63,7 @@ impl BzDecoder {
 impl DecodeV2 for BzDecoder {
     fn reinit(&mut self) -> io::Result<()> {
         self.decompress = Decompress::new(false);
+        self.stream_ended = false;
         Ok(())
     }
 
@@ -101,6 +109,13 @@ impl DecodeV2 for BzDecoder {
     }
 
     fn finish(&mut self, _output: &mut WriteBuffer<'_>) -> io::Result<bool> {
-        Ok(true)
+        if self.stream_ended {
+            Ok(true)
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "bzip2 stream did not finish",
+            ))
+        }
     }
 }

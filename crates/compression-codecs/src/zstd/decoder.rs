@@ -13,12 +13,14 @@ use zstd_safe::get_error_name;
 #[derive(Debug)]
 pub struct ZstdDecoder {
     decoder: Unshared<Decoder<'static>>,
+    stream_ended: bool,
 }
 
 impl Default for ZstdDecoder {
     fn default() -> Self {
         Self {
             decoder: Unshared::new(Decoder::new().unwrap()),
+            stream_ended: false,
         }
     }
 }
@@ -35,6 +37,7 @@ impl ZstdDecoder {
         }
         Self {
             decoder: Unshared::new(decoder),
+            stream_ended: false,
         }
     }
 
@@ -42,6 +45,7 @@ impl ZstdDecoder {
         let decoder = Decoder::with_dictionary(dictionary)?;
         Ok(Self {
             decoder: Unshared::new(decoder),
+            stream_ended: false,
         })
     }
 
@@ -64,6 +68,7 @@ impl ZstdDecoder {
 impl DecodeV2 for ZstdDecoder {
     fn reinit(&mut self) -> Result<()> {
         self.decoder.get_mut().reinit()?;
+        self.stream_ended = false;
         Ok(())
     }
 
@@ -80,15 +85,32 @@ impl DecodeV2 for ZstdDecoder {
             .run_on_buffers(input.unwritten(), output.unwritten_initialized_mut())?;
         input.advance(status.bytes_read);
         output.advance(status.bytes_written);
-        Ok(status.remaining == 0)
+
+        let finished = status.remaining == 0;
+        if finished {
+            self.stream_ended = true;
+        }
+        Ok(finished)
     }
 
     fn flush(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
+        // Note: stream_ended is not updated here because zstd's flush only flushes
+        // buffered output and doesn't indicate stream completion. Stream completion
+        // is detected in decode() when status.remaining == 0.
         self.call_fn_on_out_buffer(output, |decoder, out_buf| decoder.flush(out_buf))
     }
 
     fn finish(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
-        self.call_fn_on_out_buffer(output, |decoder, out_buf| decoder.finish(out_buf, true))
+        self.call_fn_on_out_buffer(output, |decoder, out_buf| decoder.finish(out_buf, true))?;
+
+        if self.stream_ended {
+            Ok(true)
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "zstd stream did not finish",
+            ))
+        }
     }
 }
 

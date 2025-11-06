@@ -62,10 +62,9 @@ impl Xz2Decoder {
     ) -> io::Result<bool> {
         let previous_out = self.stream.total_out() as usize;
 
-        output.initialize_unwritten();
         let status = self
             .stream
-            .process(input, output.unwritten_initialized_mut(), action)?;
+            .process(input, output.initialize_unwritten(), action)?;
 
         output.advance(self.stream.total_out() as usize - previous_out);
 

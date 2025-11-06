@@ -88,12 +88,9 @@ impl Xz2Encoder {
         let previous_in = self.stream.total_in() as usize;
         let previous_out = self.stream.total_out() as usize;
 
-        output.initialize_unwritten();
-        let res = self.stream.process(
-            input.unwritten(),
-            output.unwritten_initialized_mut(),
-            action,
-        );
+        let res = self
+            .stream
+            .process(input.unwritten(), output.initialize_unwritten(), action);
 
         input.advance(self.stream.total_in() as usize - previous_in);
         output.advance(self.stream.total_out() as usize - previous_out);

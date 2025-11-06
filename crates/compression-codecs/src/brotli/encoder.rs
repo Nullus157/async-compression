@@ -25,15 +25,13 @@ impl BrotliEncoder {
         output: &mut WriteBuffer<'_>,
         op: BrotliEncoderOperation,
     ) -> io::Result<()> {
-        output.initialize_unwritten();
-
         let in_buf = input.unwritten();
-        let out_buf = output.unwritten_initialized_mut();
+        let out_buf = output.initialize_unwritten();
 
         let mut input_len = 0;
         let mut output_len = 0;
 
-        if !self.state.compress_stream(
+        let result = if !self.state.compress_stream(
             op,
             &mut in_buf.len(),
             in_buf,
@@ -44,13 +42,15 @@ impl BrotliEncoder {
             &mut None,
             &mut |_, _, _, _| (),
         ) {
-            return Err(io::Error::other("brotli error"));
-        }
+            Err(io::Error::other("brotli error"))
+        } else {
+            Ok(())
+        };
 
         input.advance(input_len);
         output.advance(output_len);
 
-        Ok(())
+        result
     }
 }
 

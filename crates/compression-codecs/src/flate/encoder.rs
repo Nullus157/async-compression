@@ -28,19 +28,17 @@ impl FlateEncoder {
         output: &mut WriteBuffer<'_>,
         flush: FlushCompress,
     ) -> io::Result<Status> {
-        output.initialize_unwritten();
-
         let prior_in = self.compress.total_in();
         let prior_out = self.compress.total_out();
 
-        let status =
+        let result =
             self.compress
-                .compress(input.unwritten(), output.unwritten_initialized_mut(), flush)?;
+                .compress(input.unwritten(), output.initialize_unwritten(), flush);
 
         input.advance((self.compress.total_in() - prior_in) as usize);
         output.advance((self.compress.total_out() - prior_out) as usize);
 
-        Ok(status)
+        Ok(result?)
     }
 }
 

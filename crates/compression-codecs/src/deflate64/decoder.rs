@@ -26,11 +26,9 @@ impl Deflate64Decoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> Result<bool> {
-        output.initialize_unwritten();
-
         let result = self
             .inflater
-            .inflate(input.unwritten(), output.unwritten_initialized_mut());
+            .inflate(input.unwritten(), output.initialize_unwritten());
 
         input.advance(result.bytes_consumed);
         output.advance(result.bytes_written);

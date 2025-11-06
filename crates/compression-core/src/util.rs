@@ -194,20 +194,25 @@ impl<'a> WriteBuffer<'a> {
     }
 
     pub fn copy_unwritten_from<C: AsRef<[u8]>>(&mut self, other: &mut PartialBuffer<C>) -> usize {
-        // Safety: We never write uninitialized bytes into it
-        let out = unsafe { self.unwritten_mut() };
+        fn inner(this: &mut WriteBuffer<'_>, input: &[u8]) -> usize {
+            // Safety: We will never ever write uninitialized bytes into it
+            let out = unsafe { this.unwritten_mut() };
 
-        let len = out.len().min(other.unwritten().len());
+            let len = out.len().min(input.len());
 
-        out[..len]
-            .iter_mut()
-            .zip(&other.unwritten()[..len])
-            .for_each(|(maybe_uninit, byte)| {
-                maybe_uninit.write(*byte);
-            });
+            out[..len]
+                .iter_mut()
+                .zip(&input[..len])
+                .for_each(|(maybe_uninit, byte)| {
+                    maybe_uninit.write(*byte);
+                });
 
-        // Safety: We have written `len` bytes of initialized data into it
-        unsafe { self.assume_init_and_advance(len) };
+            // Safety: We have written `len` bytes of initialized data into it
+            unsafe { this.assume_init_and_advance(len) };
+            len
+        }
+
+        let len = inner(self, other.unwritten());
         other.advance(len);
 
         len

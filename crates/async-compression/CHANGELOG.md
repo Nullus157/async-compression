@@ -44,6 +44,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.33](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.32...async-compression-v0.4.33) - 2025-11-06
+
+### Fixed
+
+- `UnexpectedEof` on truncated input ([#412](https://github.com/Nullus157/async-compression/pull/412))
+
+### Other
+
+- Update async-compression to use codecs v2 ([#410](https://github.com/Nullus157/async-compression/pull/410))
+- Dedup `write::Encoder` and simplify `write::Decoder` impl ([#409](https://github.com/Nullus157/async-compression/pull/409))
+- Dedup `write::Decoder::poll_write` ([#408](https://github.com/Nullus157/async-compression/pull/408))
+- Optimize `BufWriter::poll_*` method ([#407](https://github.com/Nullus157/async-compression/pull/407))
+- Dedup `write::{AsyncBufWriter, BufWriter, Decoder}` ([#406](https://github.com/Nullus157/async-compression/pull/406))
+- Early return in `do_poll_read` instead of keep polling ([#404](https://github.com/Nullus157/async-compression/pull/404))
+- Deduplicate `bufread::Encoder` impl ([#402](https://github.com/Nullus157/async-compression/pull/402))
+- Rename `impl_do_poll_read!` to `impl_decoder!` ([#403](https://github.com/Nullus157/async-compression/pull/403))
+- *(deps)* update proptest-derive requirement from 0.6 to 0.7 ([#399](https://github.com/Nullus157/async-compression/pull/399))
+- Deduplicate `generic::bufread::Decoder` impl of tokio/futures-io ([#391](https://github.com/Nullus157/async-compression/pull/391))
+- Disable nightly feature `doc_auto_cfg` on docsrs ([#392](https://github.com/Nullus157/async-compression/pull/392))
+
 ## [0.4.32](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.31...async-compression-v0.4.32) - 2025-09-25
 
 ### Other

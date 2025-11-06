@@ -117,8 +117,8 @@ impl Lz4Encoder {
             Lz4Fn::Flush | Lz4Fn::End => self.flush_buffer_size,
         };
 
-        output.initialize_unwritten();
-        let output_len = output.unwritten_initialized_mut().len();
+        let out_buf = output.initialize_unwritten();
+        let output_len = out_buf.len();
 
         let (dst_buffer, dst_size, maybe_internal_buffer) = if min_dst_size > output_len {
             let buffer_size = self.block_buffer_size;
@@ -132,11 +132,7 @@ impl Lz4Encoder {
                 Some(buffer),
             )
         } else {
-            (
-                output.unwritten_initialized_mut().as_mut_ptr(),
-                output_len,
-                None,
-            )
+            (out_buf.as_mut_ptr(), output_len, None)
         };
 
         let len = match lz4_fn {

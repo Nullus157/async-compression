@@ -108,10 +108,8 @@ impl<'a> WriteBuffer<'a> {
     }
 
     /// Initialize all uninitialized, unwritten part to initialized, unwritten part
-    pub fn initialize_unwritten(&mut self) {}
-
-    /// Return initialized but unwritten part.
-    pub fn unwritten_initialized_mut(&mut self) -> &mut [u8] {
+    /// Return all unwritten part
+    pub fn initialize_unwritten(&mut self) -> &mut [u8] {
         &mut self.buffer[self.index..]
     }
 
@@ -129,11 +127,11 @@ impl<'a> WriteBuffer<'a> {
 
     pub fn copy_unwritten_from<C: AsRef<[u8]>>(&mut self, other: &mut PartialBuffer<C>) -> usize {
         let len = self
-            .unwritten_initialized_mut()
+            .initialize_unwritten()
             .len()
             .min(other.unwritten().len());
 
-        self.unwritten_initialized_mut()[..len].copy_from_slice(&other.unwritten()[..len]);
+        self.initialize_unwritten()[..len].copy_from_slice(&other.unwritten()[..len]);
 
         self.advance(len);
         other.advance(len);

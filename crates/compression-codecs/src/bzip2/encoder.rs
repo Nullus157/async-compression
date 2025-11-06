@@ -52,24 +52,18 @@ impl BzEncoder {
         output: &mut WriteBuffer<'_>,
         action: Action,
     ) -> io::Result<Status> {
-        output.initialize_unwritten();
-
         let prior_in = self.compress.total_in();
         let prior_out = self.compress.total_out();
 
-        let status = self
+        let result = self
             .compress
-            .compress(
-                input.unwritten(),
-                output.unwritten_initialized_mut(),
-                action,
-            )
-            .map_err(io::Error::other)?;
+            .compress(input.unwritten(), output.initialize_unwritten(), action)
+            .map_err(io::Error::other);
 
         input.advance((self.compress.total_in() - prior_in) as usize);
         output.advance((self.compress.total_out() - prior_out) as usize);
 
-        Ok(status)
+        result
     }
 }
 

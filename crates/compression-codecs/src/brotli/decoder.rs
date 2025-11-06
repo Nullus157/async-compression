@@ -36,15 +36,13 @@ impl BrotliDecoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> io::Result<BrotliResult> {
-        output.initialize_unwritten();
-
         let in_buf = input.unwritten();
-        let out_buf = output.unwritten_initialized_mut();
+        let out_buf = output.initialize_unwritten();
 
         let mut input_len = 0;
         let mut output_len = 0;
 
-        let status = match BrotliDecompressStream(
+        let result = match BrotliDecompressStream(
             &mut in_buf.len(),
             &mut input_len,
             in_buf,
@@ -54,14 +52,14 @@ impl BrotliDecoder {
             &mut 0,
             &mut self.state,
         ) {
-            BrotliResult::ResultFailure => return Err(io::Error::other("brotli error")),
-            status => status,
+            BrotliResult::ResultFailure => Err(io::Error::other("brotli error")),
+            status => Ok(status),
         };
 
         input.advance(input_len);
         output.advance(output_len);
 
-        Ok(status)
+        result
     }
 }
 

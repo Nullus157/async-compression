@@ -38,25 +38,23 @@ impl BzDecoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> io::Result<Status> {
-        output.initialize_unwritten();
-
         let prior_in = self.decompress.total_in();
         let prior_out = self.decompress.total_out();
 
-        let status = self
+        let result = self
             .decompress
-            .decompress(input.unwritten(), output.unwritten_initialized_mut())
-            .map_err(io::Error::other)?;
+            .decompress(input.unwritten(), output.initialize_unwritten())
+            .map_err(io::Error::other);
 
         input.advance((self.decompress.total_in() - prior_in) as usize);
         output.advance((self.decompress.total_out() - prior_out) as usize);
 
         // Track when stream has properly ended
-        if status == Status::StreamEnd {
+        if matches!(result, Ok(Status::StreamEnd)) {
             self.stream_ended = true;
         }
 
-        Ok(status)
+        result
     }
 }
 

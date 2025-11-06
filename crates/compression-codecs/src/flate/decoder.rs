@@ -23,21 +23,17 @@ impl FlateDecoder {
         output: &mut WriteBuffer<'_>,
         flush: FlushDecompress,
     ) -> io::Result<Status> {
-        output.initialize_unwritten();
-
         let prior_in = self.decompress.total_in();
         let prior_out = self.decompress.total_out();
 
-        let status = self.decompress.decompress(
-            input.unwritten(),
-            output.unwritten_initialized_mut(),
-            flush,
-        )?;
+        let result =
+            self.decompress
+                .decompress(input.unwritten(), output.initialize_unwritten(), flush);
 
         input.advance((self.decompress.total_in() - prior_in) as usize);
         output.advance((self.decompress.total_out() - prior_out) as usize);
 
-        Ok(status)
+        Ok(result?)
     }
 }
 

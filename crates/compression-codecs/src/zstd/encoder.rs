@@ -42,9 +42,7 @@ impl ZstdEncoder {
         output: &mut WriteBuffer<'_>,
         f: fn(&mut Encoder<'static>, &mut zstd_safe::OutBuffer<'_, [u8]>) -> io::Result<usize>,
     ) -> io::Result<bool> {
-        output.initialize_unwritten();
-
-        let mut out_buf = zstd_safe::OutBuffer::around(output.unwritten_initialized_mut());
+        let mut out_buf = zstd_safe::OutBuffer::around(output.initialize_unwritten());
         let res = f(self.encoder.get_mut(), &mut out_buf);
         let len = out_buf.as_slice().len();
         output.advance(len);
@@ -59,12 +57,10 @@ impl EncodeV2 for ZstdEncoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> Result<()> {
-        output.initialize_unwritten();
-
         let status = self
             .encoder
             .get_mut()
-            .run_on_buffers(input.unwritten(), output.unwritten_initialized_mut())?;
+            .run_on_buffers(input.unwritten(), output.initialize_unwritten())?;
         input.advance(status.bytes_read);
         output.advance(status.bytes_written);
         Ok(())

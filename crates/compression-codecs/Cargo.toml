@@ -47,7 +47,7 @@ deflate64 = ["dep:deflate64"]
 compression-core.workspace = true
 # features
 brotli = { version = "8", optional = true }
-bzip2 = { version = "0.6", optional = true }
+bzip2 = { version = "0.6.1", optional = true }
 deflate64 = { version = "0.1.5", optional = true }
 flate2 = { version = "1.0.13", optional = true }
 libzstd = { package = "zstd", version = "0.13.1", optional = true, default-features = false }

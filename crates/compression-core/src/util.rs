@@ -110,6 +110,14 @@ impl<'a> WriteBuffer<'a> {
         }
     }
 
+    pub fn capacity(&self) -> usize {
+        self.buffer.len()
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        self.buffer.as_mut_ptr() as *mut _
+    }
+
     pub fn written(&self) -> &[u8] {
         debug_assert!(self.index <= self.initialized);
 
@@ -191,6 +199,19 @@ impl<'a> WriteBuffer<'a> {
 
         self.index += n;
         self.initialized = self.initialized.max(self.index);
+    }
+
+    /// Convenient function combining [`WriteBuffer::assume_init`] and [`WriteBuffer::advance`],
+    /// works similar to [`Vec::set_len`].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that first `n` bytes of the buffer have already been initialized.
+    pub unsafe fn set_written_and_initialized_len(&mut self, n: usize) {
+        debug_assert!(n <= self.buffer.len());
+
+        self.index = n;
+        self.initialized = self.initialized.max(n);
     }
 
     pub fn copy_unwritten_from<C: AsRef<[u8]>>(&mut self, other: &mut PartialBuffer<C>) -> usize {

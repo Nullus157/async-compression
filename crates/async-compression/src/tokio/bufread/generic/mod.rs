@@ -30,8 +30,5 @@ fn poll_read(
     unsafe { buf.assume_init(initialized) };
     buf.advance(written);
 
-    match res? {
-        Poll::Pending if written == 0 => Poll::Pending,
-        _ => Poll::Ready(Ok(())),
-    }
+    res
 }

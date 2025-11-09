@@ -175,7 +175,11 @@ macro_rules! impl_decoder {
             }
 
             loop {
-                let mut input = PartialBuffer::new(ready!(reader.as_mut().poll_fill_buf(cx))?);
+                let mut input = PartialBuffer::new(match reader.as_mut().poll_fill_buf(cx)? {
+                    Poll::Ready(input) => input,
+                    Poll::Pending if output.written().is_empty() => return Poll::Pending,
+                    _ => return Poll::Ready(Ok(())),
+                });
 
                 let control_flow = inner.do_poll_read(output, decoder, &mut input, false);
 

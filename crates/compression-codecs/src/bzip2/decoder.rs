@@ -43,11 +43,15 @@ impl BzDecoder {
 
         let result = self
             .decompress
-            .decompress(input.unwritten(), output.initialize_unwritten())
+            // Safety: We **trust** bzip2 to only write initialized data to it
+            .decompress_uninit(input.unwritten(), unsafe { output.unwritten_mut() })
             .map_err(io::Error::other);
 
         input.advance((self.decompress.total_in() - prior_in) as usize);
-        output.advance((self.decompress.total_out() - prior_out) as usize);
+        // Safety: We **trust** bzip2 to write bytes properly
+        unsafe {
+            output.assume_init_and_advance((self.decompress.total_out() - prior_out) as usize)
+        };
 
         // Track when stream has properly ended
         if matches!(result, Ok(Status::StreamEnd)) {

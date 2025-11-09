@@ -1,6 +1,6 @@
-use crate::{lzma::params::LzmaDecoderParams, DecodeV2, DecodedSize};
+use crate::{lzma::params::LzmaDecoderParams, xz2::process_stream, DecodeV2, DecodedSize};
 use compression_core::util::{PartialBuffer, WriteBuffer};
-use liblzma::stream::{Action, Status, Stream};
+use liblzma::stream::{Action, Stream};
 use std::{
     convert::TryFrom,
     fmt,
@@ -52,29 +52,6 @@ impl Xz2Decoder {
 
         Self::try_from(params).unwrap()
     }
-
-    /// Return `Ok(true)` on stream ends.
-    fn process(
-        &mut self,
-        input: &[u8],
-        output: &mut WriteBuffer<'_>,
-        action: Action,
-    ) -> io::Result<bool> {
-        let previous_out = self.stream.total_out() as usize;
-
-        let status = self
-            .stream
-            .process(input, output.initialize_unwritten(), action)?;
-
-        output.advance(self.stream.total_out() as usize - previous_out);
-
-        match status {
-            Status::Ok => Ok(false),
-            Status::StreamEnd => Ok(true),
-            Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
-            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
-        }
-    }
 }
 
 impl DecodeV2 for Xz2Decoder {
@@ -88,12 +65,7 @@ impl DecodeV2 for Xz2Decoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> io::Result<bool> {
-        let previous_in = self.stream.total_in() as usize;
-
-        let res = self.process(input.unwritten(), output, Action::Run);
-        input.advance(self.stream.total_in() as usize - previous_in);
-
-        res
+        process_stream(&mut self.stream, input, output, Action::Run)
     }
 
     fn flush(&mut self, _output: &mut WriteBuffer<'_>) -> io::Result<bool> {
@@ -102,7 +74,12 @@ impl DecodeV2 for Xz2Decoder {
     }
 
     fn finish(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
-        self.process(&[], output, Action::Finish)
+        process_stream(
+            &mut self.stream,
+            &mut PartialBuffer::new(&[]),
+            output,
+            Action::Finish,
+        )
     }
 }
 

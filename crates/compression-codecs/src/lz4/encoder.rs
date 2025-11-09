@@ -102,7 +102,7 @@ impl Lz4Encoder {
 
     fn write(&mut self, lz4_fn: Lz4Fn<'_, '_>, output: &mut WriteBuffer<'_>) -> Result<usize> {
         let (drained_before, undrained) = self.drain_buffer(output);
-        if undrained > 0 {
+        if undrained > 0 || output.has_no_spare_space() {
             return Ok(drained_before);
         }
 
@@ -117,7 +117,8 @@ impl Lz4Encoder {
             Lz4Fn::Flush | Lz4Fn::End => self.flush_buffer_size,
         };
 
-        let out_buf = output.initialize_unwritten();
+        // Safety: We **trust** lz4 to not write uninitialized bytes
+        let out_buf = unsafe { output.unwritten_mut() };
         let output_len = out_buf.len();
 
         let (dst_buffer, dst_size, maybe_internal_buffer) = if min_dst_size > output_len {
@@ -126,14 +127,16 @@ impl Lz4Encoder {
                 .maybe_buffer
                 .get_or_insert_with(|| PartialBuffer::new(Vec::with_capacity(buffer_size)));
             buffer.reset();
+            buffer.get_mut().clear();
             (
-                buffer.unwritten_mut().as_mut_ptr(),
+                buffer.get_mut().spare_capacity_mut().as_mut_ptr(),
                 buffer_size,
                 Some(buffer),
             )
         } else {
             (out_buf.as_mut_ptr(), output_len, None)
         };
+        let dst_buffer = dst_buffer as *mut u8;
 
         let len = match lz4_fn {
             Lz4Fn::Begin => {
@@ -185,13 +188,15 @@ impl Lz4Encoder {
         };
 
         let drained_after = if let Some(internal_buffer) = maybe_internal_buffer {
+            // Safety: We **trust** lz4 to properly write data into the buffer
             unsafe {
                 internal_buffer.get_mut().set_len(len);
             }
             let (d, _) = self.drain_buffer(output);
             d
         } else {
-            output.advance(len);
+            // Safety: We **trust** lz4 to properly write data into the buffer
+            unsafe { output.assume_init_and_advance(len) };
             len
         };
 

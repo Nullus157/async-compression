@@ -18,19 +18,7 @@ impl<R: AsyncBufRead, E: EncodeV2> AsyncRead for Encoder<R, E> {
         cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<Result<()>> {
-        if buf.remaining() == 0 {
-            return Poll::Ready(Ok(()));
-        }
-
-        let mut output = WriteBuffer::new_initialized(buf.initialize_unfilled());
-        match self.do_poll_read(cx, &mut output)? {
-            Poll::Pending if output.written().is_empty() => Poll::Pending,
-            _ => {
-                let len = output.written_len();
-                buf.advance(len);
-                Poll::Ready(Ok(()))
-            }
-        }
+        super::poll_read(buf, |output| self.do_poll_read(cx, output))
     }
 }
 

@@ -4,12 +4,11 @@ use crate::{
     generic::bufread::impl_decoder,
 };
 
-use core::{
+use std::{
+    io::{IoSlice, Result},
     pin::Pin,
     task::{Context, Poll},
 };
-use std::io::{IoSlice, Result};
-
 use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite, ReadBuf};
 
 impl_decoder!();
@@ -20,19 +19,7 @@ impl<R: AsyncBufRead, D: DecodeV2> AsyncRead for Decoder<R, D> {
         cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<Result<()>> {
-        if buf.remaining() == 0 {
-            return Poll::Ready(Ok(()));
-        }
-
-        let mut output = WriteBuffer::new_initialized(buf.initialize_unfilled());
-        match self.do_poll_read(cx, &mut output)? {
-            Poll::Pending if output.written().is_empty() => Poll::Pending,
-            _ => {
-                let len = output.written_len();
-                buf.advance(len);
-                Poll::Ready(Ok(()))
-            }
-        }
+        super::poll_read(buf, |output| self.do_poll_read(cx, output))
     }
 }
 

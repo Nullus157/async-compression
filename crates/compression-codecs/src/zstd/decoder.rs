@@ -1,13 +1,16 @@
-use crate::zstd::params::DParameter;
-use crate::{DecodeV2, DecodedSize};
+use crate::{
+    zstd::{params::DParameter, OperationExt},
+    {DecodeV2, DecodedSize},
+};
 use compression_core::{
     unshared::Unshared,
     util::{PartialBuffer, WriteBuffer},
 };
-use libzstd::stream::raw::{Decoder, Operation};
-use std::convert::TryInto;
-use std::io;
-use std::io::Result;
+use libzstd::stream::raw::Decoder;
+use std::{
+    convert::TryInto,
+    io::{self, Result},
+};
 use zstd_safe::get_error_name;
 
 #[derive(Debug)]
@@ -48,24 +51,11 @@ impl ZstdDecoder {
             stream_ended: false,
         })
     }
-
-    fn call_fn_on_out_buffer(
-        &mut self,
-        output: &mut WriteBuffer<'_>,
-        f: fn(&mut Decoder<'static>, &mut zstd_safe::OutBuffer<'_, [u8]>) -> io::Result<usize>,
-    ) -> io::Result<bool> {
-        let mut out_buf = zstd_safe::OutBuffer::around(output.initialize_unwritten());
-        let res = f(self.decoder.get_mut(), &mut out_buf);
-        let len = out_buf.as_slice().len();
-        output.advance(len);
-
-        res.map(|bytes_left| bytes_left == 0)
-    }
 }
 
 impl DecodeV2 for ZstdDecoder {
     fn reinit(&mut self) -> Result<()> {
-        self.decoder.get_mut().reinit()?;
+        self.decoder.reinit()?;
         self.stream_ended = false;
         Ok(())
     }
@@ -75,14 +65,7 @@ impl DecodeV2 for ZstdDecoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> Result<bool> {
-        let status = self
-            .decoder
-            .get_mut()
-            .run_on_buffers(input.unwritten(), output.initialize_unwritten())?;
-        input.advance(status.bytes_read);
-        output.advance(status.bytes_written);
-
-        let finished = status.remaining == 0;
+        let finished = self.decoder.run(input, output)?;
         if finished {
             self.stream_ended = true;
         }
@@ -93,11 +76,11 @@ impl DecodeV2 for ZstdDecoder {
         // Note: stream_ended is not updated here because zstd's flush only flushes
         // buffered output and doesn't indicate stream completion. Stream completion
         // is detected in decode() when status.remaining == 0.
-        self.call_fn_on_out_buffer(output, |decoder, out_buf| decoder.flush(out_buf))
+        self.decoder.flush(output)
     }
 
     fn finish(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
-        self.call_fn_on_out_buffer(output, |decoder, out_buf| decoder.finish(out_buf, true))?;
+        self.decoder.finish(output)?;
 
         if self.stream_ended {
             Ok(true)

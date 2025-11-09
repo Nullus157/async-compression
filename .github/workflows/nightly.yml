@@ -40,5 +40,7 @@ jobs:
     - run: cargo --locked clippy --no-deps --all --all-targets --all-features -- -D warnings
 
 on:
+  push:
+    branches: [main]
   schedule:
   - cron: '0 2 * * *'

@@ -139,7 +139,7 @@ impl BufWriter {
         // when the flushed data is larger than or equal to half of yet-to-be-flushed data,
         // the copyback could use version of memcpy that do copies from the head of the buffer.
         // Anything smaller than that, an overlap would happen that forces use of memmove.
-        if self.written >= (self.buffered / 3) || self || self.buffered == self.buf.len() {
+        if self.written >= (self.buffered / 3) || self.written >= 512 || self.buffered == self.buf.len() {
             self.remove_written();
         }
 

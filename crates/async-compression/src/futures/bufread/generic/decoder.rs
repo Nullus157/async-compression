@@ -23,10 +23,8 @@ impl<R: AsyncBufRead, D: DecodeV2> AsyncRead for Decoder<R, D> {
         }
 
         let mut output = WriteBuffer::new_initialized(buf);
-        match self.do_poll_read(cx, &mut output)? {
-            Poll::Pending if output.written().is_empty() => Poll::Pending,
-            _ => Poll::Ready(Ok(output.written_len())),
-        }
+        self.do_poll_read(cx, &mut output)
+            .map_ok(|()| output.written_len())
     }
 }
 

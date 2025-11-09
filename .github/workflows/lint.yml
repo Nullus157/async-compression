@@ -23,6 +23,8 @@ jobs:
     - run: cargo --locked clippy --no-deps --all --all-targets --all-features -- -D warnings
 
 on:
+  push:
+    branches: [main]
   merge_group:
     types: [checks_requested]
   pull_request:

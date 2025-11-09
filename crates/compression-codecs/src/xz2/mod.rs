@@ -23,10 +23,12 @@ fn process_stream(
     let previous_in = stream.total_in() as usize;
     let previous_out = stream.total_out() as usize;
 
-    let res = stream.process(input.unwritten(), output.initialize_unwritten(), action);
+    // Safety: We **trust** liblzma to not write uninitialized bytes into the buffer
+    let res = stream.process_uninit(input.unwritten(), unsafe { output.unwritten_mut() }, action);
 
     input.advance(stream.total_in() as usize - previous_in);
-    output.advance(stream.total_out() as usize - previous_out);
+    // Safety: We **trust** liblzma to write bytes into the buffer properly
+    unsafe { output.assume_init_and_advance(stream.total_out() as usize - previous_out) };
 
     match res? {
         Status::Ok => Ok(false),

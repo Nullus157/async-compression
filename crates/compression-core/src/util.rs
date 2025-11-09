@@ -118,6 +118,10 @@ impl<'a> WriteBuffer<'a> {
         self.buffer.as_mut_ptr() as *mut _
     }
 
+    pub fn initialized_len(&self) -> usize {
+        self.initialized
+    }
+
     pub fn written(&self) -> &[u8] {
         debug_assert!(self.index <= self.initialized);
 

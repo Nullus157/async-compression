@@ -127,14 +127,16 @@ impl Lz4Encoder {
                 .maybe_buffer
                 .get_or_insert_with(|| PartialBuffer::new(Vec::with_capacity(buffer_size)));
             buffer.reset();
+            buffer.get_mut().clear();
             (
-                buffer.unwritten_mut().as_mut_ptr(),
+                buffer.get_mut().spare_capacity_mut().as_mut_ptr(),
                 buffer_size,
                 Some(buffer),
             )
         } else {
-            (out_buf.as_mut_ptr() as *mut _, output_len, None)
+            (out_buf.as_mut_ptr(), output_len, None)
         };
+        let dst_buffer = dst_buffer as *mut u8;
 
         let len = match lz4_fn {
             Lz4Fn::Begin => {

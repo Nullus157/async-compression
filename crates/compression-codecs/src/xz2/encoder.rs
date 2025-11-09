@@ -2,7 +2,7 @@ use compression_core::{
     util::{PartialBuffer, WriteBuffer},
     Level,
 };
-use liblzma::stream::{Action, Check, Status, Stream};
+use liblzma::stream::{Action, Check, Stream};
 use std::{
     convert::{TryFrom, TryInto},
     fmt, io,
@@ -10,6 +10,7 @@ use std::{
 
 use crate::{
     lzma::params::{LzmaEncoderParams, LzmaOptions},
+    xz2::process_stream,
     EncodeV2, Xz2FileFormat,
 };
 
@@ -77,31 +78,6 @@ impl Xz2Encoder {
         let params = LzmaEncoderParams::MultiThread { builder };
         Self::try_from(params).unwrap()
     }
-
-    /// Return `Ok(true)` if stream ends.
-    fn process(
-        &mut self,
-        input: &mut PartialBuffer<&[u8]>,
-        output: &mut WriteBuffer<'_>,
-        action: Action,
-    ) -> io::Result<bool> {
-        let previous_in = self.stream.total_in() as usize;
-        let previous_out = self.stream.total_out() as usize;
-
-        let res = self
-            .stream
-            .process(input.unwritten(), output.initialize_unwritten(), action);
-
-        input.advance(self.stream.total_in() as usize - previous_in);
-        output.advance(self.stream.total_out() as usize - previous_out);
-
-        match res? {
-            Status::Ok => Ok(false),
-            Status::StreamEnd => Ok(true),
-            Status::GetCheck => Err(io::Error::other("Unexpected lzma integrity check")),
-            Status::MemNeeded => Err(io::ErrorKind::OutOfMemory.into()),
-        }
-    }
 }
 
 impl EncodeV2 for Xz2Encoder {
@@ -110,7 +86,7 @@ impl EncodeV2 for Xz2Encoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> io::Result<()> {
-        self.process(input, output, Action::Run).map(|_| ())
+        process_stream(&mut self.stream, input, output, Action::Run).map(|_| ())
     }
 
     fn flush(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
@@ -121,10 +97,20 @@ impl EncodeV2 for Xz2Encoder {
             _ => Action::SyncFlush,
         };
 
-        self.process(&mut PartialBuffer::new(&[]), output, action)
+        process_stream(
+            &mut self.stream,
+            &mut PartialBuffer::new(&[]),
+            output,
+            action,
+        )
     }
 
     fn finish(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
-        self.process(&mut PartialBuffer::new(&[]), output, Action::Finish)
+        process_stream(
+            &mut self.stream,
+            &mut PartialBuffer::new(&[]),
+            output,
+            Action::Finish,
+        )
     }
 }

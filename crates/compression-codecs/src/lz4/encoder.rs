@@ -102,7 +102,7 @@ impl Lz4Encoder {
 
     fn write(&mut self, lz4_fn: Lz4Fn<'_, '_>, output: &mut WriteBuffer<'_>) -> Result<usize> {
         let (drained_before, undrained) = self.drain_buffer(output);
-        if undrained > 0 {
+        if undrained > 0 || output.has_no_spare_space() {
             return Ok(drained_before);
         }
 

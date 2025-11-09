@@ -136,7 +136,7 @@ impl BufWriter {
     ) -> Poll<io::Result<&mut [u8]>> {
         ready!(self.partial_flush_buf(poll_write))?;
 
-        if (self.written * 2) >= self.buffered || self.buffered == self.buf.len() {
+        if self.written >= (self.buffered / 2) || self.buffered == self.buf.len() {
             self.remove_written();
         }
 

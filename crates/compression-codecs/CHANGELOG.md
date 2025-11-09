@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.32](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.31...compression-codecs-v0.4.32) - 2025-11-06
+
+### Added
+
+- allow reading uncompressed size ([#396](https://github.com/Nullus157/async-compression/pull/396))
+
+### Fixed
+
+- `UnexpectedEof` on truncated input ([#412](https://github.com/Nullus157/async-compression/pull/412))
+
+### Other
+
+- Simplify `WriteBuffer`: Rm `unwritten_initialized_mut` ([#413](https://github.com/Nullus157/async-compression/pull/413))
+- Implement new traits `DecodeV2`/`EncodeV2` ([#398](https://github.com/Nullus157/async-compression/pull/398))
+- Re-export core in codecs ([#395](https://github.com/Nullus157/async-compression/pull/395))
+- Disable nightly feature `doc_auto_cfg` on docsrs ([#392](https://github.com/Nullus157/async-compression/pull/392))
+
 ## [0.4.31](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.30...compression-codecs-v0.4.31) - 2025-09-25
 
 ### Other

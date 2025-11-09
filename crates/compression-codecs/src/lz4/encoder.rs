@@ -117,7 +117,8 @@ impl Lz4Encoder {
             Lz4Fn::Flush | Lz4Fn::End => self.flush_buffer_size,
         };
 
-        let out_buf = output.initialize_unwritten();
+        // Safety: We **trust** lz4 to not write uninitialized bytes
+        let out_buf = unsafe { output.unwritten_mut() };
         let output_len = out_buf.len();
 
         let (dst_buffer, dst_size, maybe_internal_buffer) = if min_dst_size > output_len {
@@ -132,7 +133,7 @@ impl Lz4Encoder {
                 Some(buffer),
             )
         } else {
-            (out_buf.as_mut_ptr(), output_len, None)
+            (out_buf.as_mut_ptr() as *mut _, output_len, None)
         };
 
         let len = match lz4_fn {
@@ -185,13 +186,15 @@ impl Lz4Encoder {
         };
 
         let drained_after = if let Some(internal_buffer) = maybe_internal_buffer {
+            // Safety: We **trust** lz4 to properly write data into the buffer
             unsafe {
                 internal_buffer.get_mut().set_len(len);
             }
             let (d, _) = self.drain_buffer(output);
             d
         } else {
-            output.advance(len);
+            // Safety: We **trust** lz4 to properly write data into the buffer
+            unsafe { output.assume_init_and_advance(len) };
             len
         };
 

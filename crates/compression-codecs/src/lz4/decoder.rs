@@ -61,22 +61,28 @@ impl DecodeV2 for Lz4Decoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> Result<bool> {
-        let out_buf = output.initialize_unwritten();
-
-        let mut output_size = out_buf.len();
         let mut input_size = input.unwritten().len();
+
+        // Safety: We **trust** lz4 bytes to properly function as expected,
+        // only write decompressed, initialized data into the buffer properly.
         let result = unsafe {
-            check_error(LZ4F_decompress(
+            let out_buf = output.unwritten_mut();
+
+            let mut output_size = out_buf.len();
+
+            let result = check_error(LZ4F_decompress(
                 self.ctx.get_mut().ctx,
-                out_buf.as_mut_ptr(),
+                out_buf.as_mut_ptr() as *mut _,
                 &mut output_size,
                 input.unwritten().as_ptr(),
                 &mut input_size,
                 core::ptr::null(),
-            ))
+            ));
+            output.assume_init_and_advance(output_size);
+
+            result
         };
         input.advance(input_size);
-        output.advance(output_size);
 
         let finished = result? == 0;
         if finished {

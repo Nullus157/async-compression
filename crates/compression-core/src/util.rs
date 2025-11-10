@@ -1,3 +1,4 @@
+use core::cmp;
 use core::mem::MaybeUninit;
 
 pub const fn _assert_send<T: Send>() {}
@@ -18,7 +19,7 @@ impl<B: AsRef<[u8]>> PartialBuffer<B> {
         &self.buffer.as_ref()[..self.index]
     }
 
-    /// Convenient method for `.writen().len()`
+    /// Convenience method for `.written().len()`.
     pub fn written_len(&self) -> usize {
         self.index
     }
@@ -75,14 +76,11 @@ impl<B: AsRef<[u8]> + AsMut<[u8]>> From<B> for PartialBuffer<B> {
 
 /// Write buffer for compression-codecs.
 ///
-/// Currently it only supports initialized buffer, but will support uninitialized
-/// buffer soon.
-///
 /// # Layout
 ///
 /// ```text
-/// |                                       buffer                                    |
-/// | written and initialized | unwritten but initialized | unwritten and uninitialized
+/// |                                       buffer                                      |
+/// | written and initialized | unwritten but initialized | unwritten and uninitialized |
 /// ```
 #[derive(Debug)]
 pub struct WriteBuffer<'a> {
@@ -110,6 +108,7 @@ impl<'a> WriteBuffer<'a> {
         }
     }
 
+    /// Returns entire buffer capacity, including space which is not yet initialized.
     pub fn capacity(&self) -> usize {
         self.buffer.len()
     }
@@ -118,6 +117,9 @@ impl<'a> WriteBuffer<'a> {
         self.buffer.as_mut_ptr() as *mut _
     }
 
+    /// Returns size of buffer's initialized portion.
+    ///
+    /// This will always be at least [`written_len`](Self::written_len).
     pub fn initialized_len(&self) -> usize {
         self.initialized
     }
@@ -125,10 +127,13 @@ impl<'a> WriteBuffer<'a> {
     pub fn written(&self) -> &[u8] {
         debug_assert!(self.index <= self.initialized);
 
+        // SAFETY: slice up to `index` is always initialized
         unsafe { &*(&self.buffer[..self.index] as *const _ as *const [u8]) }
     }
 
-    /// Convenient method for `.writen().len()`
+    /// Returns size of buffer's written portion.
+    ///
+    /// This will always be at most [`initialized_len`](Self::initialized_len).
     pub fn written_len(&self) -> usize {
         self.index
     }
@@ -148,6 +153,7 @@ impl<'a> WriteBuffer<'a> {
             });
         self.initialized = self.buffer.len();
 
+        // SAFETY: slice up to `index` is always initialized
         unsafe { &mut *(&mut self.buffer[self.index..] as *mut _ as *mut [u8]) }
     }
 
@@ -202,7 +208,7 @@ impl<'a> WriteBuffer<'a> {
         debug_assert!(self.index + n <= self.buffer.len());
 
         self.index += n;
-        self.initialized = self.initialized.max(self.index);
+        self.initialized = cmp::max(self.initialized, self.index);
     }
 
     /// Convenient function combining [`WriteBuffer::assume_init`] and [`WriteBuffer::advance`],
@@ -215,7 +221,7 @@ impl<'a> WriteBuffer<'a> {
         debug_assert!(n <= self.buffer.len());
 
         self.index = n;
-        self.initialized = self.initialized.max(n);
+        self.initialized = cmp::max(self.initialized, n);
     }
 
     pub fn copy_unwritten_from<C: AsRef<[u8]>>(&mut self, other: &mut PartialBuffer<C>) -> usize {
@@ -223,7 +229,7 @@ impl<'a> WriteBuffer<'a> {
             // Safety: We will never ever write uninitialized bytes into it
             let out = unsafe { this.unwritten_mut() };
 
-            let len = out.len().min(input.len());
+            let len = cmp::min(out.len(), input.len());
 
             out[..len]
                 .iter_mut()

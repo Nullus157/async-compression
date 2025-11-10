@@ -56,5 +56,8 @@ liblzma = { version = "0.4.5", optional = true }
 memchr = { version = "2", optional = true }
 zstd-safe = { version = "7", optional = true, default-features = false }
 
+[dev-dependencies]
+static_assertions = "1"
+
 [lints]
 workspace = true

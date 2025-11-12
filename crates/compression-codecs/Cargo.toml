@@ -10,6 +10,7 @@ edition.workspace = true
 license.workspace = true
 readme = "../../README.md"
 repository.workspace = true
+rust-version = "1.74"
 
 [package.metadata.docs.rs]
 all-features = true

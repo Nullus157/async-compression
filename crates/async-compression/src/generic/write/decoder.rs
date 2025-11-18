@@ -39,12 +39,12 @@ impl Decoder {
         decoder: &mut dyn DecodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
-            let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = WriteBuffer::new_initialized(output);
+            let mut output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
+            let output = &mut output.write_buffer;
 
             self.state = match self.state {
                 State::Decoding => {
-                    if decoder.decode(input, &mut output)? {
+                    if decoder.decode(input, output)? {
                         State::Finishing
                     } else {
                         State::Decoding
@@ -52,7 +52,7 @@ impl Decoder {
                 }
 
                 State::Finishing => {
-                    if decoder.finish(&mut output)? {
+                    if decoder.finish(output)? {
                         State::Done
                     } else {
                         State::Finishing
@@ -63,9 +63,6 @@ impl Decoder {
                     return Poll::Ready(Err(io::Error::other("Write after end of stream")))
                 }
             };
-
-            let produced = output.written_len();
-            writer.as_mut().produce(produced);
 
             if let State::Done = self.state {
                 return Poll::Ready(Ok(()));
@@ -103,17 +100,17 @@ impl Decoder {
         decoder: &mut dyn DecodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
-            let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = WriteBuffer::new_initialized(output);
+            let mut output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
+            let output = &mut output.write_buffer;
 
             let (state, done) = match self.state {
                 State::Decoding => {
-                    let done = decoder.flush(&mut output)?;
+                    let done = decoder.flush(output)?;
                     (State::Decoding, done)
                 }
 
                 State::Finishing => {
-                    if decoder.finish(&mut output)? {
+                    if decoder.finish(output)? {
                         (State::Done, false)
                     } else {
                         (State::Finishing, false)
@@ -124,9 +121,6 @@ impl Decoder {
             };
 
             self.state = state;
-
-            let produced = output.written_len();
-            writer.as_mut().produce(produced);
 
             if done {
                 break Poll::Ready(Ok(()));

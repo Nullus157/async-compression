@@ -3,6 +3,7 @@
 // with those methods.
 
 use super::AsyncBufWrite;
+use compression_core::util::WriteBuffer;
 use futures_core::ready;
 use std::{
     fmt, io,
@@ -133,7 +134,7 @@ impl BufWriter {
     pub fn poll_partial_flush_buf(
         &mut self,
         poll_write: &mut dyn FnMut(&[u8]) -> Poll<io::Result<usize>>,
-    ) -> Poll<io::Result<&mut [u8]>> {
+    ) -> Poll<io::Result<Buffer<'_>>> {
         ready!(self.partial_flush_buf(poll_write))?;
 
         // when the flushed data is larger than or equal to half of yet-to-be-flushed data,
@@ -146,21 +147,27 @@ impl BufWriter {
             self.remove_written();
         }
 
-        Poll::Ready(Ok(&mut self.buf[self.buffered..]))
+        Poll::Ready(Ok(Buffer {
+            write_buffer: WriteBuffer::new_initialized(&mut self.buf[self.buffered..]),
+            buffered: &mut self.buffered,
+        }))
     }
+}
 
-    pub fn produce(&mut self, amt: usize) {
-        debug_assert!(
-            self.buffered + amt <= self.buf.len(),
-            "produce called with amt exceeding buffer capacity"
-        );
-        self.buffered += amt;
+pub struct Buffer<'a> {
+    buffered: &'a mut usize,
+    pub write_buffer: WriteBuffer<'a>,
+}
+
+impl Drop for Buffer<'_> {
+    fn drop(&mut self) {
+        *self.buffered += self.write_buffer.written_len();
     }
 }
 
 macro_rules! impl_buf_writer {
     ($poll_close: tt) => {
-        use crate::generic::write::{AsyncBufWrite, BufWriter as GenericBufWriter};
+        use crate::generic::write::{AsyncBufWrite, BufWriter as GenericBufWriter, Buffer};
         use futures_core::ready;
         use pin_project_lite::pin_project;
 
@@ -258,14 +265,10 @@ macro_rules! impl_buf_writer {
             fn poll_partial_flush_buf(
                 mut self: Pin<&mut Self>,
                 cx: &mut Context<'_>,
-            ) -> Poll<io::Result<&mut [u8]>> {
+            ) -> Poll<io::Result<Buffer<'_>>> {
                 let this = self.project();
                 this.inner
                     .poll_partial_flush_buf(&mut get_poll_write(this.writer, cx))
-            }
-
-            fn produce(self: Pin<&mut Self>, amt: usize) {
-                self.project().inner.produce(amt)
             }
         }
     };

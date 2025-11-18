@@ -39,12 +39,12 @@ impl Encoder {
         encoder: &mut dyn EncodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
-            let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = WriteBuffer::new_initialized(output);
+            let mut output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
+            let output = &mut output.write_buffer;
 
             self.state = match self.state {
                 State::Encoding => {
-                    encoder.encode(input, &mut output)?;
+                    encoder.encode(input, output)?;
                     State::Encoding
                 }
 
@@ -52,9 +52,6 @@ impl Encoder {
                     break Poll::Ready(Err(io::Error::other("Write after close")))
                 }
             };
-
-            let produced = output.written_len();
-            writer.as_mut().produce(produced);
 
             if input.unwritten().is_empty() {
                 break Poll::Ready(Ok(()));
@@ -88,19 +85,16 @@ impl Encoder {
         encoder: &mut dyn EncodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
-            let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = WriteBuffer::new_initialized(output);
+            let mut output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
+            let output = &mut output.write_buffer;
 
             let done = match self.state {
-                State::Encoding => encoder.flush(&mut output)?,
+                State::Encoding => encoder.flush(output)?,
 
                 State::Finishing | State::Done => {
                     break Poll::Ready(Err(io::Error::other("Flush after close")))
                 }
             };
-
-            let produced = output.written_len();
-            writer.as_mut().produce(produced);
 
             if done {
                 break Poll::Ready(Ok(()));
@@ -115,12 +109,12 @@ impl Encoder {
         encoder: &mut dyn EncodeV2,
     ) -> Poll<io::Result<()>> {
         loop {
-            let output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
-            let mut output = WriteBuffer::new_initialized(output);
+            let mut output = ready!(writer.as_mut().poll_partial_flush_buf(cx))?;
+            let output = &mut output.write_buffer;
 
             self.state = match self.state {
                 State::Encoding | State::Finishing => {
-                    if encoder.finish(&mut output)? {
+                    if encoder.finish(output)? {
                         State::Done
                     } else {
                         State::Finishing
@@ -129,9 +123,6 @@ impl Encoder {
 
                 State::Done => State::Done,
             };
-
-            let produced = output.written_len();
-            writer.as_mut().produce(produced);
 
             if let State::Done = self.state {
                 break Poll::Ready(Ok(()));

@@ -1,6 +1,6 @@
 mod utils;
 
-use utils::{one_to_six, one_to_six_stream, InputStream};
+use utils::{one_to_six, one_to_six_stream};
 
 #[cfg(feature = "futures-io")]
 mod futures_tests {
@@ -33,7 +33,10 @@ mod futures_tests {
 #[cfg(feature = "tokio")]
 mod tokio_tests {
     use super::*;
-    use utils::algos::ppmd::{sync, tokio::bufread};
+    use utils::{
+        algos::ppmd::{sync, tokio::bufread},
+        InputStream,
+    };
 
     #[test]
     fn compress_decompress_random() {

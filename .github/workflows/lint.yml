@@ -8,7 +8,7 @@ jobs:
     name: cargo fmt --check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with: { components: rustfmt }
     - run: cargo fmt --all -- --check
@@ -17,7 +17,7 @@ jobs:
     name: cargo clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with: { components: clippy }
     - run: cargo --locked clippy --no-deps --all --all-targets --all-features -- -D warnings

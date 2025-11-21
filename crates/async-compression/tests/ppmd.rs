@@ -1,11 +1,17 @@
 mod utils;
 
-use utils::{one_to_six, one_to_six_stream, InputStream, Level};
+use utils::{one_to_six, one_to_six_stream, InputStream};
 
 #[cfg(feature = "futures-io")]
 mod futures_tests {
     use super::*;
-    use utils::algos::ppmd::{futures::bufread, futures::read, sync};
+    use utils::{
+        algos::ppmd::{
+            futures::{bufread, read},
+            sync,
+        },
+        Level,
+    };
 
     #[test]
     fn compress_decompress_small() {

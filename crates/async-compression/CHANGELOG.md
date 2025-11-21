@@ -44,6 +44,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.34](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.33...async-compression-v0.4.34) - 2025-11-21
+
+### Added
+
+- Add uninitialized output buffer support ([#414](https://github.com/Nullus157/async-compression/pull/414))
+
+### Other
+
+- Simplify `AsyncBufWrite` ([#423](https://github.com/Nullus157/async-compression/pull/423))
+- Refactor `bufread::decoder`: Extract poll ready check ([#418](https://github.com/Nullus157/async-compression/pull/418))
+- Optimize condition for removing written data in BufWriter ([#415](https://github.com/Nullus157/async-compression/pull/415))
+
 ## [0.4.33](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.32...async-compression-v0.4.33) - 2025-11-06
 
 ### Fixed

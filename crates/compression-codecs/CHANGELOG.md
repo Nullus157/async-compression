@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.33](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.32...compression-codecs-v0.4.33) - 2025-11-21
+
+### Added
+
+- Add uninitialized output buffer support ([#414](https://github.com/Nullus157/async-compression/pull/414))
+
+### Other
+
+- Set msrv for codecs to 1.83 ([#422](https://github.com/Nullus157/async-compression/pull/422))
+
 ## [0.4.32](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.31...compression-codecs-v0.4.32) - 2025-11-06
 
 ### Added

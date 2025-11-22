@@ -25,6 +25,7 @@ all-algorithms = [
     "gzip",
     "lz4",
     "lzma",
+    "ppmd",
     "xz",
     "xz-parallel",
     "zlib",
@@ -39,6 +40,7 @@ deflate64 = ["compression-codecs/deflate64"]
 gzip = ["compression-codecs/gzip"]
 lz4 = ["compression-codecs/lz4"]
 lzma = ["compression-codecs/lzma"]
+ppmd = ["compression-codecs/ppmd"]
 xz = ["compression-codecs/xz", "lzma"]
 xz-parallel = ["compression-codecs/xz-parallel", "xz"]
 xz2 = ["compression-codecs/xz2", "xz"]
@@ -83,6 +85,7 @@ lz4 = "1.28.1"
 liblzma = "0.4.2"
 zstd-safe = { version = "7", default-features = false }
 deflate64 = "0.1.5"
+ppmd-rust = "1.3.0"
 
 [lints]
 workspace = true
@@ -110,6 +113,10 @@ required-features = ["lz4"]
 [[test]]
 name = "lzma"
 required-features = ["lzma"]
+
+[[test]]
+name = "ppmd"
+required-features = ["ppmd"]
 
 [[test]]
 name = "xz"
@@ -142,3 +149,7 @@ required-features = ["zstd", "gzip", "tokio"]
 [[example]]
 name = "lzma_filters"
 required-features = ["xz", "tokio"]
+
+[[example]]
+name = "ppmd_tokio_write"
+required-features = ["ppmd", "tokio"]

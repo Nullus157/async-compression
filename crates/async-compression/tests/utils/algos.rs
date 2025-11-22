@@ -229,6 +229,27 @@ algos! {
             }
         }
     }
+
+    pub mod ppmd("ppmd", PpmdEncoder, PpmdDecoder) {
+        pub mod sync {
+            pub use crate::utils::impls::sync::to_vec;
+
+            pub fn compress(bytes: &[u8]) -> Vec<u8> {
+                use std::io::Write;
+                let mut out = Vec::new();
+                let mut enc = ppmd_rust::Ppmd7Encoder::new(&mut out, 8, 4 << 20).unwrap();
+                enc.write_all(bytes).unwrap();
+                let _ = enc.finish(true).unwrap();
+                out
+            }
+
+            pub fn decompress(bytes: &[u8]) -> Vec<u8> {
+                use std::io::Read;
+                let mut dec = ppmd_rust::Ppmd7Decoder::new(bytes, 8, 4 << 20).unwrap();
+                to_vec(&mut dec)
+            }
+        }
+    }
 }
 
 macro_rules! io_algo_parallel {

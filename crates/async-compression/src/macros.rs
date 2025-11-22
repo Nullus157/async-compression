@@ -375,5 +375,20 @@ macro_rules! algos {
         { @dec }
         );
 
+        algos!(@algo ppmd ["ppmd"] PpmdDecoder PpmdEncoder <$inner>
+        { @enc
+
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codecs::PpmdEncoder::new(level),
+                    ),
+                }
+            }
+        }
+        { @dec }
+        );
+
     }
 }

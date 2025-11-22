@@ -1,6 +1,6 @@
 use crate::{DecodeV2, DecodedSize};
 use compression_core::util::{PartialBuffer, WriteBuffer};
-use std::io::{self, Read};
+use std::io;
 
 use super::params::PpmdDecoderParams;
 
@@ -8,9 +8,6 @@ use super::params::PpmdDecoderParams;
 pub struct PpmdDecoder {
     order: u32,
     memory_size: u32,
-    input: Vec<u8>,
-    decoder: Option<ppmd_rust::Ppmd7Decoder<std::io::Cursor<Vec<u8>>>>,
-    done: bool,
 }
 
 impl PpmdDecoder {
@@ -18,9 +15,6 @@ impl PpmdDecoder {
         Self {
             order: params.order,
             memory_size: params.memory_size,
-            input: Vec::new(),
-            decoder: None,
-            done: false,
         }
     }
 
@@ -47,55 +41,28 @@ impl std::fmt::Debug for PpmdDecoder {
 
 impl DecodeV2 for PpmdDecoder {
     fn reinit(&mut self) -> io::Result<()> {
-        self.input.clear();
-        self.decoder = None;
-        self.done = false;
-        Ok(())
+        todo!()
     }
 
     fn decode(
         &mut self,
-        input: &mut PartialBuffer<&[u8]>,
+        _input: &mut PartialBuffer<&[u8]>,
         _output: &mut WriteBuffer<'_>,
     ) -> io::Result<bool> {
-        let src = input.unwritten();
-        if !src.is_empty() {
-            self.input.extend_from_slice(src);
-            input.advance(src.len());
-        }
-        Ok(false)
+        todo!()
     }
 
     fn flush(&mut self, _output: &mut WriteBuffer<'_>) -> io::Result<bool> {
-        Ok(true)
+        todo!()
     }
 
-    fn finish(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
-        if self.done {
-            return Ok(true);
-        }
-
-        if self.decoder.is_none() {
-            let cursor = std::io::Cursor::new(std::mem::take(&mut self.input));
-            let decoder = ppmd_rust::Ppmd7Decoder::new(cursor, self.order, self.memory_size)
-                .map_err(|e| io::Error::other(e.to_string()))?;
-            self.decoder = Some(decoder);
-        }
-
-        let mut_slice = output.initialize_unwritten();
-        let read_bytes = self.decoder.as_mut().unwrap().read(mut_slice)?;
-        output.advance(read_bytes);
-
-        if read_bytes == 0 {
-            self.done = true;
-        }
-
-        Ok(self.done)
+    fn finish(&mut self, _output: &mut WriteBuffer<'_>) -> io::Result<bool> {
+        todo!()
     }
 }
 
 impl DecodedSize for PpmdDecoder {
     fn decoded_size(_input: &[u8]) -> io::Result<u64> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "unknown size"))
+        todo!()
     }
 }

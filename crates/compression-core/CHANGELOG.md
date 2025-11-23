@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.31](https://github.com/Nullus157/async-compression/compare/compression-core-v0.4.30...compression-core-v0.4.31) - 2025-11-21
+
+### Added
+
+- Add uninitialized output buffer support ([#414](https://github.com/Nullus157/async-compression/pull/414))
+
 ## [0.4.30](https://github.com/Nullus157/async-compression/compare/compression-core-v0.4.29...compression-core-v0.4.30) - 2025-11-06
 
 ### Other

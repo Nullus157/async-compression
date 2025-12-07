@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.34](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.33...compression-codecs-v0.4.34) - 2025-12-07
+
+### Other
+
+- Optimize GzipEncoder to not allocate for header and footer ([#431](https://github.com/Nullus157/async-compression/pull/431))
+- Optimize GzipDecoder ([#430](https://github.com/Nullus157/async-compression/pull/430))
+- Optimize gzip::header remove heap allocation ([#428](https://github.com/Nullus157/async-compression/pull/428))
+
 ## [0.4.33](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.32...compression-codecs-v0.4.33) - 2025-11-21
 
 ### Added

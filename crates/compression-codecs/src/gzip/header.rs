@@ -67,7 +67,7 @@ impl Parser {
     pub(super) fn input(&mut self, input: &mut PartialBuffer<&[u8]>) -> io::Result<Option<Header>> {
         let crc = &mut self.crc;
 
-        let mut consume_input = |n, input| {
+        let mut consume_input = |n, input: &mut PartialBuffer<&[u8]>| {
             crc.update(&input.unwritten()[..n]);
             input.advance(n);
         };
@@ -136,7 +136,7 @@ impl Parser {
                     if consume_cstr(&mut input).is_none() {
                         break Ok(None);
                     }
-                    
+
                     self.state = State::Comment;
                 }
 
@@ -149,7 +149,7 @@ impl Parser {
                     if consume_cstr(&mut input).is_none() {
                         break Ok(None);
                     }
-                    
+
                     self.state = State::Crc(<_>::default());
                 }
 

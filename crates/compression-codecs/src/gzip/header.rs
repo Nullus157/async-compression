@@ -63,17 +63,17 @@ impl Header {
     }
 }
 
-fn consume_input(crc: Crc, n: usize, input: &mut PartialBuffer<&[u8]>) {
+fn consume_input(crc: &mut Crc, n: usize, input: &mut PartialBuffer<&[u8]>) {
     crc.update(&input.unwritten()[..n]);
     input.advance(n);
 }
 
-fn consume_cstr(crc: Crc, input: &mut PartialBuffer<&[u8]>) -> Option<()> {
+fn consume_cstr(crc: &mut Crc, input: &mut PartialBuffer<&[u8]>) -> Option<()> {
     if let Some(len) = memchr::memchr(0, input.unwritten()) {
-        consume_input(len + 1, input);
+        consume_input(crc, len + 1, input);
         Some(())
     } else {
-        consume_input(input.unwritten().len(), input);
+        consume_input(crc, input.unwritten().len(), input);
         None
     }
 }
@@ -116,7 +116,7 @@ impl Parser {
                 State::Extra(bytes_to_consume) => {
                     let n = input.unwritten().len().min(*bytes_to_consume);
                     *bytes_to_consume -= n;
-                    consume_input(crc, n, input);
+                    consume_input(&mut self.crc, n, input);
 
                     if *bytes_to_consume == 0 {
                         self.state = State::Filename;
@@ -131,7 +131,7 @@ impl Parser {
                         continue;
                     }
 
-                    if consume_cstr(crc, input).is_none() {
+                    if consume_cstr(&mut self.crc, input).is_none() {
                         break Ok(None);
                     }
 
@@ -144,7 +144,7 @@ impl Parser {
                         continue;
                     }
 
-                    if consume_cstr(crc, input).is_none() {
+                    if consume_cstr(&mut self.crc, input).is_none() {
                         break Ok(None);
                     }
 

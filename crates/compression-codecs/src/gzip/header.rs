@@ -145,7 +145,7 @@ impl Parser {
                     }
 
                     if consume_cstr().is_none() {
-                        break Ok(None)(
+                        break Ok(None);
                     }
                     
                     self.state = State::Crc(<_>::default());

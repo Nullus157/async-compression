@@ -19,9 +19,9 @@ pub(super) struct Header {
 enum State {
     Fixed(PartialBuffer<[u8; 10]>),
     ExtraLen(PartialBuffer<[u8; 2]>),
-    Extra(PartialBuffer<Vec<u8>>),
-    Filename(Vec<u8>),
-    Comment(Vec<u8>),
+    Extra(usize),
+    Filename,
+    Comment,
     Crc(PartialBuffer<[u8; 2]>),
     Done,
 }
@@ -78,7 +78,7 @@ impl Parser {
 
                 State::ExtraLen(data) => {
                     if !self.header.flags.extra {
-                        self.state = State::Filename(<_>::default());
+                        self.state = State::Filename;
                         continue;
                     }
 
@@ -86,51 +86,49 @@ impl Parser {
 
                     if data.unwritten().is_empty() {
                         let len = u16::from_le_bytes(data.take().into_inner());
-                        self.state = State::Extra(vec![0; usize::from(len)].into());
+                        self.state = State::Extra(len.into());
                     } else {
                         return Ok(None);
                     }
                 }
 
-                State::Extra(data) => {
-                    data.copy_unwritten_from(input);
+                State::Extra(bytes_to_consume) => {
+                    let n = input.unwritten().len().min(*bytes_to_consume);
+                    *bytes_to_consume -= n;
+                    input.advance(n);
 
-                    if data.unwritten().is_empty() {
-                        self.state = State::Filename(<_>::default());
+                    if *bytes_to_consume == 0 {
+                        self.state = State::Filename;
                     } else {
                         return Ok(None);
                     }
                 }
 
-                State::Filename(data) => {
+                State::Filename => {
                     if !self.header.flags.filename {
-                        self.state = State::Comment(<_>::default());
+                        self.state = State::Comment;
                         continue;
                     }
 
                     if let Some(len) = memchr::memchr(0, input.unwritten()) {
-                        data.extend_from_slice(&input.unwritten()[..len]);
                         input.advance(len + 1);
-                        self.state = State::Comment(<_>::default());
+                        self.state = State::Comment;
                     } else {
-                        data.extend_from_slice(input.unwritten());
                         input.advance(input.unwritten().len());
                         return Ok(None);
                     }
                 }
 
-                State::Comment(data) => {
+                State::Comment => {
                     if !self.header.flags.comment {
                         self.state = State::Crc(<_>::default());
                         continue;
                     }
 
                     if let Some(len) = memchr::memchr(0, input.unwritten()) {
-                        data.extend_from_slice(&input.unwritten()[..len]);
                         input.advance(len + 1);
                         self.state = State::Crc(<_>::default());
                     } else {
-                        data.extend_from_slice(input.unwritten());
                         input.advance(input.unwritten().len());
                         return Ok(None);
                     }

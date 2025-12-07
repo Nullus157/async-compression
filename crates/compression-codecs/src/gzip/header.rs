@@ -63,25 +63,23 @@ impl Header {
     }
 }
 
+fn consume_input(crc: Crc, n: usize, input: &mut PartialBuffer<&[u8]>) {
+    crc.update(&input.unwritten()[..n]);
+    input.advance(n);
+}
+
+fn consume_cstr(crc: Crc, input: &mut PartialBuffer<&[u8]>) -> Option<()> {
+    if let Some(len) = memchr::memchr(0, input.unwritten()) {
+        consume_input(len + 1, input);
+        Some(())
+    } else {
+        consume_input(input.unwritten().len(), input);
+        None
+    }
+}
+
 impl Parser {
     pub(super) fn input(&mut self, input: &mut PartialBuffer<&[u8]>) -> io::Result<Option<Header>> {
-        let crc = &mut self.crc;
-
-        let mut consume_input = |n, input: &mut PartialBuffer<&[u8]>| {
-            crc.update(&input.unwritten()[..n]);
-            input.advance(n);
-        };
-
-        let mut consume_cstr = |input: &mut PartialBuffer<&[u8]>| {
-            if let Some(len) = memchr::memchr(0, input.unwritten()) {
-                consume_input(len + 1, input);
-                Some(())
-            } else {
-                consume_input(input.unwritten().len(), input);
-                None
-            }
-        };
-
         loop {
             match &mut self.state {
                 State::Fixed(data) => {
@@ -89,7 +87,7 @@ impl Parser {
 
                     if data.unwritten().is_empty() {
                         let data = data.get_mut();
-                        crc.update(data);
+                        self.crc.update(data);
                         self.header = Header::parse(data)?;
                         self.state = State::ExtraLen(<_>::default());
                     } else {
@@ -107,7 +105,7 @@ impl Parser {
 
                     if data.unwritten().is_empty() {
                         let data = data.get_mut();
-                        crc.update(data);
+                        self.crc.update(data);
                         let len = u16::from_le_bytes(*data);
                         self.state = State::Extra(len.into());
                     } else {
@@ -118,7 +116,7 @@ impl Parser {
                 State::Extra(bytes_to_consume) => {
                     let n = input.unwritten().len().min(*bytes_to_consume);
                     *bytes_to_consume -= n;
-                    consume_input(n, &mut input);
+                    consume_input(crc, n, input);
 
                     if *bytes_to_consume == 0 {
                         self.state = State::Filename;
@@ -133,7 +131,7 @@ impl Parser {
                         continue;
                     }
 
-                    if consume_cstr(&mut input).is_none() {
+                    if consume_cstr(crc, input).is_none() {
                         break Ok(None);
                     }
 
@@ -146,7 +144,7 @@ impl Parser {
                         continue;
                     }
 
-                    if consume_cstr(&mut input).is_none() {
+                    if consume_cstr(crc, input).is_none() {
                         break Ok(None);
                     }
 
@@ -165,7 +163,7 @@ impl Parser {
 
                     break if data.unwritten().is_empty() {
                         self.state = State::Done;
-                        let checksum = crc.sum().to_le_bytes();
+                        let checksum = self.crc.sum().to_le_bytes();
                         let data = data.get_mut();
 
                         if data == &checksum[..2] {

@@ -91,7 +91,7 @@ impl Parser {
                         self.header = Header::parse(data)?;
                         self.state = State::ExtraLen(<_>::default());
                     } else {
-                        break Ok(None)
+                        break Ok(None);
                     }
                 }
 
@@ -106,10 +106,10 @@ impl Parser {
                     if data.unwritten().is_empty() {
                         let data = data.get_mut();
                         self.crc.update(data);
-                        let len = u16::from_le_bytes(data);
+                        let len = u16::from_le_bytes(*data);
                         self.state = State::Extra(len.into());
                     } else {
-                        break Ok(None)
+                        break Ok(None);
                     }
                 }
 
@@ -121,7 +121,7 @@ impl Parser {
                     if *bytes_to_consume == 0 {
                         self.state = State::Filename;
                     } else {
-                        break Ok(None)
+                        break Ok(None);
                     }
                 }
 
@@ -131,7 +131,10 @@ impl Parser {
                         continue;
                     }
 
-                    consume_cstr()?;
+                    if consume_cstr().is_none() {
+                        break Ok(None);
+                    }
+                    
                     self.state = State::Comment;
                 }
 
@@ -141,16 +144,19 @@ impl Parser {
                         continue;
                     }
 
-                    consume_cstr()?;
+                    if consume_cstr().is_none() {
+                        break Ok(None)(
+                    }
+                    
                     self.state = State::Crc(<_>::default());
                 }
 
                 State::Crc(data) => {
                     let header = std::mem::take(&mut self.header);
-                    
+
                     if !self.header.flags.crc {
                         self.state = State::Done;
-                        break Ok(Some(header))
+                        break Ok(Some(header));
                     }
 
                     data.copy_unwritten_from(input);
@@ -160,7 +166,7 @@ impl Parser {
                         let checksum = self.crc.sum().to_le_bytes();
                         let data = data.get_mut();
 
-                        if data == checksum[..2] {
+                        if data == &checksum[..2] {
                             Ok(Some(header))
                         } else {
                             Err(io::Error::new(
@@ -170,12 +176,10 @@ impl Parser {
                         }
                     } else {
                         Ok(None)
-                    }
+                    };
                 }
 
-                State::Done => {
-                    break Err(io::Error::other("parser used after done"))
-                }
+                State::Done => break Err(io::Error::other("parser used after done")),
             }
         }
     }

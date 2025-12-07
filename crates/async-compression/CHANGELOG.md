@@ -44,6 +44,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.35](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.34...async-compression-v0.4.35) - 2025-12-07
+
+### Other
+
+- updated the following local packages: compression-codecs
+
 ## [0.4.34](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.33...async-compression-v0.4.34) - 2025-11-21
 
 ### Added

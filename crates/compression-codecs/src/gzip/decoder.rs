@@ -82,7 +82,7 @@ impl GzipDecoder {
                     let done = res?;
 
                     if done {
-                        self.state = State::Footer([0; 8]);
+                        self.state = State::Footer([0; 8].into());
                     }
                 }
 

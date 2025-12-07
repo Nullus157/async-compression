@@ -78,7 +78,7 @@ impl Parser {
 
                 State::ExtraLen(data) => {
                     if !self.header.flags.extra {
-                        self.state = State::Filename(<_>::default());
+                        self.state = State::Filename;
                         continue;
                     }
 
@@ -93,11 +93,11 @@ impl Parser {
                 }
 
                 State::Extra(bytes_to_consume) => {
-                    let n = bytes_to_conume.min(input.len());
+                    let n = bytes_to_conume.min(input.unwritten().len());
                     bytes_to_consume -= n;
-                    data.advance(n);
+                    input.advance(n);
 
-                    if bytes_to_consume == 0 {
+                    if *bytes_to_consume == 0 {
                         self.state = State::Filename;
                     } else {
                         return Ok(None);

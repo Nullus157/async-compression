@@ -93,8 +93,8 @@ impl Parser {
                 }
 
                 State::Extra(bytes_to_consume) => {
-                    let n = bytes_to_consume.min(input.unwritten().len());
-                    bytes_to_consume -= n;
+                    let n = input.unwritten().len().min(*bytes_to_consume);
+                    *bytes_to_consume -= n;
                     input.advance(n);
 
                     if *bytes_to_consume == 0 {

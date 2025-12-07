@@ -72,7 +72,7 @@ impl Parser {
             input.advance(n);
         };
 
-        let mut consume_cstr = |input| {
+        let mut consume_cstr = |input: &mut PartialBuffer<&[u8]>| {
             if let Some(len) = memchr::memchr(0, input.unwritten()) {
                 consume_input(len + 1, input);
                 Some(())

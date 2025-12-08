@@ -162,9 +162,9 @@ impl Parser {
                     data.copy_unwritten_from(input);
 
                     break if data.unwritten().is_empty() {
+                        let data = data.take().into_inner();
                         self.state = State::Done;
                         let checksum = self.crc.sum().to_le_bytes();
-                        let data = data.get_mut();
 
                         if data == &checksum[..2] {
                             Ok(Some(header))

@@ -64,7 +64,8 @@ impl GzipDecoder {
         loop {
             match &mut self.state {
                 State::Header(parser) => {
-                    if parser.input(input)?.is_some() {
+                    if parser.input(&mut self.crc, input)?.is_some() {
+                        self.crc.reset();
                         self.state = State::Decoding;
                     }
                 }

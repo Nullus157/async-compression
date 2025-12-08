@@ -37,7 +37,6 @@ impl Default for State {
 pub(super) struct Parser {
     state: State,
     header: Header,
-    crc: Crc,
 }
 
 impl Header {
@@ -79,7 +78,7 @@ fn consume_cstr(crc: &mut Crc, input: &mut PartialBuffer<&[u8]>) -> Option<()> {
 }
 
 impl Parser {
-    pub(super) fn input(&mut self, input: &mut PartialBuffer<&[u8]>) -> io::Result<Option<Header>> {
+    pub(super) fn input(&mut self, crc: &mut Crc, input: &mut PartialBuffer<&[u8]>) -> io::Result<Option<Header>> {
         loop {
             match &mut self.state {
                 State::Fixed(data) => {
@@ -87,7 +86,7 @@ impl Parser {
 
                     if data.unwritten().is_empty() {
                         let data = data.get_mut();
-                        self.crc.update(data);
+                        crc.update(data);
                         self.header = Header::parse(data)?;
                         self.state = State::ExtraLen(<_>::default());
                     } else {
@@ -105,7 +104,7 @@ impl Parser {
 
                     if data.unwritten().is_empty() {
                         let data = data.get_mut();
-                        self.crc.update(data);
+                        crc.update(data);
                         let len = u16::from_le_bytes(*data);
                         self.state = State::Extra(len.into());
                     } else {
@@ -116,7 +115,7 @@ impl Parser {
                 State::Extra(bytes_to_consume) => {
                     let n = input.unwritten().len().min(*bytes_to_consume);
                     *bytes_to_consume -= n;
-                    consume_input(&mut self.crc, n, input);
+                    consume_input(crc, n, input);
 
                     if *bytes_to_consume == 0 {
                         self.state = State::Filename;
@@ -131,7 +130,7 @@ impl Parser {
                         continue;
                     }
 
-                    if consume_cstr(&mut self.crc, input).is_none() {
+                    if consume_cstr(crc, input).is_none() {
                         break Ok(None);
                     }
 
@@ -144,7 +143,7 @@ impl Parser {
                         continue;
                     }
 
-                    if consume_cstr(&mut self.crc, input).is_none() {
+                    if consume_cstr(crc, input).is_none() {
                         break Ok(None);
                     }
 
@@ -164,7 +163,7 @@ impl Parser {
                     break if data.unwritten().is_empty() {
                         let data = data.take().into_inner();
                         self.state = State::Done;
-                        let checksum = self.crc.sum().to_le_bytes();
+                        let checksum = crc.sum().to_le_bytes();
 
                         if data == checksum[..2] {
                             Ok(Some(header))

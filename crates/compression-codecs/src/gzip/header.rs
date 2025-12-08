@@ -166,7 +166,7 @@ impl Parser {
                         self.state = State::Done;
                         let checksum = self.crc.sum().to_le_bytes();
 
-                        if *data == checksum[..2] {
+                        if data == checksum[..2] {
                             Ok(Some(header))
                         } else {
                             Err(io::Error::new(

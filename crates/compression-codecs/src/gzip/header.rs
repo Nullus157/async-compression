@@ -78,7 +78,11 @@ fn consume_cstr(crc: &mut Crc, input: &mut PartialBuffer<&[u8]>) -> Option<()> {
 }
 
 impl Parser {
-    pub(super) fn input(&mut self, crc: &mut Crc, input: &mut PartialBuffer<&[u8]>) -> io::Result<Option<Header>> {
+    pub(super) fn input(
+        &mut self,
+        crc: &mut Crc,
+        input: &mut PartialBuffer<&[u8]>,
+    ) -> io::Result<Option<Header>> {
         loop {
             match &mut self.state {
                 State::Fixed(data) => {

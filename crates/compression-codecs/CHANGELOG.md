@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.35](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.34...compression-codecs-v0.4.35) - 2025-12-11
+
+### Other
+
+- Add Crc checksum validation for gzip::header::Parser ([#432](https://github.com/Nullus157/async-compression/pull/432))
+
 ## [0.4.34](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.33...compression-codecs-v0.4.34) - 2025-12-07
 
 ### Other

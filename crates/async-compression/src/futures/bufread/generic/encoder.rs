@@ -23,8 +23,11 @@ impl<R: AsyncBufRead, E: EncodeV2> AsyncRead for Encoder<R, E> {
         }
 
         let mut output = WriteBuffer::new_initialized(buf);
-        self.do_poll_read(cx, &mut output)
-            .map_ok(|()| output.written_len())
+        match self.do_poll_read(cx, &mut output) {
+            Poll::Pending if output.written().is_empty() => Poll::Pending,
+            Poll::Ready(Err(e)) => Poll::Ready(Err(e)),
+            _ => Poll::Ready(Ok(output.written_len())),
+        }
     }
 }
 

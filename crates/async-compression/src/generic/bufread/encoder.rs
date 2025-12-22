@@ -58,7 +58,7 @@ impl Encoder {
 
                             read += input.written().len();
 
-                            // Poll for more data
+                            self.state = State::Encoding(read);
                             break;
                         }
                     }

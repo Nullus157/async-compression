@@ -19,8 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
-    - name: Ignore dev-dependencies
-      run: sed -i 's/\[dev-dependencies\]/[workaround-avoid-dev-deps]/g' Cargo.toml
     - uses: EmbarkStudios/cargo-deny-action@v2
       with:
         command: check bans licenses sources

@@ -49,7 +49,6 @@ zstdmt = ["compression-codecs/zstdmt", "zstd"]
 
 [dependencies]
 # core dependencies
-futures-core.workspace = true
 pin-project-lite.workspace = true
 compression-codecs.workspace = true
 compression-core.workspace = true

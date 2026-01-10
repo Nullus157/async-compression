@@ -101,9 +101,8 @@ macro_rules! impl_encoder {
     () => {
         use crate::generic::bufread::Encoder as GenericEncoder;
 
-        use std::ops::ControlFlow;
+        use std::{ops::ControlFlow, task::ready};
 
-        use futures_core::ready;
         use pin_project_lite::pin_project;
 
         pin_project! {

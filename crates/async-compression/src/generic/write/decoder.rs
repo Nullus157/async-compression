@@ -3,11 +3,10 @@ use crate::{
     core::util::{PartialBuffer, WriteBuffer},
     generic::write::AsyncBufWrite,
 };
-use futures_core::ready;
 use std::{
     io,
     pin::Pin,
-    task::{Context, Poll},
+    task::{ready, Context, Poll},
 };
 
 #[derive(Debug)]
@@ -60,7 +59,7 @@ impl Decoder {
                 }
 
                 State::Done => {
-                    return Poll::Ready(Err(io::Error::other("Write after end of stream")))
+                    return Poll::Ready(Err(io::Error::other("Write after end of stream")));
                 }
             };
 
@@ -144,8 +143,8 @@ macro_rules! impl_decoder {
         use crate::{
             codecs::DecodeV2, core::util::PartialBuffer, generic::write::Decoder as GenericDecoder,
         };
-        use futures_core::ready;
         use pin_project_lite::pin_project;
+        use std::task::ready;
 
         pin_project! {
             #[derive(Debug)]

@@ -114,9 +114,8 @@ macro_rules! impl_decoder {
     () => {
         use crate::generic::bufread::Decoder as GenericDecoder;
 
-        use std::ops::ControlFlow;
+        use std::{ops::ControlFlow, task::ready};
 
-        use futures_core::ready;
         use pin_project_lite::pin_project;
 
         pin_project! {

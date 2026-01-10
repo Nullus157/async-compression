@@ -4,11 +4,10 @@
 
 use super::AsyncBufWrite;
 use compression_core::util::WriteBuffer;
-use futures_core::ready;
 use std::{
     fmt, io,
     pin::Pin,
-    task::{Context, Poll},
+    task::{ready, Context, Poll},
 };
 
 const DEFAULT_BUF_SIZE: usize = 8192;
@@ -168,8 +167,8 @@ impl Drop for Buffer<'_> {
 macro_rules! impl_buf_writer {
     ($poll_close: tt) => {
         use crate::generic::write::{AsyncBufWrite, BufWriter as GenericBufWriter, Buffer};
-        use futures_core::ready;
         use pin_project_lite::pin_project;
+        use std::task::ready;
 
         pin_project! {
             #[derive(Debug)]

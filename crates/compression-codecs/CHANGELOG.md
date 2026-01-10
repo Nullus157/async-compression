@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.36](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.35...compression-codecs-v0.4.36) - 2026-01-10
+
+### Other
+
+- Set async-compression msrv ([#440](https://github.com/Nullus157/async-compression/pull/440))
+
 ## [0.4.35](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.34...compression-codecs-v0.4.35) - 2025-12-11
 
 ### Other

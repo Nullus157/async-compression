@@ -95,13 +95,13 @@ impl BufWriter {
         &mut self,
         poll_write: &mut dyn FnMut(&[u8]) -> Poll<io::Result<usize>>,
     ) -> Poll<io::Result<()>> {
-        let ret = ready!(self.do_flush(poll_write));
+        ready!(self.do_flush(poll_write))?;
 
         debug_assert_eq!(self.buffered, self.written);
         self.buffered = 0;
         self.written = 0;
 
-        Poll::Ready(ret)
+        Poll::Ready(Ok(()))
     }
 
     pub fn poll_write(

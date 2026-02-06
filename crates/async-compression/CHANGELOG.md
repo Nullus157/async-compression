@@ -48,6 +48,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ### Other
 
+- *(async-compression)* release v0.4.38 ([#443](https://github.com/Nullus157/async-compression/pull/443))
+- Fix decoding of empty response streams. ([#444](https://github.com/Nullus157/async-compression/pull/444))
+- *(deps)* update proptest-derive requirement from 0.7 to 0.8 ([#442](https://github.com/Nullus157/async-compression/pull/442))
+
+## [0.4.38](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.37...async-compression-v0.4.38) - 2026-02-06
+
+### Other
+
 - Fix decoding of empty response streams. ([#444](https://github.com/Nullus157/async-compression/pull/444))
 - *(deps)* update proptest-derive requirement from 0.7 to 0.8 ([#442](https://github.com/Nullus157/async-compression/pull/442))
 

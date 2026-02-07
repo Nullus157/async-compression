@@ -44,6 +44,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.39](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.38...async-compression-v0.4.39) - 2026-02-07
+
+### Other
+
+- Revert "Fix decoding of empty response streams." ([#446](https://github.com/Nullus157/async-compression/pull/446))
+
 ## [0.4.38](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.37...async-compression-v0.4.38) - 2026-02-06
 
 ### Other

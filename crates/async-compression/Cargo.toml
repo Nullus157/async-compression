@@ -139,10 +139,6 @@ required-features = ["zlib", "tokio"]
 name = "zstd_gzip"
 required-features = ["zstd", "gzip", "tokio"]
 
-[[test]]
-name = "empty_stream"
-required-features = ["zstd", "tokio"]
-
 [[example]]
 name = "lzma_filters"
 required-features = ["xz", "tokio"]

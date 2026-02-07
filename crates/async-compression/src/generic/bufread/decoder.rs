@@ -17,7 +17,6 @@ enum State {
 pub struct Decoder {
     state: State,
     multiple_members: bool,
-    received_data: bool,
 }
 
 impl Default for Decoder {
@@ -25,7 +24,6 @@ impl Default for Decoder {
         Self {
             state: State::Decoding,
             multiple_members: false,
-            received_data: false,
         }
     }
 }
@@ -50,16 +48,8 @@ impl Decoder {
                         // reader has returned EOF.
                         self.multiple_members = false;
 
-                        // Empty stream (no data received) - return empty output
-                        if !self.received_data {
-                            State::Done
-                        } else {
-                            State::Flushing
-                        }
+                        State::Flushing
                     } else {
-                        if !input.unwritten().is_empty() {
-                            self.received_data = true;
-                        }
                         match decoder.decode(input, output) {
                             Ok(true) => State::Flushing,
                             // ignore the first error, occurs when input is empty

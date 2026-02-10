@@ -10,6 +10,7 @@ enum State {
     Flushing,
     Finishing,
     Done,
+    Error(std::io::Error),
 }
 
 #[derive(Debug)]
@@ -53,7 +54,12 @@ impl Encoder {
                             State::Finishing
                         } else {
                             if let Err(err) = encoder.encode(input, output) {
-                                return ControlFlow::Break(Err(err));
+                                self.state = State::Error(err);
+                                if output.written_len() > 0 {
+                                    return ControlFlow::Break(Ok(()));
+                                } else {
+                                    continue;
+                                }
                             }
 
                             *read += input.written().len();
@@ -72,16 +78,37 @@ impl Encoder {
                         break;
                     }
                     Ok(false) => State::Flushing,
-                    Err(err) => return ControlFlow::Break(Err(err)),
+                    Err(err) => {
+                        self.state = State::Error(err);
+                        if output.written_len() > 0 {
+                            return ControlFlow::Break(Ok(()));
+                        } else {
+                            continue;
+                        }
+                    }
                 },
 
                 State::Finishing => match encoder.finish(output) {
                     Ok(true) => State::Done,
                     Ok(false) => State::Finishing,
-                    Err(err) => return ControlFlow::Break(Err(err)),
+                    Err(err) => {
+                        self.state = State::Error(err);
+                        if output.written_len() > 0 {
+                            return ControlFlow::Break(Ok(()));
+                        } else {
+                            continue;
+                        }
+                    }
                 },
 
                 State::Done => return ControlFlow::Break(Ok(())),
+
+                State::Error(_) => {
+                    let State::Error(err) = std::mem::replace(&mut self.state, State::Done) else {
+                        unreachable!()
+                    };
+                    return ControlFlow::Break(Err(err));
+                }
             };
 
             if output.has_no_spare_space() {

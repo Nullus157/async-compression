@@ -31,13 +31,13 @@ impl Deflate64Decoder {
             // Safety: We **trust** deflate64 to not write uninitialized bytes
             .inflate_uninit(input.unwritten(), unsafe { output.unwritten_mut() });
 
-        input.advance(result.bytes_consumed);
-        // Safety: We **trust** deflate64 to properly write bytes into buffer
-        unsafe { output.assume_init_and_advance(result.bytes_written) };
-
         if result.data_error {
             Err(Error::new(ErrorKind::InvalidData, "invalid data"))
         } else {
+            input.advance(result.bytes_consumed);
+            // Safety: We **trust** deflate64 to properly write bytes into buffer
+            unsafe { output.assume_init_and_advance(result.bytes_written) };
+
             Ok(self.inflater.finished() && self.inflater.available_output() == 0)
         }
     }

@@ -51,3 +51,24 @@ fn gzip_bufread_chunks_decompress_with_extra_header() {
 
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
+
+#[test]
+#[ntest::timeout(1000)]
+#[cfg(feature = "futures-io")]
+fn gzip_bufread_chunks_decompress_without_footer_emits_all_payload() {
+    use flate2::bufread::GzDecoder;
+    use std::io::Read;
+
+    let mut bytes = compress_with_header(&[1, 2, 3, 4, 5, 6]);
+
+    // Remove the footer.
+    bytes.truncate(bytes.len() - 8);
+
+    let mut decoder = GzDecoder::new(bytes.as_slice());
+
+    let mut output = vec![];
+    let result = decoder.read_to_end(&mut output);
+
+    assert!(result.is_err());
+    assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+}

@@ -2,7 +2,6 @@ use crate::{
     codecs::DecodeV2,
     core::util::{PartialBuffer, WriteBuffer},
 };
-
 use std::{io::Result, ops::ControlFlow};
 
 #[derive(Debug)]
@@ -11,6 +10,7 @@ enum State {
     Flushing,
     Done,
     Next,
+    Error(std::io::Error),
 }
 
 #[derive(Debug)]
@@ -54,7 +54,14 @@ impl Decoder {
                             Ok(true) => State::Flushing,
                             // ignore the first error, occurs when input is empty
                             // but we need to run decode to flush
-                            Err(err) if !first => return ControlFlow::Break(Err(err)),
+                            Err(err) if !first => {
+                                self.state = State::Error(err);
+                                if output.written_len() > 0 {
+                                    return ControlFlow::Break(Ok(()));
+                                } else {
+                                    continue;
+                                }
+                            }
                             // poll for more data for the next decode
                             _ => break,
                         }
@@ -66,7 +73,12 @@ impl Decoder {
                         Ok(true) => {
                             if self.multiple_members {
                                 if let Err(err) = decoder.reinit() {
-                                    return ControlFlow::Break(Err(err));
+                                    self.state = State::Error(err);
+                                    if output.written_len() > 0 {
+                                        return ControlFlow::Break(Ok(()));
+                                    } else {
+                                        continue;
+                                    }
                                 }
 
                                 // The decode stage might consume all the input,
@@ -78,7 +90,14 @@ impl Decoder {
                             }
                         }
                         Ok(false) => State::Flushing,
-                        Err(err) => return ControlFlow::Break(Err(err)),
+                        Err(err) => {
+                            self.state = State::Error(err);
+                            if output.written_len() > 0 {
+                                return ControlFlow::Break(Ok(()));
+                            } else {
+                                continue;
+                            }
+                        }
                     }
                 }
 
@@ -94,6 +113,13 @@ impl Decoder {
                     } else {
                         State::Decoding
                     }
+                }
+
+                State::Error(_) => {
+                    let State::Error(err) = std::mem::replace(&mut self.state, State::Done) else {
+                        unreachable!()
+                    };
+                    return ControlFlow::Break(Err(err));
                 }
             };
 

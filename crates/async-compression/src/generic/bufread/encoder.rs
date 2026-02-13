@@ -34,10 +34,10 @@ impl Encoder {
         mut input: Option<&mut PartialBuffer<&[u8]>>,
     ) -> ControlFlow<Result<()>> {
         loop {
-            self.state = match self.state {
-                State::Encoding(mut read) => match input.as_mut() {
+            self.state = match &mut self.state {
+                State::Encoding(read) => match input.as_mut() {
                     None => {
-                        if read == 0 {
+                        if *read == 0 {
                             if output.written().is_empty() {
                                 // Poll for more data
                                 break;
@@ -56,7 +56,7 @@ impl Encoder {
                                 return ControlFlow::Break(Err(err));
                             }
 
-                            read += input.written().len();
+                            *read += input.written().len();
 
                             // Poll for more data
                             break;
@@ -181,7 +181,11 @@ macro_rules! impl_encoder {
                 }
 
                 if is_pending {
-                    return Poll::Pending;
+                    if output.written().is_empty() {
+                        return Poll::Pending;
+                    } else {
+                        return Poll::Ready(Ok(()));
+                    }
                 }
             }
         }

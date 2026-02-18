@@ -44,6 +44,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## Unreleased
 
+## [0.4.40](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.39...async-compression-v0.4.40) - 2026-02-18
+
+### Other
+
+- Fix update of bytes read in the encoder state machine. ([#456](https://github.com/Nullus157/async-compression/pull/456))
+- *(deps)* update rand requirement from 0.9 to 0.10 ([#449](https://github.com/Nullus157/async-compression/pull/449))
+
 ## [0.4.39](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.38...async-compression-v0.4.39) - 2026-02-07
 
 ### Other

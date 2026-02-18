@@ -11,7 +11,7 @@ edition = "2018"
 rust-version = "1.83"
 
 [workspace.dependencies]
-compression-codecs = { version = "0.4.36", path = "crates/compression-codecs" }
+compression-codecs = { version = "0.4.37", path = "crates/compression-codecs" }
 compression-core = { version = "0.4.31", path = "crates/compression-core" }
 pin-project-lite = "0.2"
 

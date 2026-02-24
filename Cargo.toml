@@ -19,3 +19,6 @@ pin-project-lite = "0.2"
 rust_2018_idioms = "deny"
 missing_debug_implementations = { level = "deny", priority = -1 }
 # missing_docs = { level = "deny", priority = -1 }
+
+[workspace.lints.clippy]
+undocumented_unsafe_blocks = "deny"

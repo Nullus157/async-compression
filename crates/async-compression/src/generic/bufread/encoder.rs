@@ -2,7 +2,7 @@ use crate::{
     codecs::EncodeV2,
     core::util::{PartialBuffer, WriteBuffer},
 };
-use std::{io::Result, ops::ControlFlow};
+use std::{io::Result, ops::ControlFlow, panic::AssertUnwindSafe};
 
 #[derive(Debug)]
 enum State {
@@ -10,7 +10,7 @@ enum State {
     Flushing,
     Finishing,
     Done,
-    Error(std::io::Error),
+    Error(AssertUnwindSafe<std::io::Error>),
 }
 
 #[derive(Debug)]
@@ -54,7 +54,7 @@ impl Encoder {
                             State::Finishing
                         } else {
                             if let Err(err) = encoder.encode(input, output) {
-                                self.state = State::Error(err);
+                                self.state = State::Error(AssertUnwindSafe(err));
                                 if output.written_len() > 0 {
                                     return ControlFlow::Break(Ok(()));
                                 } else {
@@ -79,7 +79,7 @@ impl Encoder {
                     }
                     Ok(false) => State::Flushing,
                     Err(err) => {
-                        self.state = State::Error(err);
+                        self.state = State::Error(AssertUnwindSafe(err));
                         if output.written_len() > 0 {
                             return ControlFlow::Break(Ok(()));
                         } else {
@@ -92,7 +92,7 @@ impl Encoder {
                     Ok(true) => State::Done,
                     Ok(false) => State::Finishing,
                     Err(err) => {
-                        self.state = State::Error(err);
+                        self.state = State::Error(AssertUnwindSafe(err));
                         if output.written_len() > 0 {
                             return ControlFlow::Break(Ok(()));
                         } else {
@@ -107,7 +107,7 @@ impl Encoder {
                     let State::Error(err) = std::mem::replace(&mut self.state, State::Done) else {
                         unreachable!()
                     };
-                    return ControlFlow::Break(Err(err));
+                    return ControlFlow::Break(Err(err.0));
                 }
             };
 

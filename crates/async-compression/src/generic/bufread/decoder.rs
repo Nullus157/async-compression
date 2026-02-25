@@ -2,7 +2,7 @@ use crate::{
     codecs::DecodeV2,
     core::util::{PartialBuffer, WriteBuffer},
 };
-use std::{io::Result, ops::ControlFlow};
+use std::{io::Result, ops::ControlFlow, panic::AssertUnwindSafe};
 
 #[derive(Debug)]
 enum State {
@@ -10,7 +10,7 @@ enum State {
     Flushing,
     Done,
     Next,
-    Error(std::io::Error),
+    Error(AssertUnwindSafe<std::io::Error>),
 }
 
 #[derive(Debug)]
@@ -55,7 +55,7 @@ impl Decoder {
                             // ignore the first error, occurs when input is empty
                             // but we need to run decode to flush
                             Err(err) if !first => {
-                                self.state = State::Error(err);
+                                self.state = State::Error(AssertUnwindSafe(err));
                                 if output.written_len() > 0 {
                                     return ControlFlow::Break(Ok(()));
                                 } else {
@@ -73,7 +73,7 @@ impl Decoder {
                         Ok(true) => {
                             if self.multiple_members {
                                 if let Err(err) = decoder.reinit() {
-                                    self.state = State::Error(err);
+                                    self.state = State::Error(AssertUnwindSafe(err));
                                     if output.written_len() > 0 {
                                         return ControlFlow::Break(Ok(()));
                                     } else {
@@ -91,7 +91,7 @@ impl Decoder {
                         }
                         Ok(false) => State::Flushing,
                         Err(err) => {
-                            self.state = State::Error(err);
+                            self.state = State::Error(AssertUnwindSafe(err));
                             if output.written_len() > 0 {
                                 return ControlFlow::Break(Ok(()));
                             } else {
@@ -119,7 +119,7 @@ impl Decoder {
                     let State::Error(err) = std::mem::replace(&mut self.state, State::Done) else {
                         unreachable!()
                     };
-                    return ControlFlow::Break(Err(err));
+                    return ControlFlow::Break(Err(err.0));
                 }
             };
 

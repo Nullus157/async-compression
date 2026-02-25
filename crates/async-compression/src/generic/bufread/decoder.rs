@@ -2,11 +2,7 @@ use crate::{
     codecs::DecodeV2,
     core::util::{PartialBuffer, WriteBuffer},
 };
-use std::{
-    io::Result,
-    ops::ControlFlow,
-    panic::AssertUnwindSafe,
-};
+use std::{io::Result, ops::ControlFlow, panic::AssertUnwindSafe};
 
 #[derive(Debug)]
 enum State {

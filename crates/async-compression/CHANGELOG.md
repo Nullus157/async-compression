@@ -46,6 +46,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0), 
 
 ## [0.4.41](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.40...async-compression-v0.4.41) - 2026-02-25
 
+### Other
+
+- *(async-compression)* release v0.4.41 ([#458](https://github.com/Nullus157/async-compression/pull/458))
+- Fix UnwindSafe auto impl ([#459](https://github.com/Nullus157/async-compression/pull/459))
+- On error the encoder/decoder now emit everything it was able to decode. ([#454](https://github.com/Nullus157/async-compression/pull/454))
+
+## [0.4.41](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.40...async-compression-v0.4.41) - 2026-02-25
+
 ### Fixed
 
 - On error the encoder/decoder now emit everything it was able to decode. ([#454](https://github.com/Nullus157/async-compression/pull/454))

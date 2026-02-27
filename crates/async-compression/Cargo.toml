@@ -30,6 +30,7 @@ all-algorithms = [
     "xz-parallel",
     "zlib",
     "zstd",
+    "snappy",
 ]
 
 # algorithms
@@ -46,6 +47,7 @@ xz2 = ["compression-codecs/xz2", "xz"]
 zlib = ["compression-codecs/zlib"]
 zstd = ["compression-codecs/zstd"]
 zstdmt = ["compression-codecs/zstdmt", "zstd"]
+snappy = ["compression-codecs/snappy"]
 
 
 [dependencies]
@@ -72,6 +74,7 @@ tokio = { version = "1.38.2", default-features = false, features = [
     "macros",
     "rt-multi-thread",
     "io-std",
+    "fs"
 ] }
 tokio-util = { version = "0.7", default-features = false, features = ["io"] }
 
@@ -83,6 +86,7 @@ lz4 = "1.28.1"
 liblzma = "0.4.2"
 zstd-safe = { version = "7", default-features = false }
 deflate64 = "0.1.5"
+snap = "1"
 
 [lints]
 workspace = true
@@ -130,6 +134,10 @@ required-features = ["zstd", "tokio"]
 [[test]]
 name = "zstd-window-size"
 required-features = ["zstd", "tokio"]
+
+[[test]]
+name = "snappy"
+required-features = ["snappy"]
 
 [[example]]
 name = "zlib_tokio_write"

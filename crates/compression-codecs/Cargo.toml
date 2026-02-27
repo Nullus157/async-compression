@@ -28,6 +28,7 @@ all-algorithms = [
     "zlib",
     "zstd",
     "deflate64",
+    "snappy"
 ]
 
 # algorithms
@@ -42,6 +43,7 @@ zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]
 deflate64 = ["dep:deflate64"]
+snappy = ["snap", "crc32c"]
 
 [dependencies]
 # Workspace dependencies.
@@ -56,6 +58,8 @@ lz4 = { version = "1.28.1", optional = true }
 liblzma = { version = "0.4.5", optional = true }
 memchr = { version = "2", optional = true }
 zstd-safe = { version = "7", optional = true, default-features = false }
+snap = { version = "1", optional = true, default-features = false }
+crc32c = { version = "0.6.8", optional = true, default-features = false }
 
 [lints]
 workspace = true

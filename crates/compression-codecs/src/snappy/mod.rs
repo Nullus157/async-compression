@@ -6,7 +6,7 @@ pub use self::encoder::SnappyEncoder;
 
 use std::io;
 
-const STREAM_FRAME: &'static [u8] = b"\xFF\x06\x00\x00sNaPpY";
+const STREAM_FRAME: &[u8] = b"\xFF\x06\x00\x00sNaPpY";
 
 #[derive(Debug, Copy, Clone)]
 struct FrameHeader {

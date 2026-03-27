@@ -33,10 +33,10 @@ enum State {
 }
 
 fn compress_frame(buffer: &[u8]) -> std::io::Result<Vec<u8>> {
-    let checksum = crc32c_masked(&buffer);
+    let checksum = crc32c_masked(buffer);
 
     let mut encoder = snap::raw::Encoder::new();
-    let compress_data = encoder.compress_vec(&buffer)?;
+    let compress_data = encoder.compress_vec(buffer)?;
     let (chunk_type, data) = if compress_data.len() >= buffer.len() - (buffer.len() / 8) {
         (ChunkType::Uncompressed, buffer)
     } else {
@@ -56,7 +56,7 @@ fn compress_frame(buffer: &[u8]) -> std::io::Result<Vec<u8>> {
 
     frame.extend_from_slice(&raw_header);
     frame.extend_from_slice(&raw_checksum);
-    frame.extend_from_slice(&data);
+    frame.extend_from_slice(data);
 
     Ok(frame)
 }
@@ -70,7 +70,7 @@ impl EncodeV2 for SnappyEncoder {
         loop {
             match &mut self.state {
                 State::InitStream(buffer) => {
-                    if buffer.unwritten().len() > 0 {
+                    if !buffer.unwritten().is_empty() {
                         output.copy_unwritten_from(buffer);
                         if output.has_no_spare_space() {
                             return Ok(());
@@ -97,7 +97,7 @@ impl EncodeV2 for SnappyEncoder {
                     self.state = State::Writing(compressed_frame.into())
                 }
                 State::Writing(buffer) => {
-                    if buffer.unwritten().len() > 0 {
+                    if buffer.unwritten().is_empty() {
                         output.copy_unwritten_from(buffer);
                         return Ok(());
                     } else {
@@ -112,7 +112,7 @@ impl EncodeV2 for SnappyEncoder {
         loop {
             match &mut self.state {
                 State::InitStream(buffer) => {
-                    if buffer.unwritten().len() > 0 {
+                    if buffer.unwritten().is_empty() {
                         output.copy_unwritten_from(buffer);
                         if output.has_no_spare_space() {
                             return Ok(false);
@@ -122,12 +122,12 @@ impl EncodeV2 for SnappyEncoder {
                 }
                 State::Buffering => {
                     let buffer = &mut self.chunk;
-                    let compressed_data = compress_frame(&buffer)?;
+                    let compressed_data = compress_frame(buffer)?;
                     buffer.clear();
                     self.state = State::Writing(compressed_data.into())
                 }
                 State::Writing(buffer) => {
-                    return if buffer.unwritten().len() > 0 {
+                    return if buffer.unwritten().is_empty() {
                         output.copy_unwritten_from(buffer);
                         Ok(false)
                     } else {

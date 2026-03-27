@@ -35,14 +35,14 @@ impl SnappyDecoder {
         let expected_sum = u32::from_le_bytes(expected_sum);
 
         self.out_buf.reset();
-        let mut out_buf = self.out_buf.get_mut();
+        let out_buf = self.out_buf.get_mut();
         out_buf.clear();
         match chunk_type {
             ChunkType::Compressed => {
                 let uncompress_length = snap::raw::decompress_len(data)?;
                 out_buf.resize(uncompress_length, 0);
                 let mut decoder = snap::raw::Decoder::new();
-                decoder.decompress(&data, &mut out_buf)?;
+                decoder.decompress(data, out_buf)?;
             }
             ChunkType::Uncompressed => out_buf.extend_from_slice(data),
             _ => unreachable!(
@@ -51,7 +51,7 @@ impl SnappyDecoder {
             ),
         };
 
-        let got_sum = crc32c_masked(&out_buf);
+        let got_sum = crc32c_masked(out_buf);
         if expected_sum != got_sum {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,

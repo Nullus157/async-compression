@@ -42,7 +42,7 @@ impl SnappyEncoder {
         let chunk_type = if compress_data >= in_buffer.len() - (in_buffer.len() / 8) {
             out_buf.clear();
             out_buf.resize(in_buffer.len() + 8, 0);
-            (&mut out_buf[8..]).copy_from_slice(in_buffer);
+            out_buf[8..].copy_from_slice(in_buffer);
 
             ChunkType::Uncompressed
         } else {
@@ -60,8 +60,8 @@ impl SnappyEncoder {
         let raw_header: [u8; 4] = header.into();
         let raw_checksum: [u8; 4] = checksum.to_le_bytes();
 
-        (&mut out_buf[0..4]).copy_from_slice(&raw_header);
-        (&mut out_buf[4..8]).copy_from_slice(&raw_checksum);
+        out_buf[0..4].copy_from_slice(&raw_header);
+        out_buf[4..8].copy_from_slice(&raw_checksum);
 
         Ok(())
     }

@@ -1,8 +1,8 @@
-use crate::snappy::{crc32c_masked, mask_crc, ChunkType, FrameHeader, MAX_BLOCK_SIZE, MAX_FRAME_SIZE};
+use crate::snappy::{crc32c_masked, ChunkType, FrameHeader, MAX_BLOCK_SIZE, MAX_FRAME_SIZE};
 use crate::DecodeV2;
 use compression_core::util::{PartialBuffer, WriteBuffer};
 use std::convert::TryInto;
-use std::{io, mem};
+use std::io;
 
 #[derive(Debug)]
 pub struct SnappyDecoder {

@@ -1,4 +1,4 @@
-use crate::snappy::{mask_crc, ChunkType, FrameHeader, MAX_BLOCK_SIZE, MAX_FRAME_SIZE};
+use crate::snappy::{crc32c_masked, mask_crc, ChunkType, FrameHeader, MAX_BLOCK_SIZE, MAX_FRAME_SIZE};
 use crate::DecodeV2;
 use compression_core::util::{PartialBuffer, WriteBuffer};
 use std::convert::TryInto;
@@ -51,8 +51,7 @@ impl SnappyDecoder {
             ),
         };
 
-        let got_sum = crc32c::crc32c(&out_buf);
-        let got_sum = mask_crc(got_sum);
+        let got_sum = crc32c_masked(&out_buf);
         if expected_sum != got_sum {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,

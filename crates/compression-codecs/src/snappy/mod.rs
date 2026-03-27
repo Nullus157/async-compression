@@ -7,6 +7,14 @@ pub use self::encoder::SnappyEncoder;
 use std::io;
 
 const STREAM_FRAME: &[u8] = b"\xFF\x06\x00\x00sNaPpY";
+const CHUNK_HEADER_SIZE: usize = 4;
+const CRC_SIZE: usize = 4;
+const MAX_COMPRESSED_SIZE: usize = 76490;
+
+const MAX_FRAME_SIZE: usize =
+    STREAM_FRAME.len() + CHUNK_HEADER_SIZE + CRC_SIZE + MAX_COMPRESSED_SIZE;
+
+const MAX_BLOCK_SIZE: usize = 65536;
 
 #[derive(Debug, Copy, Clone)]
 struct FrameHeader {

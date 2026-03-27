@@ -1,53 +1,67 @@
-use crate::snappy::{mask_crc, ChunkType, FrameHeader};
+use crate::snappy::{mask_crc, ChunkType, FrameHeader, MAX_BLOCK_SIZE, MAX_FRAME_SIZE};
 use crate::DecodeV2;
 use compression_core::util::{PartialBuffer, WriteBuffer};
 use std::convert::TryInto;
 use std::{io, mem};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct SnappyDecoder {
     state: State,
+    in_buf: Vec<u8>,
+    out_buf: PartialBuffer<Vec<u8>>,
+}
+
+impl Default for SnappyDecoder {
+    fn default() -> Self {
+        Self {
+            state: State::default(),
+            in_buf: Vec::with_capacity(MAX_FRAME_SIZE),
+            out_buf: PartialBuffer::new(Vec::with_capacity(MAX_BLOCK_SIZE)),
+        }
+    }
 }
 
 impl SnappyDecoder {
     pub fn new() -> Self {
         Self::default()
     }
-}
 
-fn decode_chunk(chunk_type: ChunkType, mut buffer: Vec<u8>) -> std::io::Result<Vec<u8>> {
-    let data = buffer.split_off(4);
+    fn decode_chunk(&mut self, chunk_type: ChunkType) -> std::io::Result<()> {
+        let (expected_sum, data) = self.in_buf.split_at(4);
 
-    let expected_sum: [u8; 4] = buffer
-        .try_into()
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid checksum length"))?;
-    let expected_sum = u32::from_le_bytes(expected_sum);
+        let expected_sum: [u8; 4] = expected_sum
+            .try_into()
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid checksum length"))?;
+        let expected_sum = u32::from_le_bytes(expected_sum);
 
-    let output = match chunk_type {
-        ChunkType::Compressed => {
-            let uncompress_length = snap::raw::decompress_len(&data)?;
-            let mut out_buf = vec![0; uncompress_length];
-            let mut decoder = snap::raw::Decoder::new();
-            decoder.decompress(&data, &mut out_buf)?;
-            out_buf
+        self.out_buf.reset();
+        let mut out_buf = self.out_buf.get_mut();
+        out_buf.clear();
+        match chunk_type {
+            ChunkType::Compressed => {
+                let uncompress_length = snap::raw::decompress_len(data)?;
+                out_buf.resize(uncompress_length, 0);
+                let mut decoder = snap::raw::Decoder::new();
+                decoder.decompress(&data, &mut out_buf)?;
+            }
+            ChunkType::Uncompressed => out_buf.extend_from_slice(data),
+            _ => unreachable!(
+                "can only decode compressed or uncompressed chunks, not {:?}",
+                chunk_type
+            ),
+        };
+
+        let got_sum = crc32c::crc32c(&out_buf);
+        let got_sum = mask_crc(got_sum);
+        if expected_sum != got_sum {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "checksum mismatch",
+            ));
         }
-        ChunkType::Uncompressed => data,
-        _ => unreachable!(
-            "can only decode compressed or uncompressed chunks, not {:?}",
-            chunk_type
-        ),
-    };
 
-    let got_sum = crc32c::crc32c(&output);
-    let got_sum = mask_crc(got_sum);
-    if expected_sum != got_sum {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "checksum mismatch",
-        ));
+        Ok(())
     }
-
-    Ok(output)
 }
 
 #[derive(Debug)]
@@ -58,9 +72,8 @@ enum State {
     Buffering {
         remaining: usize,
         chunk_type: ChunkType,
-        buffer: Vec<u8>,
     },
-    Sending(PartialBuffer<Vec<u8>>),
+    Sending,
 }
 
 impl Default for State {
@@ -116,10 +129,11 @@ impl DecodeV2 for SnappyDecoder {
                         | ChunkType::ReservedSkippable(_)
                         | ChunkType::Padding => self.state = State::Skipping(data_frame_length),
                         ChunkType::Compressed | ChunkType::Uncompressed => {
+                            let in_buf = &mut self.in_buf;
+                            in_buf.clear();
                             self.state = State::Buffering {
                                 remaining: data_frame_length,
                                 chunk_type: header.chunk_type,
-                                buffer: Vec::with_capacity(data_frame_length),
                             }
                         }
                         ChunkType::ReservedUnskippable(chunk_type) => {
@@ -146,7 +160,6 @@ impl DecodeV2 for SnappyDecoder {
                 State::Buffering {
                     remaining,
                     chunk_type,
-                    buffer,
                 } => {
                     let input_buf = input.unwritten();
                     let boundary = (*remaining).min(input_buf.len());
@@ -154,7 +167,7 @@ impl DecodeV2 for SnappyDecoder {
 
                     *remaining -= input_buf.len();
 
-                    buffer.extend_from_slice(input_buf);
+                    self.in_buf.extend_from_slice(input_buf);
                     input.advance(input_buf.len());
 
                     if *remaining != 0 {
@@ -163,11 +176,11 @@ impl DecodeV2 for SnappyDecoder {
 
                     // We're done buffering, so let's decode the chunk
                     let chunk_type = *chunk_type;
-                    let buffer = mem::take(buffer);
-                    let output = decode_chunk(chunk_type, buffer)?;
-                    self.state = State::Sending(PartialBuffer::new(output))
+                    self.decode_chunk(chunk_type)?;
+                    self.state = State::Sending
                 }
-                State::Sending(buffer) => {
+                State::Sending => {
+                    let buffer = &mut self.out_buf;
                     output.copy_unwritten_from(buffer);
                     if buffer.unwritten().is_empty() {
                         self.state = State::ChunkHeader([0u8; 4].into())
@@ -181,7 +194,8 @@ impl DecodeV2 for SnappyDecoder {
 
     fn flush(&mut self, output: &mut WriteBuffer<'_>) -> std::io::Result<bool> {
         match &mut self.state {
-            State::Sending(buffer) => {
+            State::Sending => {
+                let buffer = &mut self.out_buf;
                 output.copy_unwritten_from(buffer);
                 if buffer.unwritten().is_empty() {
                     self.state = State::ChunkHeader([0u8; 4].into());

@@ -22,6 +22,8 @@ pub mod gzip;
 pub mod lz4;
 #[cfg(feature = "lzma")]
 pub mod lzma;
+#[cfg(feature = "snappy")]
+pub mod snappy;
 #[cfg(feature = "xz")]
 pub mod xz;
 #[cfg(feature = "lzma")]
@@ -30,8 +32,6 @@ pub mod xz2;
 pub mod zlib;
 #[cfg(feature = "zstd")]
 pub mod zstd;
-#[cfg(feature = "snappy")]
-pub mod snappy;
 
 use compression_core::util::{PartialBuffer, WriteBuffer};
 
@@ -51,6 +51,8 @@ pub use self::gzip::{GzipDecoder, GzipEncoder};
 pub use self::lz4::{Lz4Decoder, Lz4Encoder};
 #[cfg(feature = "lzma")]
 pub use self::lzma::{LzmaDecoder, LzmaEncoder};
+#[cfg(feature = "snappy")]
+pub use self::snappy::{SnappyDecoder, SnappyEncoder};
 #[cfg(feature = "xz")]
 pub use self::xz::{XzDecoder, XzEncoder};
 #[cfg(feature = "lzma")]
@@ -59,8 +61,6 @@ pub use self::xz2::{Xz2Decoder, Xz2Encoder, Xz2FileFormat};
 pub use self::zlib::{ZlibDecoder, ZlibEncoder};
 #[cfg(feature = "zstd")]
 pub use self::zstd::{ZstdDecoder, ZstdEncoder};
-#[cfg(feature = "snappy")]
-pub use self::snappy::{SnappyDecoder, SnappyEncoder};
 
 fn forward_output<R>(
     output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,

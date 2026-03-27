@@ -97,7 +97,7 @@ impl EncodeV2 for SnappyEncoder {
                     self.state = State::Writing(compressed_frame.into())
                 }
                 State::Writing(buffer) => {
-                    if buffer.unwritten().is_empty() {
+                    if !buffer.unwritten().is_empty() {
                         output.copy_unwritten_from(buffer);
                         return Ok(());
                     } else {
@@ -112,7 +112,7 @@ impl EncodeV2 for SnappyEncoder {
         loop {
             match &mut self.state {
                 State::InitStream(buffer) => {
-                    if buffer.unwritten().is_empty() {
+                    if !buffer.unwritten().is_empty() {
                         output.copy_unwritten_from(buffer);
                         if output.has_no_spare_space() {
                             return Ok(false);
@@ -127,7 +127,7 @@ impl EncodeV2 for SnappyEncoder {
                     self.state = State::Writing(compressed_data.into())
                 }
                 State::Writing(buffer) => {
-                    return if buffer.unwritten().is_empty() {
+                    return if !buffer.unwritten().is_empty() {
                         output.copy_unwritten_from(buffer);
                         Ok(false)
                     } else {

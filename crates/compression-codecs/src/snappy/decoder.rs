@@ -90,7 +90,10 @@ impl Default for State {
 
 impl DecodeV2 for SnappyDecoder {
     fn reinit(&mut self) -> std::io::Result<()> {
-        *self = Self::new();
+        self.state = State::default();
+        self.in_buf.get_mut().clear();
+        self.in_buf.reset();
+        self.out_buf.reset();
         Ok(())
     }
 
@@ -108,7 +111,7 @@ impl DecodeV2 for SnappyDecoder {
                     }
 
                     let header = FrameHeader::parse(header.written())?;
-                    if let ChunkType::Stream = header.chunk_type {
+                    if matches!(header.chunk_type, ChunkType::Stream) {
                         self.state = State::Skipping(header.data_frame_length as usize)
                     } else {
                         return Err(std::io::Error::new(

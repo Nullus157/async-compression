@@ -39,7 +39,7 @@ impl From<u8> for ChunkType {
             0x00 => Self::Compressed,
             0x01 => Self::Uncompressed,
             0xFE => Self::Padding,
-            0x02..=0x7f => Self::ReservedUnskippable(value),
+            0x02..=0x7F => Self::ReservedUnskippable(value),
             0x80..=0xFD => Self::ReservedSkippable(value),
         }
     }
@@ -66,7 +66,7 @@ impl FrameHeader {
         ))?;
 
         let chunk_type = ChunkType::from(header_part[0]);
-        // SAFETY: header_part is guaranteed to have at least 4 bytes due to split_first_chunk
+        // header_part is guaranteed to have at least 4 bytes due to split_first_chunk
         let length_part: &[u8; 3] = header_part[1..].first_chunk().unwrap();
 
         let length = read_u24_le(length_part) as u64;
@@ -90,7 +90,7 @@ impl From<FrameHeader> for [u8; 4] {
     }
 }
 
-pub fn read_u24_le(slice: &[u8; 3]) -> u32 {
+fn read_u24_le(slice: &[u8; 3]) -> u32 {
     slice[0] as u32 | (slice[1] as u32) << 8 | (slice[2] as u32) << 16
 }
 

@@ -7,7 +7,7 @@ const MAX_BLOCK_SIZE: usize = 1 << 16;
 #[derive(Debug)]
 pub struct SnappyEncoder {
     state: State,
-    chunk: Vec<u8>,
+    in_buf: PartialBuffer<Vec<u8>>,
     out_buf: PartialBuffer<Vec<u8>>,
 }
 
@@ -15,7 +15,7 @@ impl Default for SnappyEncoder {
     fn default() -> Self {
         Self {
             state: State::InitStream(PartialBuffer::new(STREAM_FRAME)),
-            chunk: Vec::with_capacity(MAX_BLOCK_SIZE),
+            in_buf: PartialBuffer::new(Vec::with_capacity(MAX_BLOCK_SIZE)),
             out_buf: PartialBuffer::new(Vec::with_capacity(MAX_FRAME_SIZE)),
         }
     }
@@ -27,7 +27,7 @@ impl SnappyEncoder {
     }
 
     fn compress_frame(&mut self) -> std::io::Result<()> {
-        let in_buffer = &self.chunk;
+        let in_buffer = &self.in_buf.unwritten();
         let checksum = crc32c_masked(in_buffer);
 
         self.out_buf.reset();
@@ -39,31 +39,54 @@ impl SnappyEncoder {
         let mut encoder = snap::raw::Encoder::new();
         let compress_data = encoder.compress(in_buffer, &mut out_buf[8..])?;
 
-        let chunk_type = if compress_data >= in_buffer.len() - (in_buffer.len() / 8) {
-            out_buf.clear();
-            out_buf.resize(in_buffer.len() + 8, 0);
-            out_buf[8..].copy_from_slice(in_buffer);
-
-            ChunkType::Uncompressed
+        let (chunk_type, chunk_len) = if compress_data >= in_buffer.len() - (in_buffer.len() / 8) {
+            (ChunkType::Uncompressed, in_buffer.len())
         } else {
-            out_buf.truncate(compress_data + 8);
-            ChunkType::Compressed
+            out_buf.truncate(compress_data);
+            (ChunkType::Compressed, out_buf.len())
         };
 
         // We add 4 because the length includes the 4 bytes of the checksum.
-        let chunk_len = out_buf.len() - 4;
+        let chunk_len = chunk_len + 4;
         let header = FrameHeader {
             chunk_type,
             data_frame_length: chunk_len as u64,
         };
 
-        let raw_header: [u8; 4] = header.into();
+        let mut raw_chunk_header = [0u8; 8];
+        let raw_frame_header: [u8; 4] = header.into();
         let raw_checksum: [u8; 4] = checksum.to_le_bytes();
 
-        out_buf[0..4].copy_from_slice(&raw_header);
-        out_buf[4..8].copy_from_slice(&raw_checksum);
+        raw_chunk_header[0..4].copy_from_slice(&raw_frame_header);
+        raw_chunk_header[4..8].copy_from_slice(&raw_checksum);
+
+        match chunk_type {
+            ChunkType::Compressed => self.state = State::CompressCopy(raw_chunk_header.into()),
+            ChunkType::Uncompressed => self.state = State::UncompressCopy(raw_chunk_header.into()),
+            _ => unreachable!(),
+        }
 
         Ok(())
+    }
+}
+
+fn write(
+    header: &mut PartialBuffer<[u8; 8]>,
+    input: &mut PartialBuffer<Vec<u8>>,
+    output: &mut WriteBuffer<'_>,
+) -> bool {
+    if !header.unwritten().is_empty() {
+        output.copy_unwritten_from(header);
+        if output.has_no_spare_space() {
+            return false;
+        }
+    }
+
+    if !input.unwritten().is_empty() {
+        output.copy_unwritten_from(input);
+        false
+    } else {
+        true
     }
 }
 
@@ -71,7 +94,8 @@ impl SnappyEncoder {
 enum State {
     InitStream(PartialBuffer<&'static [u8]>),
     Buffering,
-    Writing,
+    UncompressCopy(PartialBuffer<[u8; 8]>),
+    CompressCopy(PartialBuffer<[u8; 8]>),
 }
 
 impl EncodeV2 for SnappyEncoder {
@@ -92,7 +116,7 @@ impl EncodeV2 for SnappyEncoder {
                     self.state = State::Buffering
                 }
                 State::Buffering => {
-                    let buffer = &mut self.chunk;
+                    let buffer = self.in_buf.get_mut();
                     let input_buf = input.unwritten();
                     let available = MAX_BLOCK_SIZE - buffer.len();
                     let boundary = available.min(input_buf.len());
@@ -106,17 +130,22 @@ impl EncodeV2 for SnappyEncoder {
                     }
 
                     self.compress_frame()?;
-                    self.chunk.clear();
-                    self.state = State::Writing
                 }
-                State::Writing => {
-                    let buffer = &mut self.out_buf;
-                    if !buffer.unwritten().is_empty() {
-                        output.copy_unwritten_from(buffer);
+                State::UncompressCopy(header) => {
+                    if !write(header, &mut self.in_buf, output) {
                         return Ok(());
-                    } else {
-                        self.state = State::Buffering
                     }
+                    self.in_buf.get_mut().clear();
+                    self.in_buf.reset();
+                    self.state = State::Buffering
+                }
+                State::CompressCopy(header) => {
+                    if !write(header, &mut self.out_buf, output) {
+                        return Ok(());
+                    }
+                    self.in_buf.get_mut().clear();
+                    self.in_buf.reset();
+                    self.state = State::Buffering
                 }
             }
         }
@@ -136,18 +165,11 @@ impl EncodeV2 for SnappyEncoder {
                 }
                 State::Buffering => {
                     self.compress_frame()?;
-                    self.chunk.clear();
-                    self.state = State::Writing
                 }
-                State::Writing => {
-                    let buffer = &mut self.out_buf;
-                    return if !buffer.unwritten().is_empty() {
-                        output.copy_unwritten_from(buffer);
-                        Ok(false)
-                    } else {
-                        Ok(true)
-                    };
+                State::UncompressCopy(header) => {
+                    return Ok(write(header, &mut self.in_buf, output))
                 }
+                State::CompressCopy(header) => return Ok(write(header, &mut self.out_buf, output)),
             }
         }
     }

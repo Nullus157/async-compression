@@ -7,6 +7,7 @@ pub use self::encoder::SnappyEncoder;
 use std::io;
 
 const STREAM_FRAME: &[u8] = b"\xFF\x06\x00\x00sNaPpY";
+const STREAM_DATA_FRAME_SIZE: usize = 6;
 const CHUNK_HEADER_SIZE: usize = 4;
 const CRC_SIZE: usize = 4;
 const MAX_COMPRESSED_SIZE: usize = 76490;

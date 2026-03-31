@@ -1,7 +1,10 @@
-use crate::snappy::{crc32c_masked, ChunkType, FrameHeader, MAX_BLOCK_SIZE, MAX_FRAME_SIZE};
+use crate::snappy::{
+    crc32c_masked, ChunkType, FrameHeader, MAX_BLOCK_SIZE, MAX_FRAME_SIZE, STREAM_DATA_FRAME_SIZE,
+};
 use crate::DecodeV2;
 use compression_core::util::{PartialBuffer, WriteBuffer};
 use std::io;
+use std::num::NonZeroUsize;
 
 #[derive(Debug)]
 pub struct SnappyDecoder {
@@ -73,9 +76,9 @@ impl SnappyDecoder {
 enum State {
     StreamIdentifier(PartialBuffer<[u8; 4]>),
     ChunkHeader(PartialBuffer<[u8; 4]>),
-    Skipping(usize),
+    Skipping(NonZeroUsize),
     Buffering {
-        remaining: usize,
+        remaining: NonZeroUsize,
         chunk_type: ChunkType,
     },
     UncompressedCopy,
@@ -112,7 +115,18 @@ impl DecodeV2 for SnappyDecoder {
 
                     let header = FrameHeader::parse(header.written())?;
                     if matches!(header.chunk_type, ChunkType::Stream) {
-                        self.state = State::Skipping(header.data_frame_length as usize)
+                        let data_frame_length = header.data_frame_length as usize;
+                        if data_frame_length != STREAM_DATA_FRAME_SIZE {
+                            return Err(std::io::Error::new(
+                                std::io::ErrorKind::InvalidData,
+                                format!(
+                                    "Invalid stream frame data length, expected {}, got {}",
+                                    STREAM_DATA_FRAME_SIZE, data_frame_length
+                                ),
+                            ));
+                        }
+                        // We checked above that the stream data frame length is valid and non-zero
+                        self.state = State::Skipping(NonZeroUsize::new(data_frame_length).unwrap())
                     } else {
                         return Err(std::io::Error::new(
                             std::io::ErrorKind::InvalidData,
@@ -131,7 +145,12 @@ impl DecodeV2 for SnappyDecoder {
 
                     let header = FrameHeader::parse(header.written())?;
 
-                    let data_frame_length = header.data_frame_length as usize;
+                    let Some(data_frame_length) =
+                        NonZeroUsize::new(header.data_frame_length as usize)
+                    else {
+                        self.state = State::ChunkHeader([0u8; 4].into());
+                        continue;
+                    };
 
                     match header.chunk_type {
                         ChunkType::Stream
@@ -159,28 +178,34 @@ impl DecodeV2 for SnappyDecoder {
                 }
                 State::Skipping(n) => {
                     let input_len = input.unwritten().len();
-                    if input_len < *n {
+
+                    let n = n.get();
+                    if input_len < n {
                         input.advance(input_len);
-                        *n -= input_len;
-                        return Ok(false);
+                        if let Some(n) = NonZeroUsize::new(n - input_len) {
+                            self.state = State::Skipping(n);
+                            return Ok(false);
+                        }
                     }
-                    input.advance(*n);
+                    input.advance(n);
                     self.state = State::ChunkHeader([0u8; 4].into())
                 }
                 State::Buffering {
                     remaining,
                     chunk_type,
                 } => {
+                    let mut rem = remaining.get();
                     let input_buf = input.unwritten();
-                    let boundary = (*remaining).min(input_buf.len());
+                    let boundary = rem.min(input_buf.len());
                     let input_buf = &input_buf[..boundary];
 
-                    *remaining -= input_buf.len();
+                    rem -= input_buf.len();
 
                     self.in_buf.get_mut().extend_from_slice(input_buf);
                     input.advance(input_buf.len());
 
-                    if *remaining != 0 {
+                    if let Some(rem) = NonZeroUsize::new(rem) {
+                        *remaining = rem;
                         return Ok(false);
                     }
 

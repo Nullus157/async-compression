@@ -34,10 +34,10 @@ impl SnappyEncoder {
         let out_buf = self.out_buf.get_mut();
         out_buf.clear();
         let max_compress_size = snap::raw::max_compress_len(in_buffer.len());
-        out_buf.resize(max_compress_size + 8, 0);
+        out_buf.resize(max_compress_size, 0);
 
         let mut encoder = snap::raw::Encoder::new();
-        let compress_data = encoder.compress(in_buffer, &mut out_buf[8..])?;
+        let compress_data = encoder.compress(in_buffer, out_buf)?;
 
         let (chunk_type, chunk_len) = if compress_data >= in_buffer.len() - (in_buffer.len() / 8) {
             (ChunkType::Uncompressed, in_buffer.len())

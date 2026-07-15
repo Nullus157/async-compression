@@ -81,9 +81,8 @@ impl Decoder {
                                     }
                                 }
 
-                                // The decode stage might consume all the input,
-                                // the next stage might need to poll again if it's empty.
-                                first = true;
+                                // Poll again only if the decode stage consumed all the input.
+                                first = input.unwritten().is_empty();
                                 State::Next
                             } else {
                                 State::Done

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.43](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.42...async-compression-v0.4.43) - 2026-07-28
+
+### Other
+
+- Fix hang when decoding a corrupt subsequent zstd frame ([#470](https://github.com/Nullus157/async-compression/pull/470))
+
 ## [0.4.42](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.41...async-compression-v0.4.42) - 2026-04-21
 
 ### Other

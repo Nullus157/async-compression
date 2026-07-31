@@ -8,11 +8,11 @@ jobs:
     name: cargo +nightly test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
       with:
         toolchain: nightly
-    - uses: taiki-e/install-action@v2
+    - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
       with: { tool: cargo-nextest }
     - run: cargo --locked nextest run --workspace --all-features
     - run: cargo --locked test --workspace --doc --all-features
@@ -21,8 +21,8 @@ jobs:
     name: cargo +nightly fmt --check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
       with:
         toolchain: nightly
         components: rustfmt
@@ -32,8 +32,8 @@ jobs:
     name: cargo +nightly clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
       with:
         toolchain: nightly
         components: clippy

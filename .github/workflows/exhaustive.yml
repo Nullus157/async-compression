@@ -21,7 +21,7 @@ jobs:
       with:
         toolchain: ${{ matrix.platform.toolchain }}
         target: ${{ matrix.platform.target }}
-    - uses: taiki-e/install-action@v2
+    - uses: taiki-e/install-action@v2.85.3
       with: { tool: cargo-nextest }
     - run: cargo --locked nextest run --workspace --all-features
     - run: cargo --locked test --workspace --doc --all-features
@@ -50,7 +50,7 @@ jobs:
         ) -Z minimal-versions
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with: { toolchain: stable }
-    - uses: taiki-e/install-action@v2
+    - uses: taiki-e/install-action@v2.85.3
       with: { tool: cargo-nextest }
     - run: cargo --locked nextest run --workspace --all-features
     - run: cargo --locked test --workspace --doc --all-features
@@ -67,7 +67,7 @@ jobs:
         cargo update -Z minimal-versions
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with: { toolchain: stable }
-    - uses: taiki-e/install-action@v2
+    - uses: taiki-e/install-action@v2.85.3
       with: { tool: cargo-nextest }
     - run: cargo --locked nextest run --workspace --all-features
     - run: cargo --locked test --workspace --doc --all-features
@@ -83,7 +83,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions-rust-lang/setup-rust-toolchain@v1
-    - uses: taiki-e/install-action@v2
+    - uses: taiki-e/install-action@v2.85.3
       with:
         tool: cargo-hack,just
     - run: just check-features ${{ matrix.async_runtime }}
@@ -99,7 +99,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions-rust-lang/setup-rust-toolchain@v1
-    - uses: taiki-e/install-action@v2
+    - uses: taiki-e/install-action@v2.85.3
       with:
         tool: cargo-hack,just
     - run: just check-test-features ${{ matrix.async_runtime }}

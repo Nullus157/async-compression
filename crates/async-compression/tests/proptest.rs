@@ -142,4 +142,7 @@ mod proptest {
 
     #[cfg(feature = "zstd")]
     tests!(zstd);
+
+    #[cfg(feature = "snappy")]
+    tests!(snappy);
 }

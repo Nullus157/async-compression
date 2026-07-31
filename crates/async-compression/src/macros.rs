@@ -375,5 +375,19 @@ macro_rules! algos {
         { @dec }
         );
 
+        algos!(@algo snappy ["snappy"] SnappyDecoder SnappyEncoder <$inner>
+        { @enc
+
+            pub fn with_quality(inner: $inner, _level: crate::core::Level) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codecs::SnappyEncoder::new()
+                    ),
+                }
+            }
+        }
+        { @dec }
+        );
     }
 }

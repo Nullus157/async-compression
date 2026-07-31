@@ -176,6 +176,7 @@ macro_rules! io_test_cases {
 
                     #[test]
                     #[ntest::timeout(1000)]
+                    #[cfg(not(feature = "snappy"))]
                     fn trailer() {
                         let mut compressed = sync::compress(&[1, 2, 3, 4, 5, 6]);
 

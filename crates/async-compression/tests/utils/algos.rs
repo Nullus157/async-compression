@@ -229,6 +229,33 @@ algos! {
             }
         }
     }
+
+    pub mod snappy("snappy", SnappyEncoder, SnappyDecoder) {
+        pub mod sync {
+            pub use crate::utils::impls::sync::to_vec;
+
+            pub fn compress(bytes: &[u8]) -> Vec<u8> {
+                if bytes.is_empty() {
+                    return vec![0xff, 0x06, 0x00, 0x00, b's', b'N', b'a', b'P', b'p', b'Y'];
+                }
+
+                use std::io::Write;
+                use snap::write::FrameEncoder;
+
+                let mut output = Vec::new();
+                {
+                    let mut encoder = FrameEncoder::new(&mut output);
+                    encoder.write_all(bytes).unwrap();
+                }
+                output
+            }
+
+            pub fn decompress(bytes: &[u8]) -> Vec<u8> {
+                use snap::read::FrameDecoder;
+                to_vec(FrameDecoder::new(bytes))
+            }
+        }
+    }
 }
 
 macro_rules! io_algo_parallel {

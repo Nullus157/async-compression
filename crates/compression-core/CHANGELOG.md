@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Enforce `WriteBuffer::advance` and `WriteBuffer::written` initialization checks in release builds to prevent safe access to uninitialized memory ([#474](https://github.com/Nullus157/async-compression/issues/474)).
+
 ## [0.4.32](https://github.com/Nullus157/async-compression/compare/compression-core-v0.4.31...compression-core-v0.4.32) - 2026-04-21
 
 ### Other

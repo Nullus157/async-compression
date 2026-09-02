@@ -1,6 +1,6 @@
 [package]
 name = "compression-core"
-version = "0.4.32"
+version = "0.4.33"
 description = """
 Abstractions for compression algorithms.
 """

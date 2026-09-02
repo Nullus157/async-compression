@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix `WriteBuffer::assume_init` to track initialization relative to the written position without adding overlapping calls, and enforce bounds checks for initialization setters in release builds ([#475](https://github.com/Nullus157/async-compression/issues/475)).
 - Enforce `WriteBuffer::advance` and `WriteBuffer::written` initialization checks in release builds to prevent safe access to uninitialized memory ([#477](https://github.com/Nullus157/async-compression/pull/477)).
 
 ## [0.4.32](https://github.com/Nullus157/async-compression/compare/compression-core-v0.4.31...compression-core-v0.4.32) - 2026-04-21

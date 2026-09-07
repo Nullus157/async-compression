@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.40](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.39...compression-codecs-v0.4.40) - 2026-09-07
+
+### Other
+
+- *(deps)* update zstd requirement from 0.13 to 0.14 ([#481](https://github.com/Nullus157/async-compression/pull/481))
+
 ## [0.4.39](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.38...compression-codecs-v0.4.39) - 2026-09-02
 
 ### Other

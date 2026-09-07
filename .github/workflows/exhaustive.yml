@@ -21,7 +21,7 @@ jobs:
       with:
         toolchain: ${{ matrix.platform.toolchain }}
         target: ${{ matrix.platform.target }}
-    - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
+    - uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
       with: { tool: cargo-nextest }
     - run: cargo --locked nextest run --workspace --all-features
     - run: cargo --locked test --workspace --doc --all-features
@@ -50,7 +50,7 @@ jobs:
         ) -Z minimal-versions
     - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
       with: { toolchain: stable }
-    - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
+    - uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
       with: { tool: cargo-nextest }
     - run: cargo --locked nextest run --workspace --all-features
     - run: cargo --locked test --workspace --doc --all-features
@@ -67,7 +67,7 @@ jobs:
         cargo update -Z minimal-versions
     - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
       with: { toolchain: stable }
-    - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
+    - uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
       with: { tool: cargo-nextest }
     - run: cargo --locked nextest run --workspace --all-features
     - run: cargo --locked test --workspace --doc --all-features
@@ -83,7 +83,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
-    - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
+    - uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
       with:
         tool: cargo-hack,just
     - run: just check-features ${{ matrix.async_runtime }}
@@ -99,7 +99,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
-    - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
+    - uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
       with:
         tool: cargo-hack,just
     - run: just check-test-features ${{ matrix.async_runtime }}

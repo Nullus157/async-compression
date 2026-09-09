@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.41](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.40...compression-codecs-v0.4.41) - 2026-09-09
+
+### Other
+
+- Return UnexpectedEof when deflate64 does not progress ([#483](https://github.com/Nullus157/async-compression/pull/483))
+
 ## [0.4.40](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.39...compression-codecs-v0.4.40) - 2026-09-07
 
 ### Other

@@ -69,7 +69,18 @@ impl Decoder {
                 }
 
                 State::Flushing => {
-                    match decoder.finish(output) {
+                    let before = output.written_len();
+                    let result = decoder.finish(output).and_then(|finished| {
+                        if !finished
+                            && output.written_len() == before
+                            && !output.has_no_spare_space()
+                        {
+                            Err(std::io::ErrorKind::UnexpectedEof.into())
+                        } else {
+                            Ok(finished)
+                        }
+                    });
+                    match result {
                         Ok(true) => {
                             if self.multiple_members {
                                 if let Err(err) = decoder.reinit() {

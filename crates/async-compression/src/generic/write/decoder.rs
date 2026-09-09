@@ -109,8 +109,11 @@ impl Decoder {
                 }
 
                 State::Finishing => {
+                    let before = output.written_len();
                     if decoder.finish(output)? {
                         (State::Done, false)
+                    } else if output.written_len() == before && !output.has_no_spare_space() {
+                        return Poll::Ready(Err(io::ErrorKind::UnexpectedEof.into()));
                     } else {
                         (State::Finishing, false)
                     }

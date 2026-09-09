@@ -72,6 +72,12 @@ impl DecodeV2 for Deflate64Decoder {
     }
 
     fn finish(&mut self, output: &mut WriteBuffer<'_>) -> Result<bool> {
-        self.decode(&mut PartialBuffer::new(&[]), output)
+        let before = output.written_len();
+        let finished = self.decode(&mut PartialBuffer::new(&[]), output)?;
+        if !finished && output.written_len() == before && !output.has_no_spare_space() {
+            Err(ErrorKind::UnexpectedEof.into())
+        } else {
+            Ok(finished)
+        }
     }
 }

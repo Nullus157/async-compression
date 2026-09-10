@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Avoid poisoning the Zstd decoder when repeatedly polled while waiting for more input.
+
 ## [0.4.41](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.40...compression-codecs-v0.4.41) - 2026-09-09
 
 ### Other

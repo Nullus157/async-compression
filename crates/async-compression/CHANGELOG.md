@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.47](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.46...async-compression-v0.4.47) - 2026-09-14
+
+### Fixed
+
+- *(zstd)* avoid no-progress errors while awaiting input ([#486](https://github.com/Nullus157/async-compression/pull/486))
+
 ## [0.4.46](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.45...async-compression-v0.4.46) - 2026-09-09
 
 ### Other

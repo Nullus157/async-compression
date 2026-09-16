@@ -140,3 +140,69 @@ fn gzip_bufread_chunks_decompress_without_footer_emits_all_payload() {
     assert!(result.is_err());
     assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
 }
+
+/// Yields `data` once and then stays pending, modelling a live HTTP body that neither ends nor
+/// sends more bytes.
+#[cfg(feature = "futures-io")]
+struct StalledReader {
+    data: Vec<u8>,
+    pos: usize,
+}
+
+#[cfg(feature = "futures-io")]
+impl futures::io::AsyncRead for StalledReader {
+    fn poll_read(
+        self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+        buf: &mut [u8],
+    ) -> std::task::Poll<std::io::Result<usize>> {
+        let this = self.get_mut();
+        if this.pos == this.data.len() {
+            return std::task::Poll::Pending;
+        }
+        let n = (this.data.len() - this.pos).min(buf.len());
+        buf[..n].copy_from_slice(&this.data[this.pos..this.pos + n]);
+        this.pos += n;
+        std::task::Poll::Ready(Ok(n))
+    }
+}
+
+#[cfg(feature = "futures-io")]
+impl futures::io::AsyncBufRead for StalledReader {
+    fn poll_fill_buf(
+        self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::io::Result<&[u8]>> {
+        let this = self.get_mut();
+        if this.pos == this.data.len() {
+            return std::task::Poll::Pending;
+        }
+        std::task::Poll::Ready(Ok(&this.data[this.pos..]))
+    }
+
+    fn consume(self: std::pin::Pin<&mut Self>, amt: usize) {
+        let this = self.get_mut();
+        this.pos = (this.pos + amt).min(this.data.len());
+    }
+}
+
+/// A gzip member followed by bytes too short to complete a header, on a stream that never ends.
+/// The bytes already contradict the magic, so decoding must fail instead of waiting for more.
+#[test]
+#[ntest::timeout(1000)]
+#[cfg(feature = "futures-io")]
+fn bufread_multiple_members_rejects_short_invalid_header() {
+    use futures::{executor::block_on, io::AsyncReadExt as _};
+
+    let mut compressed = sync::compress(&[1, 2, 3, 4, 5, 6]);
+    compressed.extend_from_slice(b"ZZ");
+
+    let mut decoder = bufread::Decoder::new(StalledReader {
+        data: compressed,
+        pos: 0,
+    });
+    decoder.multiple_members(true);
+
+    let mut output = Vec::new();
+    assert!(block_on(decoder.read_to_end(&mut output)).is_err());
+}

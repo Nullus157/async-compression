@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.43](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.42...compression-codecs-v0.4.43) - 2026-09-16
+
+### Fixed
+
+- *(gzip)* reject invalid header before the full 10 bytes arrive ([#489](https://github.com/Nullus157/async-compression/pull/489))
+
 ## [0.4.42](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.41...compression-codecs-v0.4.42) - 2026-09-14
 
 ### Fixed

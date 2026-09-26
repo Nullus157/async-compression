@@ -65,6 +65,14 @@
     doc = "`brotli` (*inactive*) | `BrotliEncoder`, `BrotliDecoder`"
 )]
 #![cfg_attr(
+    all(feature = "brotli-mbrotli", async_compression_unstable),
+    doc = "`brotli-mbrotli` (*unstable*) | [`MbrotliEncoder`](?search=MbrotliEncoder), [`MbrotliDecoder`](?search=MbrotliDecoder)"
+)]
+#![cfg_attr(
+    not(all(feature = "brotli-mbrotli", async_compression_unstable)),
+    doc = "`brotli-mbrotli` (*unstable*, *inactive*) | `MbrotliEncoder`, `MbrotliDecoder`"
+)]
+#![cfg_attr(
     feature = "bzip2",
     doc = "`bzip2` | [`BzEncoder`](?search=BzEncoder), [`BzDecoder`](?search=BzDecoder)"
 )]
@@ -138,6 +146,18 @@
 )]
 //!
 
+//! ## Unstable features
+//!
+//! Some features are not yet covered by this crate's stability guarantees. They only take effect
+//! when the crate is also built with `--cfg async_compression_unstable`, for example through
+//! `RUSTFLAGS="--cfg async_compression_unstable"`, and they may change or be removed in any
+//! release:
+//!
+//! - `brotli-mbrotli` adds `MbrotliEncoder` and `MbrotliDecoder`, a Brotli implementation backed by
+//!   the pure-Rust [`mbrotli`](https://docs.rs/mbrotli) crate. It is an alternative to the `brotli`
+//!   feature and produces the same format. `mbrotli` requires Rust 1.89 or newer.
+//!
+
 //! ## Multi-thread support
 //! The `xz` compression algorithm supports multi-threaded compression and decompression.
 //! Enable the `xz-parallel` feature to enable multi-threading support.
@@ -170,3 +190,6 @@ pub use codecs::lz4::params as lz4;
 
 #[cfg(feature = "brotli")]
 pub use codecs::brotli::params as brotli;
+
+#[cfg(all(feature = "brotli-mbrotli", async_compression_unstable))]
+pub use codecs::mbrotli::params as mbrotli;

@@ -76,12 +76,10 @@ macro_rules! algos {
             pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
                 let params = crate::codecs::mbrotli::params::EncoderParams::default();
                 let params = params.quality(level);
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codecs::MbrotliEncoder::new(params),
-                    ),
-                }
+                Self::with_params(
+                    inner,
+                    params,
+                )
             }
 
             /// Creates a new encoder, using the specified compression level and parameters, which

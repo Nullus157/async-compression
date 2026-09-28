@@ -3,6 +3,22 @@ use compression_core::util::{PartialBuffer, WriteBuffer};
 use mbrotli::{Compressor, EncoderSessionOwned, EncoderStatus, Operation};
 use std::io;
 
+/// Feeds `input` to the session, writing straight into the uninitialized tail of `output`.
+///
+/// Returns how much input was consumed and what the session needs next.
+fn process(
+    session: &mut EncoderSessionOwned,
+    input: &[u8],
+    output: &mut WriteBuffer<'_>,
+    operation: Operation,
+) -> io::Result<(usize, EncoderStatus)> {
+    // SAFETY: `process_uninit` never de-initializes bytes of `output`.
+    let progress = session.process_uninit(input, unsafe { output.unwritten_mut() }, operation)?;
+    // SAFETY: `process_uninit` initializes exactly `produced` leading bytes of `output`.
+    unsafe { output.assume_init_and_advance(progress.produced) };
+    Ok((progress.consumed, progress.status))
+}
+
 #[derive(Debug)]
 pub struct MbrotliEncoder {
     session: EncoderSessionOwned,
@@ -26,33 +42,30 @@ impl EncodeV2 for MbrotliEncoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> io::Result<()> {
-        let progress = self.session.process(
+        let (consumed, _) = process(
+            &mut self.session,
             input.unwritten(),
-            output.initialize_unwritten(),
+            output,
             Operation::Process,
         )?;
-
-        input.advance(progress.consumed);
-        output.advance(progress.produced);
+        input.advance(consumed);
 
         Ok(())
     }
 
     fn flush(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
-        let progress = self.session.flush(output.initialize_unwritten())?;
-        output.advance(progress.produced);
+        let (_, status) = process(&mut self.session, &[], output, Operation::Flush)?;
 
-        match progress.status {
+        match status {
             EncoderStatus::NeedsInput | EncoderStatus::Finished => Ok(true),
             EncoderStatus::NeedsOutput => Ok(false),
         }
     }
 
     fn finish(&mut self, output: &mut WriteBuffer<'_>) -> io::Result<bool> {
-        let progress = self.session.finish(output.initialize_unwritten())?;
-        output.advance(progress.produced);
+        let (_, status) = process(&mut self.session, &[], output, Operation::Finish)?;
 
-        match progress.status {
+        match status {
             EncoderStatus::Finished => Ok(true),
             EncoderStatus::NeedsInput | EncoderStatus::NeedsOutput => Ok(false),
         }

@@ -1,3 +1,6 @@
+export RUSTFLAGS := "--cfg async_compression_unstable"
+export RUSTDOCFLAGS := RUSTFLAGS + "--cfg=docsrs -Dwarnings"
+
 _list:
     @just --list
 
@@ -19,7 +22,7 @@ clippy:
 
 # Document crates in workspace.
 doc *args:
-    RUSTDOCFLAGS="--cfg=docsrs -Dwarnings" cargo +nightly doc --workspace --all-features {{ args }}
+    cargo +nightly doc --workspace --all-features {{ args }}
 
 # Checks feature combinations for `tokio|futures-io` async runtime.
 check-features async_runtime:

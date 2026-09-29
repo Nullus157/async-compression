@@ -5,6 +5,10 @@ permissions:
   contents: write
   id-token: write
 
+env:
+  RUSTFLAGS: --cfg async_compression_unstable
+  RUSTDOCFLAGS: --cfg async_compression_unstable
+
 on:
   push:
     branches:

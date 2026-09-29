@@ -2,6 +2,8 @@ name: nightly
 
 env:
   RUST_BACKTRACE: 1
+  RUSTFLAGS: --cfg async_compression_unstable
+  RUSTDOCFLAGS: --cfg async_compression_unstable
 
 jobs:
   test:

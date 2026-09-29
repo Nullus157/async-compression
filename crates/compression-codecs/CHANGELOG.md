@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.44](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.43...compression-codecs-v0.4.44) - 2026-09-29
+
+### Added
+
+- *(brotli)* add optional mbrotli backend ([#492](https://github.com/Nullus157/async-compression/pull/492))
+
 ## [0.4.43](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.42...compression-codecs-v0.4.43) - 2026-09-16
 
 ### Fixed

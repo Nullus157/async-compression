@@ -68,3 +68,8 @@ zstd-safe = { version = "8", optional = true, default-features = false }
 
 [lints]
 workspace = true
+
+[lints.rust]
+# Avoid error for mbrotli
+unused-crate-dependencies = "allow"
+

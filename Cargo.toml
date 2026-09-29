@@ -16,6 +16,7 @@ compression-core = { version = "0.4.33", path = "crates/compression-core" }
 pin-project-lite = "0.2"
 
 [workspace.lints.rust]
-rust_2018_idioms = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(async_compression_unstable)'] }
 missing_debug_implementations = { level = "deny", priority = -1 }
 # missing_docs = { level = "deny", priority = -1 }

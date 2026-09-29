@@ -15,6 +15,10 @@ jobs:
       with:
         toolchain: nightly
     - run: cargo doc --all-features --no-deps
+    - run: cargo doc --all-features --no-deps
+      env:
+        RUSTFLAGS: --cfg async_compression_unstable
+        RUSTDOCFLAGS: --cfg=docsrs -Dwarnings --cfg async_compression_unstable
 
 on:
   push:

@@ -13,6 +13,8 @@ rust-version.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
+rustc-args = ["--cfg", "async_compression_unstable"]
+rustdoc-args = ["--cfg", "async_compression_unstable"]
 
 [features]
 # groups
@@ -34,6 +36,8 @@ all-algorithms = [
 
 # algorithms
 brotli = ["compression-codecs/brotli"]
+# Unstable, also requires `--cfg async_compression_unstable`.
+brotli-mbrotli = ["compression-codecs/brotli-mbrotli"]
 bzip2 = ["compression-codecs/bzip2"]
 deflate = ["compression-codecs/deflate"]
 deflate64 = ["compression-codecs/deflate64"]
@@ -90,6 +94,10 @@ workspace = true
 [[test]]
 name = "brotli"
 required-features = ["brotli"]
+
+[[test]]
+name = "brotli-mbrotli"
+required-features = ["brotli-mbrotli"]
 
 [[test]]
 name = "bzip2"

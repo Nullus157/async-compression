@@ -1,21 +1,21 @@
 macro_rules! algos {
-    (@algo $algo:ident [$algo_s:expr] $decoder:ident $encoder:ident <$inner:ident>
+    (@algo $algo:ident [$algo_s:expr] $(#[cfg($extra_cfg:meta)])? $decoder:ident $encoder:ident <$inner:ident>
         { @enc $($encoder_methods:tt)* }
         { @dec $($decoder_methods:tt)* }
     ) => {
-        #[cfg(feature = $algo_s)]
+        #[cfg(all(feature = $algo_s $(, $extra_cfg)?))]
         decoder! {
             #[doc = concat!("A ", $algo_s, " decoder, or decompressor")]
-            #[cfg(feature = $algo_s)]
+            #[cfg(all(feature = $algo_s $(, $extra_cfg)?))]
             $decoder<$inner>
 
             { $($decoder_methods)* }
         }
 
-        #[cfg(feature = $algo_s)]
+        #[cfg(all(feature = $algo_s $(, $extra_cfg)?))]
         encoder! {
             #[doc = concat!("A ", $algo_s, " encoder, or compressor.")]
-            #[cfg(feature = $algo_s)]
+            #[cfg(all(feature = $algo_s $(, $extra_cfg)?))]
             $encoder<$inner> {
                 pub fn new(inner: $inner) -> Self {
                     Self::with_quality(inner, crate::core::Level::Default)
@@ -64,6 +64,34 @@ macro_rules! algos {
                     inner: crate::$($mod::)+generic::Encoder::new(
                         inner,
                         crate::codecs::BrotliEncoder::new(params),
+                    ),
+                }
+            }
+        }
+        { @dec }
+        );
+
+        algos!(@algo brotli ["brotli-mbrotli"] #[cfg(async_compression_unstable)] MbrotliDecoder MbrotliEncoder <$inner>
+        { @enc
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                let params = crate::codecs::mbrotli::params::EncoderParams::default();
+                let params = params.quality(level);
+                Self::with_params(
+                    inner,
+                    params,
+                )
+            }
+
+            /// Creates a new encoder, using the specified compression level and parameters, which
+            /// will read uncompressed data from the given stream and emit a compressed stream.
+            pub fn with_params(
+                inner: $inner,
+                params: crate::codecs::mbrotli::params::EncoderParams,
+            ) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codecs::MbrotliEncoder::new(params),
                     ),
                 }
             }

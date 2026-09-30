@@ -79,7 +79,7 @@ tokio = { version = "1.38.2", default-features = false, features = [
 ] }
 tokio-util = { version = "0.7", default-features = false, features = ["io"] }
 
-brotli = "8"
+brotli = "9"
 bzip2 = "0.6"
 flate2 = "1.0.13"
 libzstd = { package = "zstd", version = "0.14.0", default-features = false }

@@ -1,0 +1,28 @@
+name: miri
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: compression-core
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
+      with:
+        toolchain: nightly
+        components: miri
+        build-warnings: allow
+    - uses: taiki-e/install-action@4cef1412cce204788f482e778a0b9187f9626a29 # v2.87.21
+      with: { tool: cargo-nextest }
+    - run: cargo miri setup
+    - run: cargo miri nextest run -p compression-core
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.46](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.45...compression-codecs-v0.4.46) - 2026-10-08
+
+### Other
+
+- add keywords to compression crates ([#502](https://github.com/Nullus157/async-compression/pull/502))
+
 ## [0.4.45](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.44...compression-codecs-v0.4.45) - 2026-09-30
 
 ### Other

@@ -4,6 +4,7 @@ version = "0.4.50"
 description = """
 Adaptors between compression crates and Rust's modern asynchronous IO types.
 """
+keywords = ["compression", "decompression", "async-io", "tokio", "futures-io"]
 authors.workspace = true
 categories.workspace = true
 edition.workspace = true

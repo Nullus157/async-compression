@@ -3,6 +3,9 @@ name: docs
 env:
   RUST_BACKTRACE: 1
 
+permissions:
+  contents: read
+
 jobs:
   docsrs:
     name: cargo doc --cfg docsrs
@@ -19,6 +22,24 @@ jobs:
       env:
         RUSTFLAGS: --cfg async_compression_unstable
         RUSTDOCFLAGS: --cfg=docsrs -Dwarnings --cfg async_compression_unstable
+
+  docs-rs-build:
+    name: docs.rs build (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+        - async-compression
+        - compression-codecs
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: rust-lang/docs.rs/github-actions/build@cca98f22718fdbe8fc9fd5f0ea358700f496c85b # main (beta)
+      continue-on-error: true
+      with:
+        package: ${{ matrix.package }}
 
 on:
   push:

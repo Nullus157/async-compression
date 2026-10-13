@@ -37,7 +37,6 @@ jobs:
       with:
         persist-credentials: false
     - uses: rust-lang/docs.rs/github-actions/build@cca98f22718fdbe8fc9fd5f0ea358700f496c85b # main (beta)
-      continue-on-error: true
       with:
         package: ${{ matrix.package }}
 

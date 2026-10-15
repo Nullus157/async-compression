@@ -275,6 +275,92 @@ macro_rules! algos {
         }
         );
 
+        algos!(@algo zstd ["zstd-mzstd"] #[cfg(async_compression_unstable)] MzstdDecoder MzstdEncoder <$inner>
+        { @enc
+
+            pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+                let params = crate::codecs::mzstd::params::CParameter::quality(level);
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codecs::MzstdEncoder::new(params),
+                    ),
+                }
+            }
+
+            /// Creates a new encoder, using the specified compression level and parameters, which
+            /// will read uncompressed data from the given stream and emit a compressed stream.
+            ///
+            /// # Panics
+            ///
+            /// Panics if a parameter is out of range.
+            pub fn with_quality_and_params(inner: $inner, level: crate::core::Level, params: &[crate::codecs::mzstd::params::CParameter]) -> Self {
+                let level = crate::codecs::mzstd::params::CParameter::quality(level);
+                Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codecs::MzstdEncoder::new_with_params(level, params),
+                    ),
+                }
+            }
+
+            /// Creates a new encoder, using the specified compression level and pre-trained
+            /// dictionary, which will read uncompressed data from the given stream and emit a
+            /// compressed stream.
+            ///
+            /// Dictionaries provide better compression ratios for small files, but are required to
+            /// be present during decompression.
+            ///
+            /// # Errors
+            ///
+            /// Returns error when `dictionary` is not valid.
+            pub fn with_dict(inner: $inner, level: crate::core::Level, dictionary: &[u8]) -> ::std::io::Result<Self> {
+                let level = crate::codecs::mzstd::params::CParameter::quality(level);
+                Ok(Self {
+                    inner: crate::$($mod::)+generic::Encoder::new(
+                        inner,
+                        crate::codecs::MzstdEncoder::new_with_dict(level, dictionary)?,
+                    ),
+                })
+            }
+        }
+        { @dec
+            /// Creates a new decoder, using the specified parameters, which will read compressed
+            /// data from the given stream and emit a decompressed stream.
+            ///
+            /// # Panics
+            ///
+            /// Panics if a parameter is out of range.
+            pub fn with_params(inner: $inner, params: &[crate::codecs::mzstd::params::DParameter]) -> Self {
+                Self {
+                    inner: crate::$($mod::)+generic::Decoder::new(
+                        inner,
+                        crate::codecs::MzstdDecoder::new_with_params(params),
+                    ),
+                }
+            }
+
+            /// Creates a new decoder, using the specified pre-trained dictionary, which will read
+            /// compressed data from the given stream and emit an uncompressed stream.
+            ///
+            /// Dictionaries provide better compression ratios for small files, but are required to
+            /// be present during decompression. The dictionary used must be the same as the one
+            /// used for compression.
+            ///
+            /// # Errors
+            ///
+            /// Returns error when `dictionary` is not valid.
+            pub fn with_dict(inner: $inner, dictionary: &[u8]) -> ::std::io::Result<Self> {
+                Ok(Self {
+                    inner: crate::$($mod::)+generic::Decoder::new(
+                        inner,
+                        crate::codecs::MzstdDecoder::new_with_dict(dictionary)?,
+                    ),
+                })
+            }
+        }
+        );
+
         algos!(@algo xz ["xz"] XzDecoder XzEncoder <$inner>
         { @enc
 

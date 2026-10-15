@@ -46,6 +46,8 @@ xz2 = ["xz"]
 zlib = ["flate2"]
 zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]
+# Unstable, also requires `--cfg async_compression_unstable`.
+zstd-mzstd = ["dep:mzstd"]
 deflate64 = ["dep:deflate64"]
 
 [dependencies]
@@ -61,6 +63,11 @@ lz4 = { version = "1.28.1", optional = true }
 liblzma = { version = "0.4.5", optional = true }
 memchr = { version = "2", optional = true }
 mbrotli = { version = "0.5.3", optional = true, default-features = false, features = [
+    "std",
+    "compression",
+    "decompression",
+] }
+mzstd = { version = "0.2.5", optional = true, default-features = false, features = [
     "std",
     "compression",
     "decompression",

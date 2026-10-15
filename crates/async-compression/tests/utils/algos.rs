@@ -185,6 +185,26 @@ algos! {
         }
     }
 
+    // Uses the `zstd` crate as the reference implementation, so these tests also check that the
+    // two backends interoperate.
+    #[cfg(async_compression_unstable)]
+    pub mod mzstd("zstd-mzstd", MzstdEncoder, MzstdDecoder) {
+        pub mod sync {
+            pub use crate::utils::impls::sync::to_vec;
+
+            pub fn compress(bytes: &[u8]) -> Vec<u8> {
+                use libzstd::stream::read::Encoder;
+                use libzstd::DEFAULT_COMPRESSION_LEVEL;
+                to_vec(Encoder::new(bytes, DEFAULT_COMPRESSION_LEVEL).unwrap())
+            }
+
+            pub fn decompress(bytes: &[u8]) -> Vec<u8> {
+                use libzstd::stream::read::Decoder;
+                to_vec(Decoder::new(bytes).unwrap())
+            }
+        }
+    }
+
     pub mod xz("xz", XzEncoder, XzDecoder) {
         pub mod sync {
             pub use crate::utils::impls::sync::to_vec;

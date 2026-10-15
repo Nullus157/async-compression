@@ -137,6 +137,14 @@
     doc = "`zstd` (*inactive*) | `ZstdEncoder`, `ZstdDecoder`"
 )]
 #![cfg_attr(
+    all(feature = "zstd-mzstd", async_compression_unstable),
+    doc = "`zstd-mzstd` (*unstable*) | [`MzstdEncoder`](?search=MzstdEncoder), [`MzstdDecoder`](?search=MzstdDecoder)"
+)]
+#![cfg_attr(
+    not(all(feature = "zstd-mzstd", async_compression_unstable)),
+    doc = "`zstd-mzstd` (*unstable*, *inactive*) | `MzstdEncoder`, `MzstdDecoder`"
+)]
+#![cfg_attr(
     feature = "deflate64",
     doc = "`deflate64` | (encoder not implemented), [`Deflate64Decoder`](?search=Deflate64Decoder)"
 )]
@@ -156,6 +164,9 @@
 //! - `brotli-mbrotli` adds `MbrotliEncoder` and `MbrotliDecoder`, a Brotli implementation backed by
 //!   the pure-Rust [`mbrotli`](https://docs.rs/mbrotli) crate. It is an alternative to the `brotli`
 //!   feature and produces the same format. `mbrotli` requires Rust 1.89 or newer.
+//! - `zstd-mzstd` adds `MzstdEncoder` and `MzstdDecoder`, a Zstandard implementation backed by the
+//!   pure-Rust [`mzstd`](https://docs.rs/mzstd) crate. It is an alternative to the `zstd` feature
+//!   and produces the same format. `mzstd` requires Rust 1.89 or newer.
 //!
 
 //! ## Multi-thread support
@@ -193,3 +204,6 @@ pub use codecs::brotli::params as brotli;
 
 #[cfg(all(feature = "brotli-mbrotli", async_compression_unstable))]
 pub use codecs::mbrotli::params as mbrotli;
+
+#[cfg(all(feature = "zstd-mzstd", async_compression_unstable))]
+pub use codecs::mzstd::params as mzstd;

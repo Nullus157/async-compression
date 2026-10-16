@@ -280,12 +280,7 @@ macro_rules! algos {
 
             pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
                 let params = crate::codecs::mzstd::params::CParameter::quality(level);
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codecs::MzstdEncoder::new(params),
-                    ),
-                }
+                Self::with_codec(inner, crate::codecs::MzstdEncoder::new(params))
             }
 
             /// Creates a new encoder, using the specified compression level and parameters, which
@@ -296,12 +291,7 @@ macro_rules! algos {
             /// Panics if a parameter is out of range.
             pub fn with_quality_and_params(inner: $inner, level: crate::core::Level, params: &[crate::codecs::mzstd::params::CParameter]) -> Self {
                 let level = crate::codecs::mzstd::params::CParameter::quality(level);
-                Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codecs::MzstdEncoder::new_with_params(level, params),
-                    ),
-                }
+                Self::with_codec(inner, crate::codecs::MzstdEncoder::new_with_params(level, params))
             }
 
             /// Creates a new encoder, using the specified compression level and pre-trained
@@ -316,12 +306,7 @@ macro_rules! algos {
             /// Returns error when `dictionary` is not valid.
             pub fn with_dict(inner: $inner, level: crate::core::Level, dictionary: &[u8]) -> ::std::io::Result<Self> {
                 let level = crate::codecs::mzstd::params::CParameter::quality(level);
-                Ok(Self {
-                    inner: crate::$($mod::)+generic::Encoder::new(
-                        inner,
-                        crate::codecs::MzstdEncoder::new_with_dict(level, dictionary)?,
-                    ),
-                })
+                Ok(Self::with_codec(inner, crate::codecs::MzstdEncoder::new_with_dict(level, dictionary)?))
             }
         }
         { @dec
@@ -332,12 +317,7 @@ macro_rules! algos {
             ///
             /// Panics if a parameter is out of range.
             pub fn with_params(inner: $inner, params: &[crate::codecs::mzstd::params::DParameter]) -> Self {
-                Self {
-                    inner: crate::$($mod::)+generic::Decoder::new(
-                        inner,
-                        crate::codecs::MzstdDecoder::new_with_params(params),
-                    ),
-                }
+                Self::with_codec(inner, crate::codecs::MzstdDecoder::new_with_params(params))
             }
 
             /// Creates a new decoder, using the specified pre-trained dictionary, which will read
@@ -351,12 +331,7 @@ macro_rules! algos {
             ///
             /// Returns error when `dictionary` is not valid.
             pub fn with_dict(inner: $inner, dictionary: &[u8]) -> ::std::io::Result<Self> {
-                Ok(Self {
-                    inner: crate::$($mod::)+generic::Decoder::new(
-                        inner,
-                        crate::codecs::MzstdDecoder::new_with_dict(dictionary)?,
-                    ),
-                })
+                Ok(Self::with_codec(inner, crate::codecs::MzstdDecoder::new_with_dict(dictionary)?))
             }
         }
         );

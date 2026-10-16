@@ -223,7 +223,7 @@ mod zstd_interop {
 
     use crate::utils::block_on;
 
-    fn inputs() -> Vec<(&'static str, Vec<u8>)> {
+    pub(super) fn inputs() -> Vec<(&'static str, Vec<u8>)> {
         // Deterministic pseudo-random bytes, so the stream contains poorly compressible data.
         let mut state = 0x2545_f491_4f6c_dd1d_u64;
         let noise = (0..256 * 1024)
@@ -316,6 +316,185 @@ mod zstd_interop {
                     "{name}, level {level}"
                 );
             }
+        }
+    }
+}
+
+/// Streams written by `MzstdEncoder` must decode with `MzstdDecoder`, with no other backend
+/// involved.
+#[cfg(feature = "tokio")]
+mod roundtrip {
+    use async_compression::{
+        mzstd::{CParameter, DParameter},
+        tokio::{
+            bufread::{MzstdDecoder, MzstdEncoder},
+            write,
+        },
+        Level,
+    };
+    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _, BufReader};
+
+    use super::zstd_interop::inputs;
+    use crate::utils::block_on;
+
+    const DICT: &[u8] = include_bytes!("./artifacts/dictionary-rust");
+    const SOURCE: &[u8] = include_bytes!("./artifacts/lib.rs");
+
+    const LEVELS: [Level; 8] = [
+        Level::Fastest,
+        Level::Default,
+        Level::Best,
+        Level::Precise(-5),
+        Level::Precise(1),
+        Level::Precise(3),
+        Level::Precise(9),
+        Level::Precise(19),
+    ];
+
+    fn compress(input: &[u8], level: Level, params: &[CParameter]) -> Vec<u8> {
+        let mut output = Vec::new();
+        block_on(
+            MzstdEncoder::with_quality_and_params(input, level, params).read_to_end(&mut output),
+        )
+        .unwrap();
+        output
+    }
+
+    fn decompress(input: &[u8], params: &[DParameter]) -> Vec<u8> {
+        let mut output = Vec::new();
+        block_on(MzstdDecoder::with_params(input, params).read_to_end(&mut output)).unwrap();
+        output
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn levels() {
+        for (name, input) in inputs() {
+            for level in LEVELS {
+                for checksum in [false, true] {
+                    let params = [CParameter::checksum_flag(checksum)];
+                    let compressed = compress(&input, level, &params);
+                    assert_eq!(
+                        decompress(&compressed, &[]),
+                        input,
+                        "{name}, {level:?}, checksum {checksum}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn params() {
+        let tuned = [
+            CParameter::window_log(20),
+            CParameter::hash_log(16),
+            CParameter::chain_log(16),
+            CParameter::search_log(4),
+            CParameter::min_match(5),
+            CParameter::target_length(32),
+            CParameter::content_size_flag(false),
+        ];
+        let ldm = [
+            CParameter::window_log(24),
+            CParameter::enable_long_distance_matching(true),
+            CParameter::ldm_hash_log(16),
+            CParameter::ldm_min_match(64),
+            CParameter::ldm_bucket_size_log(3),
+            CParameter::ldm_hash_rate_log(4),
+        ];
+        let cases: [(&str, &[CParameter], &[DParameter]); 4] = [
+            ("tuned", &tuned, &[]),
+            ("ldm", &ldm, &[DParameter::window_log_max(24)]),
+            (
+                "ldm disabled",
+                &[CParameter::enable_long_distance_matching(false)],
+                &[],
+            ),
+            (
+                "zeros",
+                &[CParameter::window_log(0), CParameter::hash_log(0)],
+                &[],
+            ),
+        ];
+
+        for (name, input) in inputs() {
+            for (params_name, cparams, dparams) in cases {
+                for level in [Level::Fastest, Level::Precise(9), Level::Precise(19)] {
+                    let compressed = compress(&input, level, cparams);
+                    assert_eq!(
+                        decompress(&compressed, dparams),
+                        input,
+                        "{name}, {params_name}, {level:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn dictionary() {
+        for level in LEVELS {
+            let mut compressed = Vec::new();
+            block_on(
+                MzstdEncoder::with_dict(SOURCE, level, DICT)
+                    .unwrap()
+                    .read_to_end(&mut compressed),
+            )
+            .unwrap();
+
+            let mut decoded = Vec::new();
+            block_on(
+                MzstdDecoder::with_dict(compressed.as_slice(), DICT)
+                    .unwrap()
+                    .read_to_end(&mut decoded),
+            )
+            .unwrap();
+            assert_eq!(decoded, SOURCE, "{level:?}");
+        }
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn multiple_members() {
+        let members: Vec<_> = inputs().into_iter().map(|(_, input)| input).collect();
+        let compressed: Vec<u8> = members
+            .iter()
+            .zip(LEVELS)
+            .flat_map(|(input, level)| compress(input, level, &[]))
+            .collect();
+
+        let mut decoder = MzstdDecoder::new(compressed.as_slice());
+        decoder.multiple_members(true);
+        let mut decoded = Vec::new();
+        block_on(decoder.read_to_end(&mut decoded)).unwrap();
+        assert_eq!(decoded, members.concat());
+    }
+
+    /// Both sides see the data one byte at a time, so every state is suspended and resumed.
+    #[test]
+    #[ntest::timeout(60000)]
+    fn byte_by_byte() {
+        let input = SOURCE;
+        for level in [Level::Fastest, Level::Precise(19)] {
+            let compressed = block_on(async {
+                let mut encoder = write::MzstdEncoder::with_quality(Vec::new(), level);
+                for byte in input {
+                    encoder.write_all(std::slice::from_ref(byte)).await.unwrap();
+                }
+                encoder.shutdown().await.unwrap();
+                encoder.into_inner()
+            });
+
+            let mut decoder = MzstdDecoder::new(BufReader::with_capacity(1, compressed.as_slice()));
+            let mut decoded = Vec::new();
+            let mut byte = [0];
+            while block_on(decoder.read(&mut byte)).unwrap() == 1 {
+                decoded.push(byte[0]);
+            }
+            assert_eq!(decoded, input, "{level:?}");
         }
     }
 }
@@ -450,4 +629,87 @@ mod pending {
         use ::futures::TryStreamExt as _;
         stream.into_async_read()
     });
+}
+
+/// Skippable frames carry user metadata that decoders skip. `MzstdDecoder` must treat them as
+/// `ZstdDecoder` does: each one is a complete frame, before, between or after Zstandard frames, or
+/// on its own.
+#[cfg(all(feature = "tokio", feature = "zstd"))]
+mod skippable_frames {
+    use std::convert::TryFrom;
+
+    use async_compression::tokio::bufread::{MzstdDecoder, ZstdDecoder};
+    use tokio::io::AsyncReadExt as _;
+
+    use crate::utils::block_on;
+
+    fn skippable(payload: &[u8]) -> Vec<u8> {
+        let mut frame = 0x184D_2A50_u32.to_le_bytes().to_vec();
+        frame.extend_from_slice(&u32::try_from(payload.len()).unwrap().to_le_bytes());
+        frame.extend_from_slice(payload);
+        frame
+    }
+
+    fn frame(content: &[u8]) -> Vec<u8> {
+        libzstd::encode_all(content, 3).unwrap()
+    }
+
+    fn cases() -> Vec<(&'static str, Vec<u8>)> {
+        let meta = skippable(b"metadata");
+        let empty_meta = skippable(b"");
+        let hello = frame(b"hello ");
+        let world = frame(b"world");
+        vec![
+            ("skippable only", meta.clone()),
+            ("empty skippable only", empty_meta.clone()),
+            (
+                "two skippables",
+                [meta.clone(), empty_meta.clone()].concat(),
+            ),
+            ("skippable, frame", [meta.clone(), hello.clone()].concat()),
+            ("frame, skippable", [hello.clone(), meta.clone()].concat()),
+            (
+                "frame, skippable, frame",
+                [hello.clone(), meta.clone(), world.clone()].concat(),
+            ),
+            (
+                "skippable, frame, skippable, frame, skippable",
+                [meta.clone(), hello, empty_meta, world, meta].concat(),
+            ),
+        ]
+    }
+
+    fn decode<R: tokio::io::AsyncRead + Unpin>(mut decoder: R) -> Result<Vec<u8>, String> {
+        let mut output = Vec::new();
+        block_on(decoder.read_to_end(&mut output))
+            .map(|_| output)
+            .map_err(|err| format!("{:?}", err.kind()))
+    }
+
+    fn check(multiple_members: bool) {
+        let mismatches: Vec<_> = cases()
+            .into_iter()
+            .filter_map(|(name, input)| {
+                let mut zstd = ZstdDecoder::new(input.as_slice());
+                zstd.multiple_members(multiple_members);
+                let mut mzstd = MzstdDecoder::new(input.as_slice());
+                mzstd.multiple_members(multiple_members);
+                let (zstd, mzstd) = (decode(zstd), decode(mzstd));
+                (zstd != mzstd).then(|| format!("{name}: zstd {zstd:?}, mzstd {mzstd:?}"))
+            })
+            .collect();
+        assert!(mismatches.is_empty(), "{:#?}", mismatches);
+    }
+
+    #[test]
+    #[ntest::timeout(10000)]
+    fn single_member() {
+        check(false);
+    }
+
+    #[test]
+    #[ntest::timeout(10000)]
+    fn multiple_members() {
+        check(true);
+    }
 }

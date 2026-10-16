@@ -132,89 +132,45 @@ impl CParameter {
     }
 }
 
-/// `0` selects the default, as it does for zstd's parameters.
-fn explicit(value: u32) -> Option<u32> {
-    (value != 0).then_some(value)
-}
-
 /// Builds the encoder configuration for `level` and `params`.
 ///
 /// Levels outside the supported range are clamped, as zstd does. Parameter values are passed on
-/// unchecked, so out-of-range values are reported when the compressor is built.
+/// unchecked, so out-of-range values are reported when the compressor is built. As in zstd, mzstd
+/// stores `0` as unset, which restores the parameter's default.
 pub(crate) fn encoder_config(level: i32, params: &[CParameter]) -> EncoderConfig {
     let level = level.clamp(mzstd::Level::MIN.get(), mzstd::Level::MAX.get());
     // The clamp above keeps `level` inside the range `Level` accepts.
     let mut config = EncoderConfig::new().with_level(mzstd::Level::try_from(level).unwrap());
-
-    let mut window_log = None;
-    let mut hash_log = None;
-    let mut chain_log = None;
-    let mut search_log = None;
-    let mut min_match = None;
-    let mut target_length = None;
+    let mut compression = CompressionParams::default();
+    let mut ldm = LdmParams::default();
     let mut ldm_enabled = None;
-    let mut ldm_hash_log = None;
-    let mut ldm_min_match = None;
-    let mut ldm_bucket_size_log = None;
-    let mut ldm_hash_rate_log = None;
 
     for param in params {
         match param.0 {
-            CParameterInner::WindowLog(value) => window_log = explicit(value),
-            CParameterInner::HashLog(value) => hash_log = explicit(value),
-            CParameterInner::ChainLog(value) => chain_log = explicit(value),
-            CParameterInner::SearchLog(value) => search_log = explicit(value),
-            CParameterInner::MinMatch(value) => min_match = explicit(value),
-            CParameterInner::TargetLength(value) => target_length = explicit(value),
+            CParameterInner::WindowLog(value) => compression = compression.with_window_log(value),
+            CParameterInner::HashLog(value) => compression = compression.with_hash_log(value),
+            CParameterInner::ChainLog(value) => compression = compression.with_chain_log(value),
+            CParameterInner::SearchLog(value) => compression = compression.with_search_log(value),
+            CParameterInner::MinMatch(value) => compression = compression.with_min_match(value),
+            CParameterInner::TargetLength(value) => {
+                compression = compression.with_target_length(value)
+            }
             CParameterInner::EnableLongDistanceMatching(value) => ldm_enabled = Some(value),
-            CParameterInner::LdmHashLog(value) => ldm_hash_log = explicit(value),
-            CParameterInner::LdmMinMatch(value) => ldm_min_match = explicit(value),
-            CParameterInner::LdmBucketSizeLog(value) => ldm_bucket_size_log = explicit(value),
-            CParameterInner::LdmHashRateLog(value) => ldm_hash_rate_log = explicit(value),
+            CParameterInner::LdmHashLog(value) => ldm = ldm.with_hash_log(value),
+            CParameterInner::LdmMinMatch(value) => ldm = ldm.with_min_match(value),
+            CParameterInner::LdmBucketSizeLog(value) => ldm = ldm.with_bucket_size_log(value),
+            CParameterInner::LdmHashRateLog(value) => ldm = ldm.with_hash_rate_log(value),
             CParameterInner::ContentSizeFlag(value) => config = config.with_content_size(value),
             CParameterInner::ChecksumFlag(value) => config = config.with_checksum(value),
         }
     }
 
-    let mut compression = CompressionParams::default();
-    if let Some(value) = window_log {
-        compression = compression.with_window_log(value);
-    }
-    if let Some(value) = hash_log {
-        compression = compression.with_hash_log(value);
-    }
-    if let Some(value) = chain_log {
-        compression = compression.with_chain_log(value);
-    }
-    if let Some(value) = search_log {
-        compression = compression.with_search_log(value);
-    }
-    if let Some(value) = min_match {
-        compression = compression.with_min_match(value);
-    }
-    if let Some(value) = target_length {
-        compression = compression.with_target_length(value);
-    }
-
+    // The LDM parameters only apply when long-distance matching is explicitly enabled, which may
+    // come after them.
     let long_distance = match ldm_enabled {
         None => LongDistanceMatching::Auto,
         Some(false) => LongDistanceMatching::Disabled,
-        Some(true) => {
-            let mut ldm = LdmParams::default();
-            if let Some(value) = ldm_hash_log {
-                ldm = ldm.with_hash_log(value);
-            }
-            if let Some(value) = ldm_min_match {
-                ldm = ldm.with_min_match(value);
-            }
-            if let Some(value) = ldm_bucket_size_log {
-                ldm = ldm.with_bucket_size_log(value);
-            }
-            if let Some(value) = ldm_hash_rate_log {
-                ldm = ldm.with_hash_rate_log(value);
-            }
-            LongDistanceMatching::Enabled(ldm)
-        }
+        Some(true) => LongDistanceMatching::Enabled(ldm),
     };
 
     config

@@ -42,7 +42,7 @@ impl MzstdDecoder {
     }
 }
 
-/// Feeds `input` to the session, writing into the unwritten tail of `output`.
+/// Feeds `input` to the session, writing straight into the uninitialized tail of `output`.
 ///
 /// Returns how much input was consumed and what the session needs next.
 fn process(
@@ -51,15 +51,19 @@ fn process(
     output: &mut WriteBuffer<'_>,
     operation: DecodeOperation,
 ) -> (usize, io::Result<DecoderStatus>) {
-    // Both a successful and a failed call report how much they consumed and produced, so progress
-    // made before an error is kept.
-    match session.process(input, output.initialize_unwritten(), operation) {
+    // SAFETY: `process_uninit` never de-initializes bytes of `output`.
+    let result = session.process_uninit(input, unsafe { output.unwritten_mut() }, operation);
+    // `process_uninit` initializes exactly `produced` leading bytes of `output`, both when it
+    // succeeds and when it fails, so progress made before an error is kept.
+    match result {
         Ok(progress) => {
-            output.advance(progress.produced);
+            // SAFETY: see above.
+            unsafe { output.assume_init_and_advance(progress.produced) };
             (progress.consumed, Ok(progress.status))
         }
         Err(failure) => {
-            output.advance(failure.produced);
+            // SAFETY: see above.
+            unsafe { output.assume_init_and_advance(failure.produced) };
             (failure.consumed, Err(failure.into_error().into()))
         }
     }

@@ -67,7 +67,7 @@ mbrotli = { version = "0.5.3", optional = true, default-features = false, featur
     "compression",
     "decompression",
 ] }
-mzstd = { version = "0.2.5", optional = true, default-features = false, features = [
+mzstd = { version = "0.2.6", optional = true, default-features = false, features = [
     "std",
     "compression",
     "decompression",

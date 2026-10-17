@@ -51,6 +51,8 @@ xz2 = ["compression-codecs/xz2", "xz"]
 zlib = ["compression-codecs/zlib"]
 zstd = ["compression-codecs/zstd"]
 zstdmt = ["compression-codecs/zstdmt", "zstd"]
+# Unstable, also requires `--cfg async_compression_unstable`.
+zstd-mzstd = ["compression-codecs/zstd-mzstd"]
 
 
 [dependencies]
@@ -135,6 +137,10 @@ required-features = ["zlib"]
 [[test]]
 name = "zstd"
 required-features = ["zstd"]
+
+[[test]]
+name = "zstd-mzstd"
+required-features = ["zstd-mzstd"]
 
 [[test]]
 name = "zstd-dict"

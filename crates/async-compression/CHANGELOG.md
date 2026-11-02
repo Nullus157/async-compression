@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.52](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.51...async-compression-v0.4.52) - 2026-11-02
+
+### Fixed
+
+- *(gzip)* validate and consume FHCRC header bytes ([#511](https://github.com/Nullus157/async-compression/pull/511))
+
+### Other
+
+- *(clippy)* Suppress clippy lint for macro-generated fields ([#509](https://github.com/Nullus157/async-compression/pull/509))
+
 ## [0.4.51](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.50...async-compression-v0.4.51) - 2026-10-17
 
 ### Added

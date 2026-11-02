@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.47](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.46...compression-codecs-v0.4.47) - 2026-11-02
+
+### Fixed
+
+- *(gzip)* validate and consume FHCRC header bytes ([#511](https://github.com/Nullus157/async-compression/pull/511))
+
 ## [0.4.46](https://github.com/Nullus157/async-compression/compare/compression-codecs-v0.4.45...compression-codecs-v0.4.46) - 2026-10-17
 
 ### Added

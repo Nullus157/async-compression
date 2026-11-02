@@ -206,3 +206,58 @@ fn bufread_multiple_members_rejects_short_invalid_header() {
     let mut output = Vec::new();
     assert!(block_on(decoder.read_to_end(&mut output)).is_err());
 }
+
+/// Sets FHCRC on a gzip member whose header is `header_len` bytes long and inserts the CRC16.
+#[allow(unused)]
+fn with_header_crc(mut bytes: Vec<u8>, header_len: usize) -> Vec<u8> {
+    bytes[3] |= 0b0000_0010;
+    let mut crc = flate2::Crc::new();
+    crc.update(&bytes[..header_len]);
+    let crc16 = crc.sum().to_le_bytes();
+    bytes.splice(header_len..header_len, crc16[..2].iter().copied());
+    bytes
+}
+
+#[test]
+#[ntest::timeout(1000)]
+#[cfg(feature = "futures-io")]
+fn gzip_bufread_decompress_with_header_crc() {
+    let bytes = with_header_crc(sync::compress(&[1, 2, 3, 4, 5, 6]), 10);
+    assert_eq!(sync::decompress(&bytes), &[1, 2, 3, 4, 5, 6][..]);
+
+    let input = InputStream::from(vec![bytes]);
+    let output = bufread::decompress(bufread::from(&input));
+
+    assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+}
+
+#[test]
+#[ntest::timeout(1000)]
+#[cfg(feature = "futures-io")]
+fn gzip_bufread_chunks_decompress_with_extra_header_and_header_crc() {
+    let header_len = 10 + 2 + 4 + "hello_world.txt\0".len() + "test file, please delete\0".len();
+    let bytes = with_header_crc(compress_with_header(&[1, 2, 3, 4, 5, 6]), header_len);
+    assert_eq!(sync::decompress(&bytes), &[1, 2, 3, 4, 5, 6][..]);
+
+    let input = InputStream::from(bytes.chunks(1));
+    let output = bufread::decompress(bufread::from(&input));
+
+    assert_eq!(output, &[1, 2, 3, 4, 5, 6][..]);
+}
+
+#[test]
+#[ntest::timeout(1000)]
+#[cfg(feature = "futures-io")]
+fn gzip_bufread_decompress_rejects_wrong_header_crc() {
+    use futures::{executor::block_on, io::AsyncReadExt as _};
+
+    let mut bytes = with_header_crc(sync::compress(&[1, 2, 3, 4, 5, 6]), 10);
+    bytes[10] ^= 0xff;
+
+    let input = InputStream::from(vec![bytes]);
+    let mut decoder = bufread::Decoder::new(bufread::from(&input));
+
+    let mut output = Vec::new();
+    let err = block_on(decoder.read_to_end(&mut output)).unwrap_err();
+    assert_eq!(err.to_string(), "CRC computed for header does not match");
+}

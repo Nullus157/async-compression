@@ -171,11 +171,9 @@ impl Parser {
                 }
 
                 State::Crc(data) => {
-                    let header = std::mem::take(&mut self.header);
-
                     if !self.header.flags.crc {
                         self.state = State::Done;
-                        break Ok(Some(header));
+                        break Ok(Some(std::mem::take(&mut self.header)));
                     }
 
                     data.copy_unwritten_from(input);
@@ -186,7 +184,7 @@ impl Parser {
                         let checksum = crc.sum().to_le_bytes();
 
                         if data == checksum[..2] {
-                            Ok(Some(header))
+                            Ok(Some(std::mem::take(&mut self.header)))
                         } else {
                             Err(io::Error::new(
                                 io::ErrorKind::InvalidData,

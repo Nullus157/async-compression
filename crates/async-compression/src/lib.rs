@@ -207,3 +207,6 @@ pub use codecs::mbrotli::params as mbrotli;
 
 #[cfg(all(feature = "zstd-mzstd", async_compression_unstable))]
 pub use codecs::mzstd::params as mzstd;
+
+#[cfg(all(feature = "zstd-zrip", async_compression_unstable))]
+pub use codecs::zrip::params as zrip;

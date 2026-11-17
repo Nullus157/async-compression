@@ -32,6 +32,8 @@ pub mod xz;
 pub mod xz2;
 #[cfg(feature = "zlib")]
 pub mod zlib;
+#[cfg(all(feature = "zstd-zrip", async_compression_unstable))]
+pub mod zrip;
 #[cfg(feature = "zstd")]
 pub mod zstd;
 
@@ -63,6 +65,8 @@ pub use self::xz::{XzDecoder, XzEncoder};
 pub use self::xz2::{Xz2Decoder, Xz2Encoder, Xz2FileFormat};
 #[cfg(feature = "zlib")]
 pub use self::zlib::{ZlibDecoder, ZlibEncoder};
+#[cfg(all(feature = "zstd-zrip", async_compression_unstable))]
+pub use self::zrip::{ZripDecoder, ZripEncoder};
 #[cfg(feature = "zstd")]
 pub use self::zstd::{ZstdDecoder, ZstdEncoder};
 

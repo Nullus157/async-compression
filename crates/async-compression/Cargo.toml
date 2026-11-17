@@ -53,6 +53,8 @@ zstd = ["compression-codecs/zstd"]
 zstdmt = ["compression-codecs/zstdmt", "zstd"]
 # Unstable, also requires `--cfg async_compression_unstable`.
 zstd-mzstd = ["compression-codecs/zstd-mzstd"]
+# Unstable, also requires `--cfg async_compression_unstable`.
+zstd-zrip = ["compression-codecs/zstd-zrip"]
 
 
 [dependencies]
@@ -141,6 +143,10 @@ required-features = ["zstd"]
 [[test]]
 name = "zstd-mzstd"
 required-features = ["zstd-mzstd"]
+
+[[test]]
+name = "zstd-zrip"
+required-features = ["zstd-zrip"]
 
 [[test]]
 name = "zstd-dict"

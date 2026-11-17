@@ -336,6 +336,52 @@ macro_rules! algos {
         }
         );
 
+algos!(@algo zstd ["zstd-zrip"] #[cfg(async_compression_unstable)] ZripDecoder ZripEncoder <$inner>
+{ @enc
+
+    pub fn with_quality(inner: $inner, level: crate::core::Level) -> Self {
+        let level = crate::codecs::zrip::params::CParameter::quality(level);
+        Self::with_codec(inner, crate::codecs::ZripEncoder::new(level))
+    }
+
+    /// Creates a new encoder, using the specified compression level and parameters, which
+    /// will read uncompressed data from the given stream and emit a compressed stream.
+    pub fn with_quality_and_params(inner: $inner, level: crate::core::Level, params: &[crate::codecs::zrip::params::CParameter]) -> Self {
+        let level = crate::codecs::zrip::params::CParameter::quality(level);
+        Self::with_codec(inner, crate::codecs::ZripEncoder::new_with_params(level, params))
+    }
+
+    /// Creates a new encoder, using the specified compression level and pre-trained
+    /// dictionary, which will read uncompressed data from the given stream and emit a
+    /// compressed stream.
+    ///
+    /// # Errors
+    ///
+    /// Returns error when `dictionary` is not valid.
+    pub fn with_dict(inner: $inner, level: crate::core::Level, dictionary: &[u8]) -> ::std::io::Result<Self> {
+        let level = crate::codecs::zrip::params::CParameter::quality(level);
+        Ok(Self::with_codec(inner, crate::codecs::ZripEncoder::new_with_dict(level, dictionary)?))
+    }
+}
+{ @dec
+    /// Creates a new decoder, using the specified parameters, which will read compressed
+    /// data from the given stream and emit a decompressed stream.
+    pub fn with_params(inner: $inner, params: &[crate::codecs::zrip::params::DParameter]) -> Self {
+        Self::with_codec(inner, crate::codecs::ZripDecoder::new_with_params(params))
+    }
+
+    /// Creates a new decoder, using the specified pre-trained dictionary, which will read
+    /// compressed data from the given stream and emit an uncompressed stream.
+    ///
+    /// # Errors
+    ///
+    /// Returns error when `dictionary` is not valid.
+    pub fn with_dict(inner: $inner, dictionary: &[u8]) -> ::std::io::Result<Self> {
+        Ok(Self::with_codec(inner, crate::codecs::ZripDecoder::new_with_dict(dictionary)?))
+    }
+}
+);
+
         algos!(@algo xz ["xz"] XzDecoder XzEncoder <$inner>
         { @enc
 

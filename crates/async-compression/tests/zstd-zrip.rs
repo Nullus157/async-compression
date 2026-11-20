@@ -5,6 +5,36 @@ mod utils;
 
 test_cases!(zrip);
 
+#[cfg(feature = "tokio")]
+mod params {
+    use async_compression::{tokio::bufread::ZripEncoder, zrip::CParameter, Level};
+    use tokio::io::AsyncReadExt as _;
+
+    use crate::utils::block_on;
+
+    fn input() -> Vec<u8> {
+        include_bytes!("./artifacts/lib.rs").to_vec()
+    }
+
+    fn compress(input: &[u8], level: Level, params: &[CParameter]) -> Vec<u8> {
+        let mut encoder = ZripEncoder::with_quality_and_params(input, level, params);
+        let mut output = Vec::new();
+        block_on(encoder.read_to_end(&mut output)).unwrap();
+        output
+    }
+
+    #[test]
+    #[ntest::timeout(10000)]
+    fn zero_selects_zstd_default_level() {
+        // zstd takes level 0 as its default, 3, where zrip takes it as its own, 1.
+        let input = input();
+        let default = compress(&input, Level::Default, &[]);
+        assert_eq!(compress(&input, Level::Precise(0), &[]), default);
+        assert_eq!(compress(&input, Level::Precise(3), &[]), default);
+        assert_ne!(compress(&input, Level::Precise(1), &[]), default);
+    }
+}
+
 // The artifacts are text, so on Windows they may be checked out with CRLF line endings and no
 // longer match the compressed artifacts, as in `zstd-dict.rs` and `zstd-window-size.rs`.
 #[cfg(all(feature = "tokio", not(windows)))]

@@ -9,6 +9,8 @@ use compression_core::Level;
 const MIN_LEVEL: i32 = -7;
 /// Highest level zrip encodes.
 const MAX_LEVEL: i32 = 4;
+/// zstd's default level, which it also selects for level 0. zrip's default is 1.
+const DEFAULT_LEVEL: i32 = 3;
 
 /// A compression parameter for the `zrip` backend.
 ///
@@ -28,8 +30,9 @@ impl CParameter {
         match level {
             Level::Fastest => 1,
             Level::Best => MAX_LEVEL,
+            Level::Precise(0) => DEFAULT_LEVEL,
             Level::Precise(quality) => quality.clamp(MIN_LEVEL, MAX_LEVEL),
-            _ => 3,
+            _ => DEFAULT_LEVEL,
         }
     }
 

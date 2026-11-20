@@ -49,11 +49,13 @@ impl ZripDecoder {
         input: &[u8],
         output: &mut WriteBuffer<'_>,
     ) -> io::Result<(usize, Status)> {
+        // SAFETY: `decode_uninit` never de-initializes bytes of `output`.
         let progress = self
             .decoder
-            .decode(input, output.initialize_unwritten())
+            .decode_uninit(input, unsafe { output.unwritten_mut() })
             .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
-        output.advance(progress.produced);
+        // SAFETY: `decode_uninit` initializes exactly `produced` leading bytes of `output`.
+        unsafe { output.assume_init_and_advance(progress.produced) };
         if progress.consumed > 0 {
             self.stream_ended = false;
         }

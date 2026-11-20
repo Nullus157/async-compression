@@ -42,11 +42,13 @@ impl ZripEncoder {
         output: &mut WriteBuffer<'_>,
         op: EndOp,
     ) -> io::Result<(usize, Status)> {
+        // SAFETY: `encode_uninit` never de-initializes bytes of `output`.
         let progress = self
             .encoder
-            .encode(input, output.initialize_unwritten(), op)
+            .encode_uninit(input, unsafe { output.unwritten_mut() }, op)
             .map_err(io::Error::other)?;
-        output.advance(progress.produced);
+        // SAFETY: `encode_uninit` initializes exactly `produced` leading bytes of `output`.
+        unsafe { output.assume_init_and_advance(progress.produced) };
         Ok((progress.consumed, progress.status))
     }
 }

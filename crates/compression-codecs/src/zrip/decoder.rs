@@ -76,6 +76,10 @@ impl DecodeV2 for ZripDecoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> io::Result<bool> {
+        // A frame may have ended while `flush` drained its output; report it before reading on.
+        if self.stream_ended {
+            return Ok(true);
+        }
         let (consumed, status) = self.process(input.unwritten(), output)?;
         input.advance(consumed);
         Ok(status == Status::Finished)

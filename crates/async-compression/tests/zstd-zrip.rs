@@ -386,3 +386,30 @@ mod skippable_frames {
         check(true);
     }
 }
+
+/// A frame end that a flush drains still ends the stream: as with `ZstdDecoder`, writing a second
+/// frame after it fails.
+#[cfg(feature = "tokio")]
+mod flush {
+    use async_compression::tokio::write::ZripDecoder;
+    use tokio::io::AsyncWriteExt as _;
+
+    use crate::utils::block_on;
+
+    #[test]
+    #[ntest::timeout(10000)]
+    fn frame_end_drained_by_flush() {
+        // The output is still pending when the writer has taken all of the frame.
+        let content = vec![b'a'; 100_000];
+        let first = libzstd::encode_all(content.as_slice(), 3).unwrap();
+        let second = libzstd::encode_all(&b"b"[..], 3).unwrap();
+        block_on(async {
+            let mut decoder = ZripDecoder::new(Vec::new());
+            decoder.write_all(&first).await.unwrap();
+            decoder.flush().await.unwrap();
+            decoder.write_all(&second).await.unwrap_err();
+            decoder.shutdown().await.unwrap();
+            assert_eq!(decoder.into_inner(), content);
+        });
+    }
+}

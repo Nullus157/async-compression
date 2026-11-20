@@ -4,11 +4,8 @@
 //! them only needs a type change.
 
 use compression_core::Level;
+use zrip::{MAX_LEVEL, MIN_LEVEL};
 
-/// Lowest level zrip encodes.
-const MIN_LEVEL: i32 = -7;
-/// Highest level zrip encodes.
-const MAX_LEVEL: i32 = 4;
 /// zstd's default level, which it also selects for level 0. zrip's default is 1.
 const DEFAULT_LEVEL: i32 = 3;
 

@@ -5,12 +5,18 @@ mod utils;
 
 test_cases!(zrip);
 
+#[test]
+pub fn zrip_params() {
+    let _ = async_compression::zrip::CParameter::window_log(20);
+    let _ = async_compression::zrip::DParameter::window_log_max(27);
+}
+
 #[cfg(feature = "tokio")]
 mod params {
     use async_compression::{tokio::bufread::ZripEncoder, zrip::CParameter, Level};
     use tokio::io::AsyncReadExt as _;
 
-    use crate::utils::block_on;
+    use crate::utils::{algos::zrip::sync, block_on};
 
     fn input() -> Vec<u8> {
         include_bytes!("./artifacts/lib.rs").to_vec()
@@ -21,6 +27,39 @@ mod params {
         let mut output = Vec::new();
         block_on(encoder.read_to_end(&mut output)).unwrap();
         output
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn every_quality_roundtrips() {
+        let input = input();
+        for quality in [-131073, -8, -7, -1, 0, 1, 3, 4, 5, 19, 22] {
+            let compressed = compress(&input, Level::Precise(quality), &[]);
+            assert_eq!(sync::decompress(&compressed), input, "quality {quality}");
+        }
+        for level in [Level::Fastest, Level::Default, Level::Best] {
+            let compressed = compress(&input, level, &[]);
+            assert_eq!(sync::decompress(&compressed), input, "{level:?}");
+        }
+    }
+
+    #[test]
+    #[ntest::timeout(10000)]
+    fn tuned_params_roundtrip() {
+        let input = input();
+        let params = [
+            CParameter::window_log(20),
+            CParameter::enable_long_distance_matching(true),
+        ];
+        let compressed = compress(&input, Level::Precise(3), &params);
+        assert_eq!(sync::decompress(&compressed), input);
+
+        let compressed = compress(
+            &input,
+            Level::Fastest,
+            &[CParameter::enable_long_distance_matching(false)],
+        );
+        assert_eq!(sync::decompress(&compressed), input);
     }
 
     #[test]
@@ -198,6 +237,159 @@ mod zstd_interop {
                 block_on(ZripDecoder::new(compressed.as_slice()).read_to_end(&mut output)).unwrap();
                 assert_eq!(output, input, "{name}, level {level}");
             }
+        }
+    }
+}
+
+#[cfg(feature = "tokio")]
+mod roundtrip {
+    use async_compression::{
+        tokio::{
+            bufread::{ZripDecoder, ZripEncoder},
+            write,
+        },
+        zrip::{CParameter, DParameter},
+        Level,
+    };
+    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _, BufReader};
+
+    use super::zstd_interop::inputs;
+    use crate::utils::block_on;
+
+    const DICT: &[u8] = include_bytes!("./artifacts/dictionary-rust");
+    const SOURCE: &[u8] = include_bytes!("./artifacts/lib.rs");
+
+    const LEVELS: [Level; 9] = [
+        Level::Fastest,
+        Level::Default,
+        Level::Best,
+        Level::Precise(-7),
+        Level::Precise(-5),
+        Level::Precise(1),
+        Level::Precise(3),
+        Level::Precise(4),
+        Level::Precise(19),
+    ];
+
+    fn compress(input: &[u8], level: Level, params: &[CParameter]) -> Vec<u8> {
+        let mut output = Vec::new();
+        block_on(
+            ZripEncoder::with_quality_and_params(input, level, params).read_to_end(&mut output),
+        )
+        .unwrap();
+        output
+    }
+
+    fn decompress(input: &[u8], params: &[DParameter]) -> Vec<u8> {
+        let mut output = Vec::new();
+        block_on(ZripDecoder::with_params(input, params).read_to_end(&mut output)).unwrap();
+        output
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn levels() {
+        for (name, input) in inputs() {
+            for level in LEVELS {
+                let compressed = compress(&input, level, &[]);
+                assert_eq!(decompress(&compressed, &[]), input, "{name}, {level:?}");
+            }
+        }
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn params() {
+        let ldm = [
+            CParameter::window_log(24),
+            CParameter::enable_long_distance_matching(true),
+        ];
+        let cases: [(&str, &[CParameter], &[DParameter]); 3] = [
+            ("window", &[CParameter::window_log(20)], &[]),
+            ("ldm", &ldm, &[DParameter::window_log_max(24)]),
+            (
+                "ldm disabled",
+                &[CParameter::enable_long_distance_matching(false)],
+                &[],
+            ),
+        ];
+
+        for (name, input) in inputs() {
+            for (params_name, cparams, dparams) in cases {
+                for level in [Level::Fastest, Level::Precise(3), Level::Best] {
+                    let compressed = compress(&input, level, cparams);
+                    assert_eq!(
+                        decompress(&compressed, dparams),
+                        input,
+                        "{name}, {params_name}, {level:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn dictionary() {
+        for level in LEVELS {
+            let mut compressed = Vec::new();
+            block_on(
+                ZripEncoder::with_dict(SOURCE, level, DICT)
+                    .unwrap()
+                    .read_to_end(&mut compressed),
+            )
+            .unwrap();
+
+            let mut decoded = Vec::new();
+            block_on(
+                ZripDecoder::with_dict(compressed.as_slice(), DICT)
+                    .unwrap()
+                    .read_to_end(&mut decoded),
+            )
+            .unwrap();
+            assert_eq!(decoded, SOURCE, "{level:?}");
+        }
+    }
+
+    #[test]
+    #[ntest::timeout(60000)]
+    fn multiple_members() {
+        let members: Vec<_> = inputs().into_iter().map(|(_, input)| input).collect();
+        let compressed: Vec<u8> = members
+            .iter()
+            .zip(LEVELS)
+            .flat_map(|(input, level)| compress(input, level, &[]))
+            .collect();
+
+        let mut decoder = ZripDecoder::new(compressed.as_slice());
+        decoder.multiple_members(true);
+        let mut decoded = Vec::new();
+        block_on(decoder.read_to_end(&mut decoded)).unwrap();
+        assert_eq!(decoded, members.concat());
+    }
+
+    /// Both sides see the data one byte at a time, so every state is suspended and resumed.
+    #[test]
+    #[ntest::timeout(60000)]
+    fn byte_by_byte() {
+        let input = SOURCE;
+        for level in [Level::Fastest, Level::Best] {
+            let compressed = block_on(async {
+                let mut encoder = write::ZripEncoder::with_quality(Vec::new(), level);
+                for byte in input {
+                    encoder.write_all(std::slice::from_ref(byte)).await.unwrap();
+                }
+                encoder.shutdown().await.unwrap();
+                encoder.into_inner()
+            });
+
+            let mut decoder = ZripDecoder::new(BufReader::with_capacity(1, compressed.as_slice()));
+            let mut decoded = Vec::new();
+            let mut byte = [0];
+            while block_on(decoder.read(&mut byte)).unwrap() == 1 {
+                decoded.push(byte[0]);
+            }
+            assert_eq!(decoded, input, "{level:?}");
         }
     }
 }

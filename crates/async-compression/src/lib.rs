@@ -145,6 +145,14 @@
     doc = "`zstd-mzstd` (*unstable*, *inactive*) | `MzstdEncoder`, `MzstdDecoder`"
 )]
 #![cfg_attr(
+    all(feature = "zstd-zrip", async_compression_unstable),
+    doc = "`zstd-zrip` (*unstable*) | [`ZripEncoder`](?search=ZripEncoder), [`ZripDecoder`](?search=ZripDecoder)"
+)]
+#![cfg_attr(
+    not(all(feature = "zstd-zrip", async_compression_unstable)),
+    doc = "`zstd-zrip` (*unstable*, *inactive*) | `ZripEncoder`, `ZripDecoder`"
+)]
+#![cfg_attr(
     feature = "deflate64",
     doc = "`deflate64` | (encoder not implemented), [`Deflate64Decoder`](?search=Deflate64Decoder)"
 )]
@@ -167,6 +175,10 @@
 //! - `zstd-mzstd` adds `MzstdEncoder` and `MzstdDecoder`, a Zstandard implementation backed by the
 //!   pure-Rust [`mzstd`](https://docs.rs/mzstd) crate. It is an alternative to the `zstd` feature
 //!   and produces the same format. `mzstd` requires Rust 1.89 or newer.
+//! - `zstd-zrip` adds `ZripEncoder` and `ZripDecoder`, a Zstandard implementation backed by the
+//!   pure-Rust [`zrip`](https://docs.rs/zrip) crate. It is an alternative to the `zstd` feature
+//!   and produces the same format. It encodes levels -7 to 4, clamping higher ones to 4, and
+//!   decodes frames from any level. `zrip` requires Rust 1.89 or newer.
 //!
 
 //! ## Multi-thread support

@@ -64,6 +64,39 @@ mod params {
 
     #[test]
     #[ntest::timeout(10000)]
+    fn zero_selects_default_window() {
+        let input = input();
+        let default = compress(&input, Level::Default, &[]);
+        let zero = compress(&input, Level::Default, &[CParameter::window_log(0)]);
+        let overridden = compress(
+            &input,
+            Level::Default,
+            &[CParameter::window_log(10), CParameter::window_log(0)],
+        );
+
+        assert_eq!(zero, default);
+        assert_eq!(overridden, default);
+    }
+
+    #[test]
+    #[ntest::timeout(10000)]
+    fn out_of_range_window_log_is_clamped() {
+        let input = input();
+        let compress = |window_log| {
+            compress(
+                &input,
+                Level::Default,
+                &[CParameter::window_log(window_log)],
+            )
+        };
+        assert_eq!(compress(1), compress(10));
+        assert_ne!(compress(10), compress(20));
+        assert_eq!(compress(100), compress(27));
+        assert_eq!(sync::decompress(&compress(100)), input);
+    }
+
+    #[test]
+    #[ntest::timeout(10000)]
     fn zero_selects_zstd_default_level() {
         // zstd takes level 0 as its default, 3, where zrip takes it as its own, 1.
         let input = input();

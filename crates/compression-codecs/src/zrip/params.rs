@@ -34,6 +34,9 @@ impl CParameter {
     }
 
     /// Window size in bytes (as a power of two)
+    ///
+    /// zrip clamps it to 10..=27, 1 KiB to 128 MiB, where zstd rejects values out of its range.
+    /// `0` selects the level's default, as with the `zstd` backend.
     pub fn window_log(value: u32) -> Self {
         Self(CParameterInner::WindowLog(value))
     }

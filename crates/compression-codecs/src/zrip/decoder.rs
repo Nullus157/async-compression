@@ -9,8 +9,6 @@ use zrip::push::{PushDecoder, Status};
 #[derive(Debug)]
 pub struct ZripDecoder {
     decoder: PushDecoder,
-    /// A frame ended and no later one has started.
-    stream_ended: bool,
 }
 
 impl Default for ZripDecoder {
@@ -29,10 +27,7 @@ impl ZripDecoder {
         if let Some(max) = max_window(params) {
             decoder = decoder.max_window(max);
         }
-        Self {
-            decoder,
-            stream_ended: false,
-        }
+        Self { decoder }
     }
 
     pub fn new_with_dict(dictionary: &[u8]) -> io::Result<Self> {
@@ -40,7 +35,6 @@ impl ZripDecoder {
             .map_err(|err| io::Error::new(io::ErrorKind::InvalidInput, err))?;
         Ok(Self {
             decoder: PushDecoder::with_dict(dict),
-            stream_ended: false,
         })
     }
 
@@ -56,12 +50,6 @@ impl ZripDecoder {
             .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
         // SAFETY: `decode_uninit` initializes exactly `produced` leading bytes of `output`.
         unsafe { output.assume_init_and_advance(progress.produced) };
-        if progress.consumed > 0 {
-            self.stream_ended = false;
-        }
-        if progress.status == Status::Finished {
-            self.stream_ended = true;
-        }
         Ok((progress.consumed, progress.status))
     }
 }
@@ -69,7 +57,6 @@ impl ZripDecoder {
 impl DecodeV2 for ZripDecoder {
     fn reinit(&mut self) -> io::Result<()> {
         self.decoder.reset();
-        self.stream_ended = false;
         Ok(())
     }
 
@@ -78,8 +65,9 @@ impl DecodeV2 for ZripDecoder {
         input: &mut PartialBuffer<&[u8]>,
         output: &mut WriteBuffer<'_>,
     ) -> io::Result<bool> {
-        // A frame may have ended while `flush` drained its output; report it before reading on.
-        if self.stream_ended {
+        // zrip reports `Finished` once, and a frame may have ended while `flush` drained its
+        // output; report it before reading on.
+        if self.decoder.at_frame_end() {
             return Ok(true);
         }
         let (consumed, status) = self.process(input.unwritten(), output)?;
@@ -98,7 +86,7 @@ impl DecodeV2 for ZripDecoder {
             return Ok(false);
         }
         // Like the `zstd` backend: the stream must end with a complete frame.
-        if self.stream_ended && self.decoder.finish().is_ok() {
+        if self.decoder.at_frame_end() {
             Ok(true)
         } else {
             Err(io::Error::new(

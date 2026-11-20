@@ -74,7 +74,7 @@ mzstd = { version = "0.2.6", optional = true, default-features = false, features
     "compression",
     "decompression",
 ] }
-zrip = { version = "0.8.21", optional = true, default-features = false, features = ["std", "ldm", "simd"] }
+zrip = { version = "0.8.22", optional = true, default-features = false, features = ["std", "ldm", "simd"] }
 zstd-safe = { version = "8", optional = true, default-features = false }
 
 [lints]

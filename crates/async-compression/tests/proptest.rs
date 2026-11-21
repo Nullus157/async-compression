@@ -148,4 +148,7 @@ mod proptest {
 
     #[cfg(all(feature = "zstd-mzstd", async_compression_unstable))]
     tests!(mzstd);
+
+    #[cfg(all(feature = "zstd-zrip", async_compression_unstable))]
+    tests!(zrip);
 }

@@ -48,6 +48,8 @@ zstd = ["libzstd", "zstd-safe"]
 zstdmt = ["zstd", "zstd-safe/zstdmt"]
 # Unstable, also requires `--cfg async_compression_unstable`.
 zstd-mzstd = ["dep:mzstd"]
+# Unstable, also requires `--cfg async_compression_unstable`.
+zstd-zrip = ["dep:zrip"]
 deflate64 = ["dep:deflate64"]
 
 [dependencies]
@@ -72,6 +74,7 @@ mzstd = { version = "0.2.6", optional = true, default-features = false, features
     "compression",
     "decompression",
 ] }
+zrip = { version = "0.8.22", optional = true, default-features = false, features = ["std", "ldm", "simd"] }
 zstd-safe = { version = "8", optional = true, default-features = false }
 
 [lints]

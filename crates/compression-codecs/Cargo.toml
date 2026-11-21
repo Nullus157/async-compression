@@ -1,6 +1,6 @@
 [package]
 name = "compression-codecs"
-version = "0.4.47"
+version = "0.4.48"
 description = """
 Adaptors for various compression algorithms.
 """

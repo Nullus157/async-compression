@@ -13,12 +13,12 @@ pub struct BrotliDecoder {
 
 impl Default for BrotliDecoder {
     fn default() -> Self {
-        Self::with_window(false)
+        Self::with_large_window(false)
     }
 }
 
 impl BrotliDecoder {
-    fn with_window(large_window: bool) -> Self {
+    fn with_large_window(large_window: bool) -> Self {
         Self {
             state: Box::new(Self::new_brotli_state(large_window)),
             large_window,
@@ -56,7 +56,7 @@ impl BrotliDecoder {
     /// however few bytes the stream decodes to, so only use this for trusted input. Large windows
     /// are not valid in the HTTP `br` content coding.
     pub fn new_with_large_window() -> Self {
-        Self::with_window(true)
+        Self::with_large_window(true)
     }
 
     fn decode(

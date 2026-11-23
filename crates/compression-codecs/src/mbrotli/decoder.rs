@@ -6,8 +6,8 @@ use mbrotli::{
 };
 use std::io;
 
-/// Only accept RFC 7932 windows, as the `brotli` backend does. Large windows (RFC 9841) are not
-/// valid in the `br` content coding.
+/// Only accept RFC 7932 windows, as the `brotli` backend does (via `BrotliState::new_strict`).
+/// Large windows (RFC 9841) are not valid in the `br` content coding.
 const DECODER_CONFIG: DecoderConfig = DecoderConfig::new().with_window_limit(
     match WindowLimit::standard(mbrotli::Window::MAX_STANDARD_BITS) {
         Ok(limit) => limit,

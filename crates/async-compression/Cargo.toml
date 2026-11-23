@@ -101,6 +101,10 @@ name = "brotli"
 required-features = ["brotli"]
 
 [[test]]
+name = "brotli-large-window"
+required-features = ["brotli", "tokio"]
+
+[[test]]
 name = "brotli-mbrotli"
 required-features = ["brotli-mbrotli"]
 

@@ -19,8 +19,13 @@ impl Default for BrotliDecoder {
 }
 
 impl BrotliDecoder {
+    /// `BrotliState::new` accepts the non-standard large-window format (RFC 9841), whose header
+    /// can declare a window of up to 1 GiB, and the ring buffer is sized from it. A few hundred
+    /// bytes of input could then make the decoder allocate ~1 GiB, regardless of how much output
+    /// the caller reads. Only accept RFC 7932 windows (at most 16 MiB), as the `mbrotli` backend
+    /// does; `BrotliEncoder` never produces large-window streams anyway.
     fn new_brotli_state() -> BrotliState {
-        BrotliState::new(
+        BrotliState::new_strict(
             StandardAlloc::default(),
             StandardAlloc::default(),
             StandardAlloc::default(),

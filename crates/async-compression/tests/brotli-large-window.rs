@@ -75,3 +75,43 @@ async fn large_window_is_accepted_when_enabled() {
         input.repeat(3)
     );
 }
+
+#[cfg(all(async_compression_unstable, feature = "brotli-mbrotli"))]
+mod mbrotli {
+    use super::{compress, is_large_window};
+    use async_compression::tokio::bufread::MbrotliDecoder;
+    use tokio::io::AsyncReadExt as _;
+
+    async fn decode(mut decoder: MbrotliDecoder<&[u8]>) -> std::io::Result<Vec<u8>> {
+        decoder.multiple_members(true);
+        let mut output = Vec::new();
+        decoder.read_to_end(&mut output).await?;
+        Ok(output)
+    }
+
+    #[tokio::test]
+    async fn large_window_is_rejected_by_default() {
+        let input = b"hello world, ".repeat(100);
+        for lgwin in [25, 30] {
+            let compressed = compress(&input, lgwin, true);
+            assert!(is_large_window(&compressed));
+            decode(MbrotliDecoder::new(&compressed[..]))
+                .await
+                .unwrap_err();
+        }
+    }
+
+    #[tokio::test]
+    async fn large_window_is_accepted_when_enabled() {
+        let input = b"hello world, ".repeat(100);
+        let mut compressed = compress(&input, 24, false);
+        compressed.extend(compress(&input, 30, true));
+        compressed.extend(compress(&input, 25, true));
+        assert_eq!(
+            decode(MbrotliDecoder::with_large_window(&compressed[..]))
+                .await
+                .unwrap(),
+            input.repeat(3)
+        );
+    }
+}

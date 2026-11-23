@@ -6,14 +6,21 @@ use mbrotli::{
 };
 use std::io;
 
-/// Only accept RFC 7932 windows, as the `brotli` backend does (via `BrotliState::new_strict`).
-/// Large windows (RFC 9841) are not valid in the `br` content coding.
+/// Only accept RFC 7932 windows by default, as the `brotli` backend does (via
+/// `BrotliState::new_strict`). Large windows (RFC 9841) are not valid in the `br` content coding.
 const DECODER_CONFIG: DecoderConfig = DecoderConfig::new().with_window_limit(
     match WindowLimit::standard(mbrotli::Window::MAX_STANDARD_BITS) {
         Ok(limit) => limit,
         Err(_) => panic!("the standard window limit is valid"),
     },
 );
+
+/// With large windows enabled, accept up to 2^30 bytes, the most the `brotli` backend accepts.
+const LARGE_WINDOW_DECODER_CONFIG: DecoderConfig =
+    DecoderConfig::new().with_window_limit(match WindowLimit::large(30) {
+        Ok(limit) => limit,
+        Err(_) => panic!("the large window limit is valid"),
+    });
 
 #[derive(Debug)]
 pub struct MbrotliDecoder {
@@ -22,18 +29,33 @@ pub struct MbrotliDecoder {
 
 impl Default for MbrotliDecoder {
     fn default() -> Self {
-        let decompressor = Decompressor::new(DECODER_CONFIG).unwrap();
+        Self::with_config(DECODER_CONFIG)
+    }
+}
+
+impl MbrotliDecoder {
+    fn with_config(config: DecoderConfig) -> Self {
+        let decompressor = Decompressor::new(config).unwrap();
         // A fresh decompressor without an exact output size has no way to refuse a session.
         let session = decompressor
             .into_session(DecodeStreamConfig::default())
             .unwrap();
         Self { session }
     }
-}
 
-impl MbrotliDecoder {
+    /// Creates a decoder that only accepts standard (RFC 7932) brotli streams, whose window is
+    /// at most 16 MiB.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Creates a decoder that also accepts the non-standard large-window brotli format
+    /// (RFC 9841), with windows of up to 1 GiB.
+    ///
+    /// A large-window stream chooses its own window, so only use this for trusted input. Large
+    /// windows are not valid in the HTTP `br` content coding.
+    pub fn new_with_large_window() -> Self {
+        Self::with_config(LARGE_WINDOW_DECODER_CONFIG)
     }
 }
 

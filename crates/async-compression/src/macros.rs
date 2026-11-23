@@ -108,7 +108,18 @@ macro_rules! algos {
                 }
             }
         }
-        { @dec }
+        { @dec
+            /// Creates a new decoder which also accepts the non-standard large-window brotli
+            /// format (RFC 9841), with windows of up to 1 GiB, which will read compressed data
+            /// from the given stream and emit a decompressed stream.
+            ///
+            /// [`new`](Self::new) only accepts standard (RFC 7932) streams, whose window is at
+            /// most 16 MiB. A large-window stream chooses its own window, so only use this for
+            /// trusted input. Large windows are not valid in the HTTP `br` content coding.
+            pub fn with_large_window(inner: $inner) -> Self {
+                Self::with_codec(inner, crate::codecs::MbrotliDecoder::new_with_large_window())
+            }
+        }
         );
 
         algos!(@algo bzip2 ["bzip2"] BzDecoder BzEncoder <$inner>

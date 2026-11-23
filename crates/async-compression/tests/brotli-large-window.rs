@@ -54,3 +54,24 @@ async fn large_window_is_rejected_after_reinit() {
     compressed.extend(compress(&input, 30, true));
     decode(&compressed, true).await.unwrap_err();
 }
+
+async fn decode_large_window(input: &[u8]) -> std::io::Result<Vec<u8>> {
+    let mut decoder = BrotliDecoder::with_large_window(input);
+    decoder.multiple_members(true);
+    let mut output = Vec::new();
+    decoder.read_to_end(&mut output).await?;
+    Ok(output)
+}
+
+#[tokio::test]
+async fn large_window_is_accepted_when_enabled() {
+    let input = b"hello world, ".repeat(100);
+    let mut compressed = compress(&input, 24, false);
+    compressed.extend(compress(&input, 30, true));
+    // The second member also checks that `reinit()` keeps the setting.
+    compressed.extend(compress(&input, 25, true));
+    assert_eq!(
+        decode_large_window(&compressed).await.unwrap(),
+        input.repeat(3)
+    );
+}

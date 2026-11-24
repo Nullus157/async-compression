@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.54](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.53...async-compression-v0.4.54) - 2026-11-24
+
+### Fixed
+
+- *(brotli)* reject large-window streams by default; add large-window opt-ins and HTTP zstd constructors ([#515](https://github.com/Nullus157/async-compression/pull/515))
+
 ## [0.4.53](https://github.com/Nullus157/async-compression/compare/async-compression-v0.4.52...async-compression-v0.4.53) - 2026-11-21
 
 ### Added

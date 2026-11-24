@@ -35,6 +35,10 @@ all-algorithms = [
     "zstd",
 ]
 
+# implementations
+futures-io = ["dep:futures-io", "dep:pin-project-lite"]
+tokio = ["dep:tokio", "dep:pin-project-lite"]
+
 # algorithms
 brotli = ["compression-codecs/brotli"]
 # Unstable, also requires `--cfg async_compression_unstable`.
@@ -59,10 +63,11 @@ zstd-zrip = ["compression-codecs/zstd-zrip"]
 
 [dependencies]
 # core dependencies
-pin-project-lite.workspace = true
 compression-codecs.workspace = true
 compression-core.workspace = true
 # optional dependencies
+# only the `futures-io` and `tokio` adaptors use `pin_project!`
+pin-project-lite = { workspace = true, optional = true }
 futures-io = { version = "0.3", default-features = false, features = [
     "std",
 ], optional = true }

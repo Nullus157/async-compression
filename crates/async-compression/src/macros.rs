@@ -68,7 +68,19 @@ macro_rules! algos {
                 }
             }
         }
-        { @dec }
+        { @dec
+            /// Creates a new decoder which also accepts the non-standard large-window brotli
+            /// format (RFC 9841), which will read compressed data from the given stream and emit a
+            /// decompressed stream.
+            ///
+            /// [`new`](Self::new) only accepts standard (RFC 7932) streams, whose window is at
+            /// most 16 MiB. A large-window stream can declare a window of up to 1 GiB, which the
+            /// decoder allocates however few bytes the stream decodes to, so only use this for
+            /// trusted input. Large windows are not valid in the HTTP `br` content coding.
+            pub fn with_large_window(inner: $inner) -> Self {
+                Self::with_codec(inner, crate::codecs::BrotliDecoder::new_with_large_window())
+            }
+        }
         );
 
         algos!(@algo brotli ["brotli-mbrotli"] #[cfg(async_compression_unstable)] MbrotliDecoder MbrotliEncoder <$inner>
@@ -96,7 +108,18 @@ macro_rules! algos {
                 }
             }
         }
-        { @dec }
+        { @dec
+            /// Creates a new decoder which also accepts the non-standard large-window brotli
+            /// format (RFC 9841), with windows of up to 1 GiB, which will read compressed data
+            /// from the given stream and emit a decompressed stream.
+            ///
+            /// [`new`](Self::new) only accepts standard (RFC 7932) streams, whose window is at
+            /// most 16 MiB. A large-window stream chooses its own window, so only use this for
+            /// trusted input. Large windows are not valid in the HTTP `br` content coding.
+            pub fn with_large_window(inner: $inner) -> Self {
+                Self::with_codec(inner, crate::codecs::MbrotliDecoder::new_with_large_window())
+            }
+        }
         );
 
         algos!(@algo bzip2 ["bzip2"] BzDecoder BzEncoder <$inner>
@@ -253,6 +276,17 @@ macro_rules! algos {
                 }
             }
 
+            /// Creates a new decoder suited to the HTTP `zstd` content coding, which will read
+            /// compressed data from the given stream and emit a decompressed stream.
+            ///
+            /// It rejects frames whose window is larger than 8 MiB, the limit RFC 9659 sets for HTTP,
+            /// instead of the 128 MiB that [`new`](Self::new) accepts. The window is memory the decoder
+            /// keeps per stream, so prefer this when decoding untrusted input. It is the same as
+            /// [`with_params`](Self::with_params) with `DParameter::window_log_max(23)`.
+            pub fn new_for_http(inner: $inner) -> Self {
+                Self::with_params(inner, &[crate::codecs::zstd::params::DParameter::window_log_max(23)])
+            }
+
             /// Creates a new decoder, using the specified compression level and pre-trained
             /// dictionary, which will read compressed data from the given stream and emit an
             /// uncompressed stream.
@@ -320,6 +354,17 @@ macro_rules! algos {
                 Self::with_codec(inner, crate::codecs::MzstdDecoder::new_with_params(params))
             }
 
+            /// Creates a new decoder suited to the HTTP `zstd` content coding, which will read
+            /// compressed data from the given stream and emit a decompressed stream.
+            ///
+            /// It rejects frames whose window is larger than 8 MiB, the limit RFC 9659 sets for HTTP,
+            /// instead of the 128 MiB that [`new`](Self::new) accepts. The window is memory the decoder
+            /// keeps per stream, so prefer this when decoding untrusted input. It is the same as
+            /// [`with_params`](Self::with_params) with `DParameter::window_log_max(23)`.
+            pub fn new_for_http(inner: $inner) -> Self {
+                Self::with_params(inner, &[crate::codecs::mzstd::params::DParameter::window_log_max(23)])
+            }
+
             /// Creates a new decoder, using the specified pre-trained dictionary, which will read
             /// compressed data from the given stream and emit an uncompressed stream.
             ///
@@ -368,6 +413,17 @@ algos!(@algo zstd ["zstd-zrip"] #[cfg(async_compression_unstable)] ZripDecoder Z
     /// data from the given stream and emit a decompressed stream.
     pub fn with_params(inner: $inner, params: &[crate::codecs::zrip::params::DParameter]) -> Self {
         Self::with_codec(inner, crate::codecs::ZripDecoder::new_with_params(params))
+    }
+
+    /// Creates a new decoder suited to the HTTP `zstd` content coding, which will read
+    /// compressed data from the given stream and emit a decompressed stream.
+    ///
+    /// It rejects frames whose window is larger than 8 MiB, the limit RFC 9659 sets for HTTP,
+    /// instead of the 128 MiB that [`new`](Self::new) accepts. The window is memory the decoder
+    /// keeps per stream, so prefer this when decoding untrusted input. It is the same as
+    /// [`with_params`](Self::with_params) with `DParameter::window_log_max(23)`.
+    pub fn new_for_http(inner: $inner) -> Self {
+        Self::with_params(inner, &[crate::codecs::zrip::params::DParameter::window_log_max(23)])
     }
 
     /// Creates a new decoder, using the specified pre-trained dictionary, which will read

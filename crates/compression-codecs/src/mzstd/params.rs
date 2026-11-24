@@ -192,7 +192,10 @@ enum DParameterInner {
 }
 
 impl DParameter {
-    /// Maximum window size in bytes (as a power of two)
+    /// Maximum window size in bytes (as a power of two). The default is 27 (128 MiB).
+    ///
+    /// The window is memory the decoder keeps per stream, sized from each frame header. The HTTP
+    /// `zstd` content coding limits it to 8 MiB (RFC 9659), so 23 suits untrusted HTTP input.
     pub fn window_log_max(value: u32) -> Self {
         Self(DParameterInner::WindowLogMax(value))
     }

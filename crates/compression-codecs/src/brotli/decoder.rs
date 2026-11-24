@@ -8,27 +8,55 @@ type BrotliState = brotli::BrotliState<StandardAlloc, StandardAlloc, StandardAll
 pub struct BrotliDecoder {
     // `BrotliState` is very large (over 2kb) which is why we're boxing it.
     state: Box<BrotliState>,
+    large_window: bool,
 }
 
 impl Default for BrotliDecoder {
     fn default() -> Self {
-        Self {
-            state: Box::new(Self::new_brotli_state()),
-        }
+        Self::with_large_window(false)
     }
 }
 
 impl BrotliDecoder {
-    fn new_brotli_state() -> BrotliState {
-        BrotliState::new(
+    fn with_large_window(large_window: bool) -> Self {
+        Self {
+            state: Box::new(Self::new_brotli_state(large_window)),
+            large_window,
+        }
+    }
+
+    /// `BrotliState::new` accepts the non-standard large-window format (RFC 9841), whose header
+    /// can declare a window of up to 1 GiB, and the ring buffer is sized from it. A few hundred
+    /// bytes of input could then make the decoder allocate ~1 GiB, regardless of how much output
+    /// the caller reads. So only accept RFC 7932 windows (at most 16 MiB) unless the caller opts
+    /// in, as the `mbrotli` backend does; `BrotliEncoder` never produces large-window streams.
+    fn new_brotli_state(large_window: bool) -> BrotliState {
+        let new = if large_window {
+            BrotliState::new
+        } else {
+            BrotliState::new_strict
+        };
+        new(
             StandardAlloc::default(),
             StandardAlloc::default(),
             StandardAlloc::default(),
         )
     }
 
+    /// Creates a decoder that only accepts standard (RFC 7932) brotli streams, whose window is
+    /// at most 16 MiB.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Creates a decoder that also accepts the non-standard large-window brotli format
+    /// (RFC 9841).
+    ///
+    /// A large-window stream can declare a window of up to 1 GiB, which the decoder allocates
+    /// however few bytes the stream decodes to, so only use this for trusted input. Large windows
+    /// are not valid in the HTTP `br` content coding.
+    pub fn new_with_large_window() -> Self {
+        Self::with_large_window(true)
     }
 
     fn decode(
@@ -65,7 +93,7 @@ impl BrotliDecoder {
 
 impl DecodeV2 for BrotliDecoder {
     fn reinit(&mut self) -> io::Result<()> {
-        *self.state = Self::new_brotli_state();
+        *self.state = Self::new_brotli_state(self.large_window);
         Ok(())
     }
 
@@ -106,6 +134,7 @@ impl fmt::Debug for BrotliDecoder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BrotliDecoder")
             .field("decompress", &"<no debug>")
+            .field("large_window", &self.large_window)
             .finish()
     }
 }

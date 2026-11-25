@@ -3,6 +3,9 @@ name: docs
 env:
   RUST_BACKTRACE: 1
 
+permissions:
+  contents: read
+
 jobs:
   docsrs:
     name: cargo doc --cfg docsrs
@@ -10,15 +13,43 @@ jobs:
     env:
       RUSTDOCFLAGS: '--cfg=docsrs -Dwarnings'
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Install Rust
+      uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
       with:
         toolchain: nightly
-    - run: cargo doc --all-features --no-deps
-    - run: cargo doc --all-features --no-deps
+
+    - name: Build docs
+      run: cargo doc --all-features --no-deps
+
+    - name: Build unstable docs
+      run: cargo doc --all-features --no-deps
       env:
         RUSTFLAGS: --cfg async_compression_unstable
         RUSTDOCFLAGS: --cfg=docsrs -Dwarnings --cfg async_compression_unstable
+
+  docs-rs-build:
+    name: docs.rs build (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+        - async-compression
+        - compression-codecs
+        - compression-core
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Build docs.rs
+      uses: rust-lang/docs.rs/github-actions/build@cca98f22718fdbe8fc9fd5f0ea358700f496c85b # main (beta)
+      with:
+        package: ${{ matrix.package }}
 
 on:
   push:
